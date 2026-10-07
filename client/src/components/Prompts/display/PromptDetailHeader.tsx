@@ -2,7 +2,8 @@ import { format } from 'date-fns';
 import { TooltipAnchor } from '@librechat/client';
 import { User, Calendar, EarthIcon, BarChart3 } from 'lucide-react';
 import type { TPromptGroup } from 'librechat-data-provider';
-import { useLocalize, useAuthContext } from '~/hooks';
+import { useLocalize, useAuthContext, useCalendar } from '~/hooks';
+import { formatShortDate } from '~/utils';
 import CategoryIcon from '../utils/CategoryIcon';
 
 interface PromptDetailHeaderProps {
@@ -12,7 +13,13 @@ interface PromptDetailHeaderProps {
 const PromptDetailHeader = ({ group }: PromptDetailHeaderProps) => {
   const localize = useLocalize();
   const { user } = useAuthContext();
-  const formattedDate = group.createdAt ? format(new Date(group.createdAt), 'MMM d, yyyy') : null;
+  const { dateLocale } = useCalendar();
+  let formattedDate: string | null = null;
+  if (group.createdAt) {
+    const createdAt = new Date(group.createdAt);
+    formattedDate =
+      dateLocale != null ? formatShortDate(createdAt, dateLocale) : format(createdAt, 'MMM d, yyyy');
+  }
   const isSharedPrompt = group.author !== user?.id && Boolean(group.authorName);
 
   const isGlobalGroup = group.isPublic === true;

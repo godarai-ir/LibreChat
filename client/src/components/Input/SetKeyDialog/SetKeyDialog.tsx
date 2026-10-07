@@ -19,7 +19,7 @@ import {
   OGDialogTrigger,
 } from '@librechat/client';
 import type { TDialogProps } from '~/common';
-import { useUserKey, useLocalize, useClockFormat } from '~/hooks';
+import { useUserKey, useLocalize, useClockFormat, useCalendar } from '~/hooks';
 import { NotificationSeverity } from '~/common';
 import { formatKeyExpiryLabel } from './utils';
 import CustomConfig from './CustomEndpoint';
@@ -125,7 +125,7 @@ const RevokeKeysButton = ({
             <OGDialogTitle>{localize('com_ui_revoke_key_endpoint', { 0: endpoint })}</OGDialogTitle>
           </OGDialogHeader>
           <div className="py-4">
-            <Label className="text-left text-sm font-medium">
+            <Label className="text-start text-sm font-medium">
               {localize('com_ui_revoke_key_confirm')}
             </Label>
           </div>
@@ -365,11 +365,12 @@ const SetKeyDialog = ({
   const EndpointComponent = endpointComponents[configuredEndpoint] ?? endpointComponents['default'];
   const expiryTime = getExpiry();
   const hour12 = useClockFormat();
+  const { dateLocale } = useCalendar();
   let currentExpiryLabel: string | null = null;
   if (expiryTime === 'never') {
     currentExpiryLabel = localize('com_endpoint_config_key_never_expires');
   } else if (expiryTime !== undefined) {
-    currentExpiryLabel = formatKeyExpiryLabel(localize, expiryTime, hour12);
+    currentExpiryLabel = formatKeyExpiryLabel(localize, expiryTime, hour12, dateLocale);
   }
 
   return (

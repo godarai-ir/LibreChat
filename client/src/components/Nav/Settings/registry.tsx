@@ -29,6 +29,7 @@ import LangfuseConnection from '../SettingsTabs/Integrations/LangfuseConnection'
 import ClockFormatSelector from '../SettingsTabs/General/ClockFormatSelector';
 import ImportConversations from '../SettingsTabs/Data/ImportConversations';
 import WeekStartSelector from '../SettingsTabs/General/WeekStartSelector';
+import CalendarSelector from '../SettingsTabs/General/CalendarSelector';
 import { ArchiveAllChats } from '../SettingsTabs/Data/ArchiveAllChats';
 import { toggleControl, ThemeSetting, LangSetting } from './controls';
 import BackupCodesItem from '../SettingsTabs/Account/BackupCodesItem';
@@ -124,6 +125,14 @@ export const registry: SettingEntry[] = [
     labelKey: 'com_nav_clock_format',
     keywords: ['time', '12-hour', '24-hour', 'am', 'pm', 'meridiem'],
     Component: ClockFormatSelector,
+  },
+  {
+    id: 'calendar',
+    tab: GENERAL,
+    section: 'appearance',
+    labelKey: 'com_nav_calendar',
+    keywords: ['date', 'calendar', 'gregorian', 'jalali', 'persian', 'solar hijri', 'shamsi'],
+    Component: CalendarSelector,
   },
   {
     id: 'weekStart',

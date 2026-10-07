@@ -4,7 +4,7 @@ import { Button } from '@librechat/client';
 import type { TAgentApiKeyListItem } from 'librechat-data-provider';
 import { formatDate, formatRelativeTime, getExpiryStatus } from './utils';
 import DeleteKeyDialog from './DeleteKeyDialog';
-import { useLocalize } from '~/hooks';
+import { useLocalize, useCalendar } from '~/hooks';
 
 type ItemProps = {
   apiKey: TAgentApiKeyListItem;
@@ -12,6 +12,7 @@ type ItemProps = {
 
 export default function Item({ apiKey }: ItemProps) {
   const localize = useLocalize();
+  const { dateLocale } = useCalendar();
   const deleteButtonRef = useRef<HTMLButtonElement | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -42,7 +43,7 @@ export default function Item({ apiKey }: ItemProps) {
           </span>
           <span>
             {apiKey.lastUsedAt
-              ? localize('com_ui_api_key_last_used', { 0: formatRelativeTime(apiKey.lastUsedAt) })
+              ? localize('com_ui_api_key_last_used', { 0: formatRelativeTime(apiKey.lastUsedAt, dateLocale) })
               : localize('com_ui_api_key_never_used')}
           </span>
           <span aria-hidden="true" className="text-text-tertiary">
@@ -50,7 +51,7 @@ export default function Item({ apiKey }: ItemProps) {
           </span>
           <span>
             {apiKey.expiresAt
-              ? localize('com_ui_api_key_expires_on', { 0: formatDate(apiKey.expiresAt) })
+              ? localize('com_ui_api_key_expires_on', { 0: formatDate(apiKey.expiresAt, dateLocale) })
               : localize('com_ui_api_key_no_expiration')}
           </span>
         </div>

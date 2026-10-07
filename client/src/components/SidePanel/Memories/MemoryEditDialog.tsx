@@ -15,7 +15,7 @@ import type { TUserMemory } from 'librechat-data-provider';
 import { getMemoryKeyError, getMemoryValueError, getMemoryApiErrorMessage } from '~/utils/memory';
 import { useUpdateMemoryMutation, useMemoriesQuery } from '~/data-provider';
 import { getMemoryAddress, getMemoryUpdateAddress } from './address';
-import { useLocalize, useHasAccess, useClockFormat } from '~/hooks';
+import { useLocalize, useHasAccess, useClockFormat, useCalendar } from '~/hooks';
 import MemoryUsageBadge from './MemoryUsageBadge';
 
 interface MemoryEditDialogProps {
@@ -26,8 +26,8 @@ interface MemoryEditDialogProps {
   triggerRef?: React.MutableRefObject<HTMLButtonElement | null>;
 }
 
-const formatDateTime = (dateString: string, hour12?: boolean): string => {
-  return new Date(dateString).toLocaleDateString(undefined, {
+const formatDateTime = (dateString: string, hour12?: boolean, locale?: string): string => {
+  return new Date(dateString).toLocaleDateString(locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -48,6 +48,7 @@ export default function MemoryEditDialog({
   const { showToast } = useToastContext();
   const { data: memData } = useMemoriesQuery();
   const hour12 = useClockFormat();
+  const { dateLocale } = useCalendar();
 
   const hasUpdateAccess = useHasAccess({
     permissionType: PermissionTypes.MEMORIES,
@@ -161,7 +162,7 @@ export default function MemoryEditDialog({
             {memory && (
               <div className="border-border-light bg-surface-secondary flex items-center justify-between gap-3 rounded-lg border px-3 py-2">
                 <span className="text-text-secondary min-w-0 truncate text-xs">
-                  {formatDateTime(memory.updated_at, hour12)}
+                  {formatDateTime(memory.updated_at, hour12, dateLocale)}
                 </span>
                 {memoryUsage ? (
                   <MemoryUsageBadge
@@ -173,7 +174,7 @@ export default function MemoryEditDialog({
                 ) : (
                   memory.tokenCount !== undefined && (
                     <span className="text-text-secondary shrink-0 text-xs">
-                      {memory.tokenCount.toLocaleString()}{' '}
+                      {memory.tokenCount.toLocaleString(dateLocale)}{' '}
                       {localize(memory.tokenCount === 1 ? 'com_ui_token' : 'com_ui_tokens')}
                     </span>
                   )

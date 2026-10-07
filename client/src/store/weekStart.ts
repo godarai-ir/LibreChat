@@ -1,6 +1,6 @@
 import { createStorageAtom } from './jotai-utils';
 
-export type WeekStartPreference = 'system' | 'sunday' | 'monday';
+export type WeekStartPreference = 'system' | 'saturday' | 'sunday' | 'monday';
 
 const DEFAULT_WEEK_START: WeekStartPreference = 'system';
 

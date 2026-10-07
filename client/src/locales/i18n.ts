@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 import translationEn from './en/translation.json';
+import { formatInterpolation } from './digits';
 
 export const defaultNS = 'translation';
 
@@ -302,7 +303,7 @@ export const i18nInitPromise = i18n.use(initReactI18next).init({
   partialBundledLanguages: true,
   load: 'currentOnly',
   react: { useSuspense: false },
-  interpolation: { escapeValue: false },
+  interpolation: { escapeValue: false, alwaysFormat: true, format: formatInterpolation },
 });
 
 export async function changeLanguageSafely(locale?: string | null) {

@@ -740,6 +740,10 @@ const formatRelativeTime = (from: Date, to: Date, locale?: string): string => {
   return formatter.format(Math.round(duration), 'year');
 };
 
+/** "3 days ago" in the given locale, for callers that only need the relative form. */
+export const formatTimeAgo = (date: Date, locale?: string): string =>
+  formatRelativeTime(date, new Date(Date.now()), resolveLocale(locale));
+
 /**
  * Formats a message timestamp into locale-aware relative and absolute strings.
  * Returns null when the value is missing or unparseable, so callers can skip

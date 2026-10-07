@@ -40,6 +40,7 @@ import { MCPAppViews } from '~/components/MCPUIResource';
 import { sandboxStartingByToolCallId } from '~/store';
 import { MessageSurfaceContext } from '../ui/surface';
 import useClockFormat from '~/hooks/useClockFormat';
+import useCalendar from '~/hooks/useCalendar';
 import { cn, getMessageTimestamp } from '~/utils';
 import { StackedToolIcons } from './ToolOutput';
 import useTimeTick from '~/hooks/useTimeTick';
@@ -182,7 +183,7 @@ const PhaseLabel = memo(function PhaseLabel({
   return (
     <span
       className={cn(
-        'tool-status-text relative block min-w-0 overflow-hidden text-left',
+        'tool-status-text relative block min-w-0 overflow-hidden text-start',
         grow && 'flex-1',
       )}
       title={text}
@@ -435,7 +436,7 @@ function LivePhaseHeader({
           {failedNote !== '' && <span className="sr-only">· {failedNote}</span>}
           {cancelledNote !== '' && (
             <>
-              <span className="text-text-secondary mr-1">·</span>
+              <span className="text-text-secondary me-1">·</span>
               <span>{cancelledNote}</span>
             </>
           )}
@@ -455,11 +456,12 @@ function FailedPeekTime({ failedAt }: { failedAt: number | Date }) {
   useTimeTick();
   const { i18n } = useTranslation();
   const hour12 = useClockFormat();
+  const { dateLocale } = useCalendar();
   const date = new Date(failedAt);
   if (!Number.isFinite(date.getTime()) || date.getTime() > Date.now()) {
     return null;
   }
-  const timestamp = getMessageTimestamp(date.toISOString(), i18n.language, hour12);
+  const timestamp = getMessageTimestamp(date.toISOString(), dateLocale ?? i18n.language, hour12);
   if (timestamp == null) {
     return null;
   }
@@ -500,7 +502,7 @@ function FailedPeek({
       type="button"
       className={cn(
         TOOL_ROW_CLASSES,
-        'text-text-secondary hover:text-text-primary focus-visible:ring-focus-subtle w-full pl-6 text-left focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset',
+        'text-text-secondary hover:text-text-primary focus-visible:ring-focus-subtle w-full ps-6 text-start focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset',
       )}
       onClick={onReveal}
       data-testid="activity-phase-failed-peek"
@@ -522,7 +524,7 @@ function FailedPeek({
           {localize('com_ui_plus_n_more', { 0: String(count - 1) })}
         </span>
       )}
-      <span className="ml-auto shrink-0 text-xs font-medium underline underline-offset-2">
+      <span className="ms-auto shrink-0 text-xs font-medium underline underline-offset-2">
         {localize('com_ui_show_error')}
       </span>
     </button>
@@ -810,7 +812,7 @@ export default function ActivityPhaseGroup({
       <PhaseGlyph failed={hasFailure} />
       <span
         className={cn(
-          'tool-status-text min-w-0 flex-1 truncate text-left font-medium',
+          'tool-status-text min-w-0 flex-1 truncate text-start font-medium',
           hasFailure && 'text-text-warning',
         )}
         role="status"
@@ -851,7 +853,7 @@ export default function ActivityPhaseGroup({
              *  supplies it today; stating it here keeps the requirement with
              *  the element that depends on it. */
             className={cn(
-              'text-text-secondary hover:text-text-primary focus-visible:ring-focus-subtle flex h-auto min-h-7 min-w-0 flex-1 items-center justify-start gap-2 rounded-none bg-transparent p-0 py-1 text-left font-medium hover:bg-transparent focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none focus-visible:ring-inset',
+              'text-text-secondary hover:text-text-primary focus-visible:ring-focus-subtle flex h-auto min-h-7 min-w-0 flex-1 items-center justify-start gap-2 rounded-none bg-transparent p-0 py-1 text-start font-medium hover:bg-transparent focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none focus-visible:ring-inset',
               /** The open card's title: the one semibold, primary-colour line
                *  in the fold, so the rows under it read as its contents. */
               isExpanded && 'text-text-primary font-semibold',

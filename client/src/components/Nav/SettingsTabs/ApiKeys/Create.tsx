@@ -4,7 +4,7 @@ import { Button, Input, Label, Radio, Spinner, useToastContext } from '@librecha
 import type { TAgentApiKeyCreateResponse } from 'librechat-data-provider';
 import type { FormEvent } from 'react';
 import { computeExpiresAt, formatDate, DEFAULT_EXPIRY, EXPIRY_OPTIONS } from './utils';
-import { useLocalize } from '~/hooks';
+import { useLocalize, useCalendar } from '~/hooks';
 
 type CreateProps = {
   onCreated: (result: TAgentApiKeyCreateResponse) => void;
@@ -13,6 +13,7 @@ type CreateProps = {
 
 export default function Create({ onCreated, onCancel }: CreateProps) {
   const localize = useLocalize();
+  const { dateLocale } = useCalendar();
   const { showToast } = useToastContext();
   const [name, setName] = useState('');
   const [nameError, setNameError] = useState(false);
@@ -83,7 +84,7 @@ export default function Create({ onCreated, onCancel }: CreateProps) {
         <p className="text-xs text-text-secondary">
           {expiresAt == null
             ? localize('com_ui_api_key_no_expiration')
-            : localize('com_ui_api_key_expires_on', { 0: formatDate(expiresAt) })}
+            : localize('com_ui_api_key_expires_on', { 0: formatDate(expiresAt, dateLocale) })}
         </p>
       </div>
       <div className="flex justify-end gap-2">

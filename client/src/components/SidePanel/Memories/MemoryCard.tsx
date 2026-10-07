@@ -1,6 +1,6 @@
 import type { TUserMemory } from 'librechat-data-provider';
 import MemoryCardActions from './MemoryCardActions';
-import { useLocalize } from '~/hooks';
+import { useLocalize, useCalendar } from '~/hooks';
 import { cn } from '~/utils';
 
 interface MemoryCardProps {
@@ -8,8 +8,8 @@ interface MemoryCardProps {
   hasUpdateAccess: boolean;
 }
 
-const formatDate = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString(undefined, {
+const formatDate = (dateString: string, locale?: string): string => {
+  return new Date(dateString).toLocaleDateString(locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -18,6 +18,7 @@ const formatDate = (dateString: string): string => {
 
 export default function MemoryCard({ memory, hasUpdateAccess }: MemoryCardProps) {
   const localize = useLocalize();
+  const { dateLocale } = useCalendar();
   const displayKey = memory.key || localize('com_ui_memory');
 
   return (
@@ -41,7 +42,7 @@ export default function MemoryCard({ memory, hasUpdateAccess }: MemoryCardProps)
           </span>
         )}
         {hasUpdateAccess && (
-          <div className="ml-auto shrink-0">
+          <div className="ms-auto shrink-0">
             <MemoryCardActions memory={memory} />
           </div>
         )}
@@ -53,7 +54,7 @@ export default function MemoryCard({ memory, hasUpdateAccess }: MemoryCardProps)
           {memory.value}
         </p>
         <span className="text-text-secondary shrink-0 text-xs">
-          {formatDate(memory.updated_at)}
+          {formatDate(memory.updated_at, dateLocale)}
         </span>
       </div>
     </div>

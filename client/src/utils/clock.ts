@@ -67,9 +67,9 @@ export const resolveHour12 = (preference: ClockFormatPreference, locale?: string
 };
 
 /** First day of the week on the same 0-6 Sunday-first scale the schedule cadence
- *  uses (the cron day-of-week field). Deliberately not narrowed to Sunday/Monday:
- *  the setting offers only those two, but its 'system' branch reports whatever the
- *  locale says, and several (`ar-EG`, `fa-IR`) start the week on Saturday. */
+ *  uses (the cron day-of-week field). Deliberately not narrowed to the setting's
+ *  Saturday/Sunday/Monday: its 'system' branch reports whatever the locale says,
+ *  and the Maldives starts the week on Friday. */
 export type WeekStartDay = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 /**
@@ -231,17 +231,20 @@ export const localeWeekStartsOn = (locale?: string): WeekStartDay => {
   if (region == null) {
     return 1;
   }
-  // The mapped days matter doubly here: the type above allows them, but the
-  // selector offers no Saturday or Friday override, so a user in `ar-EG` or
-  // `dv-MV` on such an engine has no other route back to their own week order.
+  // The mapped days matter doubly here: the selector offers no Friday override,
+  // so a user in `dv-MV` on such an engine has no other route back to their own
+  // week order.
   return FALLBACK_REGION_WEEK_START.get(region) ?? 1;
 };
 
-/** Resolves the "Week starts on" setting to a concrete day index (0 = Sunday, 1 = Monday). */
+/** Resolves the "Week starts on" setting to a concrete day index (6 = Saturday, 0 = Sunday, 1 = Monday). */
 export const resolveWeekStartsOn = (
   preference: WeekStartPreference,
   locale?: string,
 ): WeekStartDay => {
+  if (preference === 'saturday') {
+    return 6;
+  }
   if (preference === 'sunday') {
     return 0;
   }

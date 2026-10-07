@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { TooltipAnchor } from '@librechat/client';
-import { useLocalize } from '~/hooks';
+import { useLocalize, useCalendar } from '~/hooks';
 import { cn } from '~/utils';
 
 interface MemoryUsageBadgeProps {
@@ -37,6 +37,7 @@ export default function MemoryUsageBadge({
   tooltipMax,
 }: MemoryUsageBadgeProps) {
   const localize = useLocalize();
+  const { dateLocale } = useCalendar();
   const [showTokens, setShowTokens] = useState(false);
 
   const tokenLabel = localize('com_ui_tokens');
@@ -45,16 +46,16 @@ export default function MemoryUsageBadge({
 
   const tokenText =
     current !== undefined
-      ? `${current.toLocaleString()} / ${max.toLocaleString()} ${tokenLabel}`
-      : `${max.toLocaleString()} ${tokenLabel}`;
-  const percentText = `${percentage}% ${localize('com_ui_used').toLowerCase()}`;
+      ? `${current.toLocaleString(dateLocale)} / ${max.toLocaleString(dateLocale)} ${tokenLabel}`
+      : `${max.toLocaleString(dateLocale)} ${tokenLabel}`;
+  const percentText = `${percentage.toLocaleString(dateLocale)}% ${localize('com_ui_used').toLowerCase()}`;
 
   return (
     <>
       {/* The button's name changes silently while focus is elsewhere, so a create,
           edit or delete that moves the usage is announced from here instead. */}
       <span className="sr-only" role="status" aria-atomic="true">
-        {`${localize('com_ui_usage')}: ${percentage}%`}
+        {`${localize('com_ui_usage')}: ${percentage.toLocaleString(dateLocale)}%`}
       </span>
       <TooltipAnchor
         /** The reading the badge is not showing, so hovering answers the other

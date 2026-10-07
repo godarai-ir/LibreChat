@@ -28,7 +28,7 @@ import SharedSubagentActivityDialog from '~/components/Chat/Subagents/SharedSuba
 import { cn, DEFAULT_APP_TITLE, getResponseStatus, selectActiveBranchTail } from '~/utils';
 import { siblingIdxFamily, siblingKey } from '~/components/Chat/Messages/Thread/state';
 import { useDeploymentThemeOverride } from '~/Providers/DeploymentTheme';
-import { useLocalize, useDocumentTitle, useAuthContext } from '~/hooks';
+import { useLocalize, useCalendar, useDocumentTitle, useAuthContext } from '~/hooks';
 import { ThemeSelector, LangSelector } from '~/components/Appearance';
 import { ShareMessagesProvider } from './ShareMessagesProvider';
 import { useForkSharedConvoMutation } from '~/data-provider';
@@ -144,7 +144,9 @@ function SharedView() {
 
   useDocumentTitle(docTitle);
 
+  const { dateLocale } = useCalendar();
   const locale =
+    dateLocale ||
     langcode ||
     (typeof navigator !== 'undefined'
       ? navigator.language || navigator.languages?.[0] || 'en-US'
@@ -407,7 +409,7 @@ export function ShareHeader({
                   className={cn(
                     'border-border-medium text-text-primary rounded-full text-sm transition-colors',
                     isMobile
-                      ? 'absolute right-4 bottom-4 justify-center p-0 shadow-lg'
+                      ? 'absolute end-4 bottom-4 justify-center p-0 shadow-lg'
                       : 'gap-2 self-start px-4 py-2',
                   )}
                 >
@@ -422,7 +424,7 @@ export function ShareHeader({
                 onPointerDownOutside={handleDialogOutside}
                 onInteractOutside={handleDialogOutside}
               >
-                <OGDialogHeader className="text-left">
+                <OGDialogHeader className="text-start">
                   <OGDialogTitle>{settingsLabel}</OGDialogTitle>
                 </OGDialogHeader>
                 <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto pt-2 text-sm">

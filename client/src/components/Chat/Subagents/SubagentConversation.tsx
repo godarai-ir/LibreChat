@@ -20,7 +20,7 @@ import MessageRow from '~/components/Chat/Messages/ui/MessageRow';
 import { ElapsedTimer } from '~/components/Chat/Messages/Elapsed';
 import { showThinkingAtom } from '~/store/showThinking';
 import { useChatSurface } from './surface';
-import { useLocalize } from '~/hooks';
+import { useLocalize, useCalendar } from '~/hooks';
 import { cn } from '~/utils';
 
 const TRIGGER_LABELS = {
@@ -45,6 +45,7 @@ function ExternalEventTrigger({
   fullWidth: boolean;
 }) {
   const localize = useLocalize();
+  const { dateLocale } = useCalendar();
   const [expanded, setExpanded] = useState(false);
   const details = turn.trigger.externalEvent;
   const label = localize('com_ui_subagent_trigger_external_event');
@@ -77,7 +78,7 @@ function ExternalEventTrigger({
             <dd className="text-text-primary break-words">{details.sourceType}</dd>
             <dt>{localize('com_ui_subagent_event_received')}</dt>
             <dd className="text-text-primary break-words">
-              {new Date(details.occurredAt).toLocaleString()}
+              {new Date(details.occurredAt).toLocaleString(dateLocale)}
             </dd>
             {details.expectedActionToolName != null && (
               <>

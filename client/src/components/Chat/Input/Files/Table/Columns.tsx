@@ -13,7 +13,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { TFile } from 'librechat-data-provider';
 import ImagePreview from '~/components/Chat/Input/Files/ImagePreview';
 import FilePreview from '~/components/Chat/Input/Files/FilePreview';
-import { TranslationKeys, useLocalize } from '~/hooks';
+import { TranslationKeys, useLocalize, useCalendar } from '~/hooks';
 import { SortFilterHeader } from './SortFilterHeader';
 import { formatDate, getFileType } from '~/utils';
 
@@ -98,7 +98,7 @@ export const columns: ColumnDef<TFile>[] = [
               aria-current={sortState ? 'true' : 'false'}
             >
               {localize('com_ui_name')}
-              <SortIcon className="ml-2 h-3 w-4 sm:h-4 sm:w-4" />
+              <SortIcon className="ms-2 h-3 w-4 sm:h-4 sm:w-4" />
             </Button>
           }
         />
@@ -157,7 +157,7 @@ export const columns: ColumnDef<TFile>[] = [
               aria-current={sortState ? 'true' : 'false'}
             >
               {localize('com_ui_date')}
-              <SortIcon className="ml-2 h-3 w-4 sm:h-4 sm:w-4" />
+              <SortIcon className="ms-2 h-3 w-4 sm:h-4 sm:w-4" />
             </Button>
           }
         />
@@ -165,7 +165,8 @@ export const columns: ColumnDef<TFile>[] = [
     },
     cell: ({ row }) => {
       const isSmallScreen = useMediaQuery('(max-width: 768px)');
-      return formatDate(row.original.updatedAt?.toString() ?? '', isSmallScreen);
+      const { dateLocale } = useCalendar();
+      return formatDate(row.original.updatedAt?.toString() ?? '', isSmallScreen, dateLocale);
     },
   },
   {
@@ -276,7 +277,7 @@ export const columns: ColumnDef<TFile>[] = [
               aria-current={sortState ? 'true' : 'false'}
             >
               {localize('com_ui_size')}
-              <SortIcon className="ml-2 h-3 w-4 sm:h-4 sm:w-4" />
+              <SortIcon className="ms-2 h-3 w-4 sm:h-4 sm:w-4" />
             </Button>
           }
         />

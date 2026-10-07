@@ -3,7 +3,14 @@ import { format } from 'date-fns';
 import { Button, TooltipAnchor } from '@librechat/client';
 import { User, Pencil, Calendar, EarthIcon } from 'lucide-react';
 import type { TSkill } from 'librechat-data-provider';
-import { useLocalize, useAuthContext, useSkillPermissions, useSkillActiveState } from '~/hooks';
+import {
+  useLocalize,
+  useCalendar,
+  useAuthContext,
+  useSkillPermissions,
+  useSkillActiveState,
+} from '~/hooks';
+import { formatShortDate } from '~/utils';
 import SkillMarkdownRenderer from './SkillMarkdownRenderer';
 import { ShareSkill, SkillToggle } from '../buttons';
 import DeleteSkill from '../dialogs/DeleteSkill';
@@ -21,6 +28,7 @@ const SKIP_KEYS = new Set(['name', 'description']);
 export default function SkillDetail({ skill, onEdit, onDelete }: SkillDetailProps) {
   const localize = useLocalize();
   const { user } = useAuthContext();
+  const { dateLocale } = useCalendar();
   const permissions = useSkillPermissions(skill);
   const { isActive, toggle } = useSkillActiveState();
   const [viewMode, setViewMode] = useState<'rendered' | 'source'>('rendered');
@@ -29,9 +37,12 @@ export default function SkillDetail({ skill, onEdit, onDelete }: SkillDetailProp
   const isPublic = skill.isPublic === true;
   const isShared = skill.author !== user?.id && Boolean(skill.authorName);
   const addedBy = isShared ? skill.authorName : localize('com_ui_you');
-  const updatedDate = skill.updatedAt
-    ? format(new Date(skill.updatedAt), 'MMM d, yyyy')
-    : undefined;
+  let updatedDate: string | undefined;
+  if (skill.updatedAt) {
+    const updatedAt = new Date(skill.updatedAt);
+    updatedDate =
+      dateLocale != null ? formatShortDate(updatedAt, dateLocale) : format(updatedAt, 'MMM d, yyyy');
+  }
 
   const { fields: frontmatterFields, body: cleanBody } = useMemo(
     () => parseFrontmatter(skill.body ?? '', SKIP_KEYS),

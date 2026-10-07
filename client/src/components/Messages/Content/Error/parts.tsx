@@ -282,8 +282,8 @@ export function ErrorDetails({ label, children }: { label: string; children: Rea
         {label}
         <ChevronRight
           className={cn(
-            'size-3.5 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none',
-            open && 'rotate-90',
+            'size-3.5 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none rtl:-scale-x-100',
+            open && 'rotate-90 rtl:-rotate-90',
           )}
           aria-hidden="true"
         />
@@ -363,7 +363,7 @@ const isoTimestamp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
  * which another locale can misread (a day-first date read month-first), so any other string is
  * shown as persisted.
  */
-export function formatTimestamp(value: string | number): string {
+export function formatTimestamp(value: string | number, locale?: string): string {
   if (typeof value === 'string' && !isoTimestamp.test(value)) {
     return value;
   }
@@ -371,7 +371,7 @@ export function formatTimestamp(value: string | number): string {
   if (Number.isNaN(date.getTime())) {
     return String(value);
   }
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(
     date,
   );
 }

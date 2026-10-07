@@ -31,7 +31,7 @@ import {
   useUpdateScheduleMutation,
   useRunScheduleNowMutation,
 } from '~/data-provider';
-import { useLocalize, useHasAccess, useClockFormat, useWeekStart } from '~/hooks';
+import { useLocalize, useHasAccess, useClockFormat, useWeekStart, useCalendar } from '~/hooks';
 import { cn, getMessageTimestamp, rowActionClasses } from '~/utils';
 import ScheduleMCPRecovery from './ScheduleMCPRecovery';
 import { useAgentsMapContext } from '~/Providers';
@@ -256,6 +256,7 @@ export default function ScheduleCard({ schedule, projectName, consentEnabled }: 
 
   const hour12 = useClockFormat();
   const weekStartsOn = useWeekStart();
+  const { dateLocale } = useCalendar();
   const cadenceText = describeCadence(
     schedule.cadence,
     localize,
@@ -268,7 +269,7 @@ export default function ScheduleCard({ schedule, projectName, consentEnabled }: 
     if (!schedule.enabled || schedule.nextRunAt == null) {
       return null;
     }
-    const timestamp = getMessageTimestamp(schedule.nextRunAt, i18n.language, hour12);
+    const timestamp = getMessageTimestamp(schedule.nextRunAt, dateLocale ?? i18n.language, hour12);
     if (!timestamp) {
       return null;
     }
@@ -276,7 +277,7 @@ export default function ScheduleCard({ schedule, projectName, consentEnabled }: 
       relative: timestamp.relative,
       full: localize('com_ui_schedule_next_run', { time: timestamp.relative }),
     };
-  }, [schedule.enabled, schedule.nextRunAt, i18n.language, hour12, localize]);
+  }, [schedule.enabled, schedule.nextRunAt, dateLocale, i18n.language, hour12, localize]);
 
   const canInspectConsent = consentEnabled || schedule.hasMCPConsent === true;
 
@@ -306,13 +307,13 @@ export default function ScheduleCard({ schedule, projectName, consentEnabled }: 
               icon: runSchedule.isLoading ? (
                 <Spinner className="size-4" />
               ) : (
-                <Play className="icon-sm text-text-primary mr-2" aria-hidden="true" />
+                <Play className="icon-sm text-text-primary me-2" aria-hidden="true" />
               ),
             },
             {
               label: localize('com_ui_edit'),
               onClick: () => setEditOpen(true),
-              icon: <Pencil className="icon-sm text-text-primary mr-2" aria-hidden="true" />,
+              icon: <Pencil className="icon-sm text-text-primary me-2" aria-hidden="true" />,
               ariaHasPopup: 'dialog' as const,
               hideOnClick: false,
               ref: editButtonRef,
@@ -321,7 +322,7 @@ export default function ScheduleCard({ schedule, projectName, consentEnabled }: 
             {
               label: localize('com_ui_delete'),
               onClick: () => setDeleteOpen(true),
-              icon: <Trash className="icon-sm text-text-primary mr-2" aria-hidden="true" />,
+              icon: <Trash className="icon-sm text-text-primary me-2" aria-hidden="true" />,
               ariaHasPopup: 'dialog' as const,
               hideOnClick: false,
               ref: deleteButtonRef,
@@ -462,7 +463,7 @@ export default function ScheduleCard({ schedule, projectName, consentEnabled }: 
           title={localize('com_ui_schedule_delete')}
           className="w-11/12 max-w-lg"
           main={
-            <Label className="text-left text-sm font-medium">
+            <Label className="text-start text-sm font-medium">
               <Trans
                 i18nKey="com_ui_delete_confirm_strong"
                 values={{ title: schedule.name }}

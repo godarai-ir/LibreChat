@@ -13,7 +13,9 @@ import {
 import type { TConversation, TMessage, GroupedConversations } from 'librechat-data-provider';
 import type { InvalidateQueryFilters } from '@tanstack/react-query';
 import type { InfiniteData, Query } from '@tanstack/react-query';
+import type { CalendarSystem } from './calendar';
 import { isTemporaryConversation } from './conversation';
+import { getCalendarMonth } from './calendar';
 import { getSessionPrincipal } from './session';
 
 /**
@@ -57,7 +59,25 @@ export const dateKeys = {
   december: 'com_ui_date_december',
 };
 
-const getGroupName = (date: Date) => {
+/** Solar Hijri month headings in calendar order, Farvardin first. */
+export const persianMonthKeys = [
+  'com_ui_date_farvardin',
+  'com_ui_date_ordibehesht',
+  'com_ui_date_khordad',
+  'com_ui_date_tir',
+  'com_ui_date_mordad',
+  'com_ui_date_shahrivar',
+  'com_ui_date_mehr',
+  'com_ui_date_aban',
+  'com_ui_date_azar',
+  'com_ui_date_dey',
+  'com_ui_date_bahman',
+  'com_ui_date_esfand',
+];
+
+const persianMonthOrder = new Map(persianMonthKeys.map((key, index) => [key, index]));
+
+const getGroupName = (date: Date, calendar: CalendarSystem) => {
   const now = new Date(Date.now());
   if (isToday(date)) {
     return dateKeys.today;
@@ -70,6 +90,13 @@ const getGroupName = (date: Date) => {
   }
   if (isWithinInterval(date, { start: subDays(now, 30), end: now })) {
     return dateKeys.previous30Days;
+  }
+  if (calendar === 'persian') {
+    const { year, month } = getCalendarMonth(date, calendar);
+    if (year === getCalendarMonth(now, calendar).year && date.getTime() <= now.getTime()) {
+      return persianMonthKeys[month - 1];
+    }
+    return ' ' + year.toString();
   }
   if (isWithinInterval(date, { start: startOfYear(now), end: now })) {
     const month = format(date, 'MMMM').toLowerCase();
@@ -106,6 +133,8 @@ export type ConversationGroupOptions = {
   field?: ConversationDateField | 'title';
   direction?: 'asc' | 'desc';
   includePinned?: boolean;
+  /** Calendar whose months and years head the older groups; Gregorian by default. */
+  calendar?: CalendarSystem;
 };
 
 const getConversationDate = (
@@ -135,7 +164,12 @@ const getTitleInitial = (title: string): string => {
 
 export const groupConversations = (
   conversations: Array<TConversation | null>,
-  { field = 'updatedAt', direction = 'desc', includePinned = false }: ConversationGroupOptions = {},
+  {
+    field = 'updatedAt',
+    direction = 'desc',
+    includePinned = false,
+    calendar = 'gregory',
+  }: ConversationGroupOptions = {},
 ): GroupedConversations => {
   if (!Array.isArray(conversations)) {
     return [];
@@ -172,7 +206,7 @@ export const groupConversations = (
       return;
     }
 
-    const groupName = getGroupName(getConversationDate(conversation, field, now));
+    const groupName = getGroupName(getConversationDate(conversation, field, now), calendar);
     const group = groups.get(groupName);
     if (group) {
       group.push(conversation);
@@ -185,13 +219,18 @@ export const groupConversations = (
     return runs;
   }
 
+  const currentYear = getCalendarMonth(now, calendar).year;
   const yearMonthGroups = Array.from(groups.keys())
     .filter((group) => !dateGroupsSet.has(group))
     .sort((a, b) => {
       const getOrder = (group: string) => {
         const month = dateKeysReverse[group];
         if (month) {
-          return now.getFullYear() * 12 + (monthOrderMap.get(month) ?? 0);
+          return currentYear * 12 + (monthOrderMap.get(month) ?? 0);
+        }
+        const persianMonth = persianMonthOrder.get(group);
+        if (persianMonth != null) {
+          return currentYear * 12 + persianMonth;
         }
         return parseInt(group.trim(), 10) * 12;
       };

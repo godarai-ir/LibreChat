@@ -5,7 +5,8 @@ import { Button, TooltipAnchor } from '@librechat/client';
 import { Pencil, Pin, User, Calendar, EarthIcon, Sparkles } from 'lucide-react';
 import type { TSkill } from 'librechat-data-provider';
 import type { TranslationKeys } from '~/hooks';
-import { useLocalize, useAuthContext } from '~/hooks';
+import { useLocalize, useAuthContext, useCalendar } from '~/hooks';
+import { formatShortDate } from '~/utils';
 import DeleteSkill from '../dialogs/DeleteSkill';
 import { ShareSkill } from '../buttons';
 
@@ -24,7 +25,13 @@ const SkillDetailHeader = ({ skill, showActions = true }: SkillDetailHeaderProps
   const localize = useLocalize();
   const navigate = useNavigate();
   const { user } = useAuthContext();
-  const formattedDate = skill.createdAt ? format(new Date(skill.createdAt), 'MMM d, yyyy') : null;
+  const { dateLocale } = useCalendar();
+  let formattedDate: string | null = null;
+  if (skill.createdAt) {
+    const createdAt = new Date(skill.createdAt);
+    formattedDate =
+      dateLocale != null ? formatShortDate(createdAt, dateLocale) : format(createdAt, 'MMM d, yyyy');
+  }
   const isOwner = skill.author === user?.id;
   const isShared = !isOwner && Boolean(skill.authorName);
   const isPublic = skill.isPublic === true;

@@ -6,7 +6,7 @@ import {
   useScheduleMCPConsent,
   useScheduleMCPConsentMutations,
 } from '~/data-provider/Schedules/consent';
-import { useLocalize } from '~/hooks';
+import { useLocalize, useCalendar } from '~/hooks';
 
 const statusKeys = {
   missing: 'com_ui_schedule_consent_missing',
@@ -37,6 +37,7 @@ export default function Consent({
   triggerRef: MutableRefObject<HTMLButtonElement | null>;
 }) {
   const localize = useLocalize();
+  const { dateLocale } = useCalendar();
   const inputId = useId();
   const query = useScheduleMCPConsent(id);
   const { confirm, revoke } = useScheduleMCPConsentMutations(id);
@@ -89,7 +90,7 @@ export default function Consent({
                 {data.expiresAtMs != null && (
                   <p className="text-text-secondary text-sm">
                     {localize('com_ui_schedule_consent_deadline', {
-                      time: new Date(data.expiresAtMs).toLocaleString(),
+                      time: new Date(data.expiresAtMs).toLocaleString(dateLocale),
                     })}
                   </p>
                 )}
