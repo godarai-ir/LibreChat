@@ -860,6 +860,7 @@
   "com_nav_ui_scale": "مقیاس رابط کاربری",
   "com_nav_ui_scale_decrease": "کوچک کردن مقیاس رابط کاربری",
   "com_nav_ui_scale_increase": "بزرگ کردن مقیاس رابط کاربری",
+  "com_nav_ui_scale_value": "{{0}}٪",
   "com_nav_unseen_tab_badge": "نمایش تعداد خوانده‌نشده‌ها در عنوان زبانه",
   "com_nav_user": "کاربر",
   "com_nav_user_msg_markdown": "نمایش پیام‌های کاربر به‌صورت Markdown",

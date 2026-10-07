@@ -33,6 +33,14 @@ describe('SplitText', () => {
     }
   });
 
+  it('animates joining scripts a word at a time so their letters stay connected', () => {
+    const { container } = render(<SplitText text="سلام دنیا Hi" />);
+    const letters = Array.from(container.querySelectorAll('p > span > span.inline-block')).map(
+      (span) => span.textContent,
+    );
+    expect(letters).toEqual(['سلام', 'دنیا', 'H', 'i']);
+  });
+
   it.each([
     ['rtl', 'Welcome to reeva::chat', ['Welcome', 'to', 'reeva::chat']],
     ['ltr', 'שלום עולם', ['שלום', 'עולם']],

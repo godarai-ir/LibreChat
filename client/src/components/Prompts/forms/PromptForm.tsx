@@ -4,7 +4,7 @@ import { useRecoilValue } from 'recoil';
 import { useParams } from 'react-router-dom';
 import { Menu, Rocket, X } from 'lucide-react';
 import { useForm, FormProvider } from 'react-hook-form';
-import { Button, Skeleton, useToastContext } from '@librechat/client';
+import { Button, Skeleton, isDocumentRTL, useToastContext } from '@librechat/client';
 import {
   Permissions,
   ResourceType,
@@ -467,7 +467,9 @@ const PromptForm = ({ promptId: promptIdProp }: { promptId?: string }) => {
           <div
             className="h-full w-full"
             style={{
-              transform: showSidePanel ? 'translateX(max(-85vw, -380px))' : 'translateX(0)',
+              transform: showSidePanel
+                ? `translateX(${isDocumentRTL() ? 'min(85vw, 380px)' : 'max(-85vw, -380px)'})`
+                : 'translateX(0)',
               transition: 'transform 300ms cubic-bezier(0.2, 0, 0, 1)',
             }}
           >
@@ -475,7 +477,7 @@ const PromptForm = ({ promptId: promptIdProp }: { promptId?: string }) => {
               <div className="flex-1 overflow-hidden px-4">
                 {/* Mobile Actions Row */}
                 {!isLoadingGroup && group && isSmallScreen && (
-                  <div className="mt-2 mb-3 flex items-center justify-between gap-2">
+                  <div className="mb-3 mt-2 flex items-center justify-between gap-2">
                     <OpenSidebar />
                     <HeaderActions
                       group={group}
@@ -487,7 +489,7 @@ const PromptForm = ({ promptId: promptIdProp }: { promptId?: string }) => {
                   </div>
                 )}
                 {/* Header: Title + Actions */}
-                <div className="mt-2 mb-3 flex items-center justify-between gap-2">
+                <div className="mb-3 mt-2 flex items-center justify-between gap-2">
                   {isLoadingGroup ? (
                     <Skeleton className="h-9 w-48" />
                   ) : (
@@ -601,7 +603,7 @@ const PromptForm = ({ promptId: promptIdProp }: { promptId?: string }) => {
           <div
             ref={sidePanelRef}
             className={cn(
-              'border-border-medium bg-surface-primary-alt fixed top-0 end-0 z-[110] flex h-full flex-col border-s shadow-xl lg:hidden',
+              'border-border-medium bg-surface-primary-alt fixed end-0 top-0 z-[110] flex h-full flex-col border-s shadow-xl lg:hidden',
               showSidePanel ? 'translate-x-0' : 'translate-x-full rtl:-translate-x-full',
             )}
             style={{

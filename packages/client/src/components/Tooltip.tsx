@@ -12,7 +12,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import type { FocusOutline } from './Focus';
 import { useDialogDepth, usePopoverZIndex } from './OriginalDialog';
 import { focusOutlineVariants } from './Focus';
-import { cn } from '~/utils';
+import { cn, mirrorPlacement } from '~/utils';
 import './Tooltip.css';
 
 interface TooltipAnchorProps extends Ariakit.TooltipAnchorProps {
@@ -148,7 +148,7 @@ export const TooltipAnchor: ForwardRefExoticComponent<
   },
   ref,
 ) {
-  const tooltip = Ariakit.useTooltipStore({ placement: side });
+  const tooltip = Ariakit.useTooltipStore({ placement: mirrorPlacement(side) });
 
   /**
    * `role="button"` renders a plain element with no native activation, so Enter and

@@ -60,7 +60,13 @@ const getSegmenter = (): IntlSegmenter | null => {
   return segmenter;
 };
 
+/** Scripts whose letters join; animating them one by one breaks the joins. */
+const JOINING_SCRIPT = /[\p{Script=Arabic}\p{Script=Syriac}\p{Script=Nko}\p{Script=Mongolian}]/u;
+
 const splitGraphemes = (text: string): string[] => {
+  if (JOINING_SCRIPT.test(text)) {
+    return [text];
+  }
   const instance = getSegmenter();
   if (instance) {
     return Array.from(instance.segment(text)).map((s: SegmentData) => s.segment);

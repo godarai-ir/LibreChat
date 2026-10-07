@@ -2,7 +2,7 @@ import { useState, memo, useRef } from 'react';
 import { useSetAtom } from 'jotai';
 import { useSetRecoilState } from 'recoil';
 import * as Menu from '@ariakit/react/menu';
-import { GearIcon, DropdownMenuSeparator, Avatar } from '@librechat/client';
+import { GearIcon, DropdownMenuSeparator, Avatar, mirrorPlacement } from '@librechat/client';
 import {
   Archive,
   ChevronRight,
@@ -41,7 +41,7 @@ function HelpSubmenu({
   const showLegalDivider = (hasHelpFaq || true) && (hasTos || hasPrivacy);
 
   return (
-    <Menu.MenuProvider placement="right-start">
+    <Menu.MenuProvider placement={mirrorPlacement('right-start')}>
       <Menu.MenuItem
         hideOnClick={false}
         render={
@@ -106,7 +106,7 @@ function AccountSettings({ collapsed = false }: { collapsed?: boolean }) {
   const accountSettingsButtonRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <Menu.MenuProvider placement={collapsed ? 'right-end' : undefined}>
+    <Menu.MenuProvider placement={collapsed ? mirrorPlacement('right-end') : undefined}>
       <Menu.MenuButton
         ref={accountSettingsButtonRef}
         aria-label={localize('com_nav_account_settings')}
@@ -124,7 +124,7 @@ function AccountSettings({ collapsed = false }: { collapsed?: boolean }) {
         </div>
         {!collapsed && (
           <div
-            className="text-text-primary mt-2 grow overflow-hidden text-start text-ellipsis whitespace-nowrap"
+            className="text-text-primary mt-2 grow overflow-hidden text-ellipsis whitespace-nowrap text-start"
             style={{ marginTop: '0', marginLeft: '0' }}
           >
             {user?.name ?? user?.username ?? localize('com_nav_user')}

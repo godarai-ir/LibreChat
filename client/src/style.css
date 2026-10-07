@@ -2586,7 +2586,22 @@ html[data-input-modality='keyboard']
 /* Addresses, links and secrets read left to right on any page. An empty field keeps the
  * page direction so a translated placeholder still sits at the start edge. */
 @layer base {
-  [dir='rtl'] :is(input[type='email'], input[type='url'], input[type='password']):not(:placeholder-shown) {
+  [dir='rtl']
+    :is(input[type='email'], input[type='url'], input[type='password']):not(:placeholder-shown) {
     direction: ltr;
   }
+
+  /* Free text follows its own script, paragraph by paragraph, so an English prompt or
+   * name typed into an RTL page starts at the left. A field with an explicit `dir`
+   * (the composer, the message editors) keeps the direction it was given. */
+  [dir='rtl']
+    :is(textarea, input:not([type]), input[type='text'], input[type='search']):not([dir]) {
+    unicode-bidi: plaintext;
+  }
+}
+
+/* react-virtualized writes `direction: ltr` inline on every Grid for its horizontal scroll
+ * math. Every list here scrolls vertically only, so the rows can follow the page direction. */
+[dir='rtl'] .ReactVirtualized__Grid {
+  direction: inherit !important;
 }

@@ -8,6 +8,10 @@ const ChatDirection = () => {
   const direction = useChatDirection();
   const setDirection = useSetRecoilState(store.chatDirection);
   const localize = useLocalize();
+  const label =
+    direction === 'ltr'
+      ? localize('chat_direction_left_to_right')
+      : localize('chat_direction_right_to_left');
 
   /** Flips the direction in effect, which until the first toggle is the UI language's own. */
   const toggleChatDirection = () => {
@@ -21,16 +25,11 @@ const ChatDirection = () => {
       </div>
       <Button
         variant="outline"
-        aria-label={localize('com_nav_chat_direction_selected', {
-          direction:
-            direction === 'ltr'
-              ? localize('chat_direction_left_to_right')
-              : localize('chat_direction_right_to_left'),
-        })}
+        aria-label={localize('com_nav_chat_direction_selected', { direction: label })}
         onClick={toggleChatDirection}
         data-testid="chatDirection"
       >
-        {direction}
+        {label}
       </Button>
     </div>
   );

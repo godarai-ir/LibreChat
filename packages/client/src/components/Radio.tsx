@@ -177,8 +177,10 @@ const Radio: React.NamedExoticComponent<RadioProps> = memo(function Radio({
       aria-labelledby={ariaLabelledBy}
     >
       {selectedIndex >= 0 && isMounted && (
+        /* Anchored physically: it slides by the button's `offsetLeft`, which is measured
+           from the left edge in either direction. */
         <div
-          className={`border-border-light bg-surface-primary pointer-events-none absolute start-0 rounded-md border shadow-xs transition-all duration-300 ease-out ${
+          className={`border-border-light bg-surface-primary shadow-xs pointer-events-none absolute left-0 rounded-md border transition-all duration-300 ease-out ${
             wrap ? 'top-0' : 'inset-y-1'
           }`}
           style={backgroundStyle}
@@ -197,7 +199,7 @@ const Radio: React.NamedExoticComponent<RadioProps> = memo(function Radio({
           onClick={() => handleChange(option.value)}
           onKeyDown={(event) => handleKeyDown(event, index)}
           disabled={disabled}
-          className={`focus-visible:ring-focus-control relative z-10 flex items-center justify-center gap-2 rounded-md font-medium ${segmentSizeClasses[size]} transition-colors duration-150 focus-visible:ring-2 focus-visible:outline-hidden ${
+          className={`focus-visible:ring-focus-control relative z-10 flex items-center justify-center gap-2 rounded-md font-medium ${segmentSizeClasses[size]} focus-visible:outline-hidden transition-colors duration-150 focus-visible:ring-2 ${
             currentValue === option.value ? 'text-text-primary' : 'text-text-secondary'
           } ${disabled ? 'cursor-not-allowed opacity-50' : ''} ${disabledInkClasses} ${fullWidth ? 'flex-1' : ''} ${buttonClassName}`}
         >

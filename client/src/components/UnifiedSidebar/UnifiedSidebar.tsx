@@ -2,7 +2,7 @@ import { useCallback, useState, useEffect, useRef, memo } from 'react';
 import { useAtom } from 'jotai';
 import { useForm } from 'react-hook-form';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { pxToRem, useRemScale, useMediaQuery } from '@librechat/client';
+import { pxToRem, useRemScale, isDocumentRTL, useMediaQuery } from '@librechat/client';
 import type { ReactNode } from 'react';
 import type { ChatFormValues } from '~/common';
 import {
@@ -120,6 +120,8 @@ function UnifiedSidebar({
     const maxWidth = (window.innerWidth * 0.4) / remScale;
     /** The scaled minimum can exceed the viewport cap, so it yields to the cap. */
     const minWidth = Math.min(EXPANDED_MIN, maxWidth);
+    /** The sidebar hugs the right edge under RTL, so its width is measured from there. */
+    const rtl = isDocumentRTL();
     let rafId: number | null = null;
 
     const move = (e: MouseEvent) => {
@@ -128,7 +130,8 @@ function UnifiedSidebar({
       }
       rafId = requestAnimationFrame(() => {
         rafId = null;
-        const next = Math.max(minWidth, Math.min(e.clientX / remScale, maxWidth));
+        const edgeDistance = rtl ? window.innerWidth - e.clientX : e.clientX;
+        const next = Math.max(minWidth, Math.min(edgeDistance / remScale, maxWidth));
         setSidebarWidth(next);
       });
     };
