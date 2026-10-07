@@ -5,13 +5,11 @@ import {
   useLayoutEffect,
   useState,
 } from 'react';
-import { useAtomValue } from 'jotai';
 import { cx } from 'class-variance-authority';
 import ReactTextareaAutosize from 'react-textarea-autosize';
 import type { TextareaAutosizeProps } from 'react-textarea-autosize';
 import type { FocusOutline } from './Focus';
 import { focusOutlineVariants } from './Focus';
-import { chatDirectionAtom } from '~/store';
 
 type BaseTextareaAutosizeProps = Omit<TextareaAutosizeProps, 'aria-label' | 'aria-labelledby'> & {
   focusOutline?: FocusOutline;
@@ -35,11 +33,10 @@ export const TextareaAutosize: ForwardRefExoticComponent<
 > = forwardRef<HTMLTextAreaElement, TextareaAutosizePropsWithAria>(
   ({ focusOutline, className, ...props }, ref) => {
     const [, setIsRerendered] = useState(false);
-    const chatDirection = useAtomValue(chatDirectionAtom).toLowerCase();
     useLayoutEffect(() => setIsRerendered(true), []);
     return (
       <ReactTextareaAutosize
-        dir={chatDirection}
+        dir="auto"
         {...props}
         className={
           cx(focusOutlineVariants({ focusOutline }), invalidBorder, className) || undefined

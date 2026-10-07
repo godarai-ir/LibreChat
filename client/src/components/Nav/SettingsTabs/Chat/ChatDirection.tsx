@@ -1,15 +1,17 @@
 import React from 'react';
-import { useRecoilState } from 'recoil';
+import { useSetRecoilState } from 'recoil';
 import { Button } from '@librechat/client';
-import { useLocalize } from '~/hooks';
+import { useLocalize, useChatDirection } from '~/hooks';
 import store from '~/store';
 
 const ChatDirection = () => {
-  const [direction, setDirection] = useRecoilState(store.chatDirection);
+  const direction = useChatDirection();
+  const setDirection = useSetRecoilState(store.chatDirection);
   const localize = useLocalize();
 
+  /** Flips the direction in effect, which until the first toggle is the UI language's own. */
   const toggleChatDirection = () => {
-    setDirection((prev) => (prev === 'LTR' ? 'RTL' : 'LTR'));
+    setDirection(direction === 'rtl' ? 'LTR' : 'RTL');
   };
 
   return (
@@ -21,14 +23,14 @@ const ChatDirection = () => {
         variant="outline"
         aria-label={localize('com_nav_chat_direction_selected', {
           direction:
-            direction === 'LTR'
+            direction === 'ltr'
               ? localize('chat_direction_left_to_right')
               : localize('chat_direction_right_to_left'),
         })}
         onClick={toggleChatDirection}
         data-testid="chatDirection"
       >
-        {direction.toLowerCase()}
+        {direction}
       </Button>
     </div>
   );
