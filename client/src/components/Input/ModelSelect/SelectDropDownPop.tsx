@@ -68,7 +68,7 @@ function SelectDropDownPop({
             <button
               data-testid="select-dropdown-button"
               className={cn(
-                'border-border-light bg-surface-secondary relative flex cursor-pointer flex-col rounded-lg border py-2 pr-10 pl-3 text-left focus:ring-0 focus:ring-offset-0 sm:text-sm',
+                'border-border-light bg-surface-secondary relative flex cursor-pointer flex-col rounded-lg border py-2 pe-10 ps-3 text-start focus:ring-0 focus:ring-offset-0 sm:text-sm',
                 'hover:bg-surface-hover data-[state=open]:bg-surface-hover',
                 'max-w-[min(13.4375rem,90vw)] min-w-[min(12.5rem,90vw)] sm:max-w-full sm:min-w-full',
               )}
@@ -88,7 +88,7 @@ function SelectDropDownPop({
                   {typeof value !== 'string' && value ? (value.label ?? '') : (value ?? '')}
                 </span>
               </span>
-              <span className="absolute inset-y-0 right-0 flex items-center pr-2">
+              <span className="absolute inset-y-0 end-0 flex items-center pe-2">
                 <svg
                   stroke="currentColor"
                   fill="none"
@@ -112,7 +112,7 @@ function SelectDropDownPop({
               side="bottom"
               align="start"
               className={cn(
-                'border-border-light bg-surface-secondary z-50 mt-2 mr-3 max-h-[52vh] w-full max-w-[85vw] overflow-hidden overflow-y-auto rounded-lg border shadow-lg sm:max-w-full lg:max-h-[52vh]',
+                'border-border-light bg-surface-secondary z-50 mt-2 me-3 max-h-[52vh] w-full max-w-[85vw] overflow-hidden overflow-y-auto rounded-lg border shadow-lg sm:max-w-full lg:max-h-[52vh]',
                 hasSearchRender && 'relative',
               )}
             >

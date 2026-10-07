@@ -283,7 +283,7 @@ export default function DialogImage({
             <DialogPrimitive.Title className="sr-only">{title}</DialogPrimitive.Title>
           )}
           {/* Close button - top left */}
-          <div className="absolute top-4 left-4 z-20">
+          <div className="absolute top-4 start-4 z-20">
             <TooltipAnchor
               zIndex={TOOLTIP_Z_INDEX}
               description={localize('com_ui_close')}
@@ -398,8 +398,8 @@ export default function DialogImage({
           {showDetails && (
             <div
               data-side-panel
-              className={`bg-surface-primary border-text-on-media/10 fixed top-0 right-0 z-30 h-full w-80 max-w-full transform border-l shadow-2xl transition-transform duration-300 ${
-                isPromptOpen ? 'translate-x-0' : 'translate-x-full'
+              className={`bg-surface-primary border-text-on-media/10 fixed top-0 end-0 z-30 h-full w-80 max-w-full transform border-s shadow-2xl transition-transform duration-300 ${
+                isPromptOpen ? 'translate-x-0' : 'translate-x-full rtl:-translate-x-full'
               }`}
               onClick={(e) => e.stopPropagation()}
             >

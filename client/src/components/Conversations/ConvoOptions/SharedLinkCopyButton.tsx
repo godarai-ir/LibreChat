@@ -31,7 +31,7 @@ export default function SharedLinkCopyButton({ sharedLink }: { sharedLink: strin
         value={sharedLink}
         aria-label={localize('com_ui_shared_link')}
         onFocus={(event) => event.currentTarget.select()}
-        className="h-11 rounded-xl bg-surface-secondary pr-12 text-right text-sm text-text-primary"
+        className="h-11 rounded-xl bg-surface-secondary pe-12 text-end text-sm text-text-primary"
         data-testid="shared-link-url"
       />
       <CopyButton
@@ -40,7 +40,7 @@ export default function SharedLinkCopyButton({ sharedLink }: { sharedLink: strin
         label={localize('com_ui_copy_link')}
         copiedLabel={localize('com_ui_copied')}
         onClick={handleCopy}
-        className="absolute right-1.5 top-1/2 size-8 -translate-y-1/2"
+        className="absolute end-1.5 top-1/2 size-8 -translate-y-1/2"
       />
     </div>
   );

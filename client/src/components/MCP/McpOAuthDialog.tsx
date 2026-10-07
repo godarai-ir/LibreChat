@@ -114,7 +114,7 @@ export default function McpOAuthDialog({
               value={oauthUrl}
               aria-label={localize('com_ui_copy_link')}
               onFocus={(event) => event.currentTarget.select()}
-              className="text-text-secondary pr-10"
+              className="text-text-secondary pe-10"
               data-testid="mcp-oauth-url"
             />
             <CopyButton
@@ -126,7 +126,7 @@ export default function McpOAuthDialog({
                   copyUrl(setIsCopying);
                 }
               }}
-              className="absolute top-1/2 right-1 -translate-y-1/2"
+              className="absolute top-1/2 end-1 -translate-y-1/2"
             />
           </div>
 

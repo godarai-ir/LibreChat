@@ -12,7 +12,7 @@ export const URLIcon = memo(
     altName,
     containerStyle = { width: pxToRem(FALLBACK_ICON_PX), height: pxToRem(FALLBACK_ICON_PX) },
     imageStyle = { width: '100%', height: '100%' },
-    className = 'icon-md mr-1 shrink-0 overflow-hidden rounded-full',
+    className = 'icon-md me-1 shrink-0 overflow-hidden rounded-full',
     provider,
   }: {
     iconURL: string;

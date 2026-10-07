@@ -178,7 +178,7 @@ const Radio: React.NamedExoticComponent<RadioProps> = memo(function Radio({
     >
       {selectedIndex >= 0 && isMounted && (
         <div
-          className={`border-border-light bg-surface-primary pointer-events-none absolute left-0 rounded-md border shadow-xs transition-all duration-300 ease-out ${
+          className={`border-border-light bg-surface-primary pointer-events-none absolute start-0 rounded-md border shadow-xs transition-all duration-300 ease-out ${
             wrap ? 'top-0' : 'inset-y-1'
           }`}
           style={backgroundStyle}

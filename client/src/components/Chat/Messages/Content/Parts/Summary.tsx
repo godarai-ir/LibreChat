@@ -86,7 +86,7 @@ const SummaryButton = memo(
             fontSize,
           )}
         >
-          <span className="relative mr-1.5 inline-flex h-[1.125rem] w-[1.125rem] items-center justify-center">
+          <span className="relative me-1.5 inline-flex h-[1.125rem] w-[1.125rem] items-center justify-center">
             <ScrollText
               className="icon-sm text-text-secondary absolute opacity-100 transition-opacity group-hover/button:opacity-0"
               aria-hidden="true"
@@ -155,7 +155,7 @@ const FloatingSummaryBar = memo(
     return (
       <div
         className={cn(
-          'absolute right-3 bottom-3 flex items-center gap-2 transition-opacity duration-150',
+          'absolute end-3 bottom-3 flex items-center gap-2 transition-opacity duration-150',
           isVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
       >

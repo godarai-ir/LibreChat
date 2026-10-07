@@ -541,7 +541,7 @@ export default function VirtualizedAgentGrid({
                   ref={virtualizer.measureElement}
                   className={
                     windowed
-                      ? 'absolute top-0 left-0 grid w-full items-stretch gap-5'
+                      ? 'absolute top-0 start-0 grid w-full items-stretch gap-5'
                       : 'relative col-span-full grid items-stretch gap-5'
                   }
                   style={{

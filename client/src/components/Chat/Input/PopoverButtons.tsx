@@ -55,7 +55,7 @@ export default function PopoverButtons({
         label: localize(showExamples === true ? 'com_hide_examples' : 'com_show_examples'),
         buttonClass: isGenerativeModel === true || isTextModel ? 'disabled' : '',
         handler: triggerExamples,
-        icon: <MessagesSquared className={cn('mr-1 w-[0.875rem]', iconClass)} />,
+        icon: <MessagesSquared className={cn('me-1 w-[0.875rem]', iconClass)} />,
       },
     ],
   };
@@ -75,7 +75,7 @@ export default function PopoverButtons({
         buttonClass: '',
         type: 'alternative',
         handler: () => setSettingsView(SettingsViews.advanced),
-        icon: <DataIcon className={cn('mr-1 h-6 w-[0.875rem]', iconClass)} />,
+        icon: <DataIcon className={cn('me-1 h-6 w-[0.875rem]', iconClass)} />,
       },
     ],
     [SettingsViews.advanced]: [
@@ -84,7 +84,7 @@ export default function PopoverButtons({
         buttonClass: '',
         type: 'alternative',
         handler: () => setSettingsView(SettingsViews.default),
-        icon: <AssistantIcon className={cn('mr-1 h-6 w-[0.875rem]', iconClass)} />,
+        icon: <AssistantIcon className={cn('me-1 h-6 w-[0.875rem]', iconClass)} />,
       },
     ],
   };
@@ -103,7 +103,7 @@ export default function PopoverButtons({
             className={cn(
               button.buttonClass,
               'border-border-medium focus:ring-ring-primary border focus:ring-1',
-              'text-text-primary hover:bg-surface-hover ml-1 h-full bg-transparent px-2 py-1 text-xs font-normal',
+              'text-text-primary hover:bg-surface-hover ms-1 h-full bg-transparent px-2 py-1 text-xs font-normal',
               buttonClass ?? '',
             )}
             onClick={button.handler}

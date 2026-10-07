@@ -31,11 +31,11 @@ const InputWithLabel: FC<InputWithLabelProps> = forwardRef((props, ref) => {
   return (
     <>
       <div className={cn('mt-4 flex flex-row', labelClassName)}>
-        <Label htmlFor={id} className="text-left text-sm font-medium">
+        <Label htmlFor={id} className="text-start text-sm font-medium">
           {label}
         </Label>
         {subLabel && (
-          <Label className="mx-1 text-right text-sm text-text-secondary">{subLabel}</Label>
+          <Label className="mx-1 text-end text-sm text-text-secondary">{subLabel}</Label>
         )}
         <br />
       </div>

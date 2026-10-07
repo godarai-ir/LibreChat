@@ -175,7 +175,7 @@ function DynamicSlider({
           <div className="flex w-full items-center justify-between">
             <Label
               htmlFor={`${settingKey}-dynamic-setting`}
-              className="text-left text-xs font-medium break-words"
+              className="text-start text-xs font-medium break-words"
             >
               {labelCode ? (localize(label as TranslationKeys) ?? label) : label || settingKey}{' '}
               {showDefault && (
@@ -217,7 +217,7 @@ function DynamicSlider({
                   defaultTextProps,
                   cn(
                     optionText,
-                    'reset-rc-number-input group-hover/temp:border-border-light h-auto w-14 border-0 py-1 pl-1 text-center text-xs',
+                    'reset-rc-number-input group-hover/temp:border-border-light h-auto w-14 border-0 py-1 ps-1 text-center text-xs',
                   ),
                 )}
               />

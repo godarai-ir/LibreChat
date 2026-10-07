@@ -49,8 +49,8 @@ function HelpSubmenu({
         }
       >
         <CircleHelp className="icon-md" aria-hidden="true" />
-        <span className="flex-1 text-left">{localize('com_nav_help')}</span>
-        <ChevronRight className="text-text-secondary h-4 w-4" aria-hidden="true" />
+        <span className="flex-1 text-start">{localize('com_nav_help')}</span>
+        <ChevronRight className="text-text-secondary h-4 w-4 rtl:-scale-x-100" aria-hidden="true" />
       </Menu.MenuItem>
       <Menu.Menu
         portal
@@ -124,7 +124,7 @@ function AccountSettings({ collapsed = false }: { collapsed?: boolean }) {
         </div>
         {!collapsed && (
           <div
-            className="text-text-primary mt-2 grow overflow-hidden text-left text-ellipsis whitespace-nowrap"
+            className="text-text-primary mt-2 grow overflow-hidden text-start text-ellipsis whitespace-nowrap"
             style={{ marginTop: '0', marginLeft: '0' }}
           >
             {user?.name ?? user?.username ?? localize('com_nav_user')}
@@ -139,7 +139,7 @@ function AccountSettings({ collapsed = false }: { collapsed?: boolean }) {
           translate: collapsed ? '4px 0' : '0 -4px',
         }}
       >
-        <div className="text-text-secondary mr-2 ml-3 py-2 text-sm" role="note">
+        <div className="text-text-secondary me-2 ms-3 py-2 text-sm" role="note">
           {user?.email ?? localize('com_nav_user')}
         </div>
         <DropdownMenuSeparator />
@@ -178,7 +178,7 @@ function AccountSettings({ collapsed = false }: { collapsed?: boolean }) {
         </Menu.MenuItem>
         <DropdownMenuSeparator />
         <Menu.MenuItem onClick={() => logout()} className="select-item text-sm">
-          <LogOut className="icon-md" aria-hidden="true" />
+          <LogOut className="icon-md rtl:-scale-x-100" aria-hidden="true" />
           {localize('com_nav_log_out')}
         </Menu.MenuItem>
       </Menu.Menu>

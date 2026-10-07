@@ -372,16 +372,16 @@ export default function ProjectWorkspace() {
             variant="section-action"
             size="sm"
             onClick={() => navigate('/projects')}
-            className="-ml-1.5"
+            className="-ms-1.5"
           >
-            <ArrowLeft className="size-4" aria-hidden="true" />
+            <ArrowLeft className="size-4 rtl:-scale-x-100" aria-hidden="true" />
             {localize('com_ui_all_projects')}
           </Button>
           <Button
             type="button"
             size="sm"
             shape="round"
-            className="ml-auto shrink-0"
+            className="ms-auto shrink-0"
             variant="default"
             onClick={startProjectChat}
             aria-label={localize('com_ui_new_chat_in_project', { name: project.name })}
@@ -457,8 +457,8 @@ export default function ProjectWorkspace() {
             maxSize="70"
             className="min-w-0"
           >
-            <div className="flex h-full min-h-0 min-w-0 flex-col gap-4 py-6 pl-4 md:pl-6">
-              <div className="pr-3">{detailsHeader}</div>
+            <div className="flex h-full min-h-0 min-w-0 flex-col gap-4 py-6 ps-4 md:ps-6">
+              <div className="pe-3">{detailsHeader}</div>
               {/** The gutter before the workspace separator lives on each section rather than
                *  this column, so the details group reaches the panel edge and its horizontal
                *  separator overlaps the vertical one. Dragging that overlap resizes both
@@ -478,7 +478,7 @@ export default function ProjectWorkspace() {
                     minSize={detailsPanelMinSize}
                     className="min-h-0"
                   >
-                    <div className="h-full pr-3 pb-3">{instructionsSection}</div>
+                    <div className="h-full pe-3 pb-3">{instructionsSection}</div>
                   </ResizablePanel>
                   {filesSection != null && (
                     <>
@@ -489,7 +489,7 @@ export default function ProjectWorkspace() {
                         minSize={detailsPanelMinSize}
                         className="min-h-0"
                       >
-                        <div className="h-full pt-3 pr-3">{filesSection}</div>
+                        <div className="h-full pt-3 pe-3">{filesSection}</div>
                       </ResizablePanel>
                     </>
                   )}
@@ -499,7 +499,7 @@ export default function ProjectWorkspace() {
           </ResizablePanel>
           <ResizableHandleAlt withHandle />
           <ResizablePanel id="project-chats" defaultSize="55" minSize="30" className="min-w-0">
-            <div className="flex h-full min-h-0 min-w-0 flex-col py-6 pr-4 pl-3 md:pr-6">
+            <div className="flex h-full min-h-0 min-w-0 flex-col py-6 pe-4 ps-3 md:pe-6">
               {chatsSection}
             </div>
           </ResizablePanel>

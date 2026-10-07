@@ -18,7 +18,7 @@ describe('AuthorHeader', () => {
     const header = screen.getByTestId('author-header');
 
     expect(header).toHaveClass('w-full', 'items-center', 'gap-2');
-    expect(header).not.toHaveClass('md:-ml-9', '-ml-9');
+    expect(header).not.toHaveClass('md:-ms-9', '-ms-9');
   });
 
   it('keeps the icon out of the accessible name', () => {

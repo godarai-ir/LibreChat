@@ -218,13 +218,13 @@ function UnifiedSidebar({
          * a site banner above that container stays above the drawer too
          * instead of covering its header strip, as it already does for the
          * scrim and the pane. */
-        'bg-surface-primary-alt text-text-primary absolute inset-y-0 left-0 flex touch-pan-y touch-pinch-zoom flex-col',
+        'bg-surface-primary-alt text-text-primary absolute inset-y-0 start-0 flex touch-pan-y touch-pinch-zoom flex-col',
         /** In dark mode the scrim and the drawer are both near-black, and no
          *  scrim opacity separates them by 3:1, so the drawer draws its own
          *  edge. Light palettes get that separation from the scrim, so the
          *  `drawer-edge` role defaults to the drawer's own fill there. */
-        'border-drawer-edge border-r',
-        expanded ? 'translate-x-0' : '-translate-x-full',
+        'border-drawer-edge border-e',
+        expanded ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full',
       )}
       style={{
         width: MOBILE_DRAWER_WIDTH,

@@ -54,7 +54,7 @@ function MultiSelectPop({
             <button
               data-testid="select-dropdown-button"
               className={cn(
-                'border-border-light bg-surface-secondary relative flex flex-col rounded-md border py-2 pr-10 pl-3 text-left focus:ring-0 focus:ring-offset-0 focus:outline-hidden sm:text-sm',
+                'border-border-light bg-surface-secondary relative flex flex-col rounded-md border py-2 pe-10 ps-3 text-start focus:ring-0 focus:ring-offset-0 focus:outline-hidden sm:text-sm',
                 'cursor-pointer font-normal',
                 'hover:bg-surface-hover data-[state=open]:bg-surface-hover',
               )}
@@ -88,7 +88,7 @@ function MultiSelectPop({
                   </span>
                 </span>
               </span>
-              <span className="absolute inset-y-0 right-0 flex items-center pr-2">
+              <span className="absolute inset-y-0 end-0 flex items-center pe-2">
                 <svg
                   stroke="currentColor"
                   fill="none"
@@ -134,10 +134,10 @@ function MultiSelectPop({
                         <img
                           src={option.icon}
                           alt={`${option.name} logo`}
-                          className="icon-sm mr-1 rounded-sm bg-cover"
+                          className="icon-sm me-1 rounded-sm bg-cover"
                         />
                       ) : (
-                        <Wrench className="icon-sm bg-surface-secondary mr-1 rounded-sm bg-cover" />
+                        <Wrench className="icon-sm bg-surface-secondary me-1 rounded-sm bg-cover" />
                       )
                     }
                   />

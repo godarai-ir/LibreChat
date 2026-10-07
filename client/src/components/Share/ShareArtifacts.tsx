@@ -180,7 +180,7 @@ interface ShareArtifactsPanelProps {
 function ShareArtifactsPanel({ contextValue }: ShareArtifactsPanelProps) {
   return (
     <ArtifactsProvider value={contextValue}>
-      <div className="border-border-light bg-surface-primary flex h-full w-full border-l shadow-2xl">
+      <div className="border-border-light bg-surface-primary flex h-full w-full border-s shadow-2xl">
         <Suspense fallback={null}>
           <Artifacts />
         </Suspense>
@@ -195,7 +195,7 @@ function ShareArtifactsPanel({ contextValue }: ShareArtifactsPanelProps) {
 function ShareArtifactsOverlay({ contextValue }: ShareArtifactsPanelProps) {
   return (
     <div
-      className="fixed inset-y-0 right-0 z-40 flex w-full max-w-full sm:max-w-[26.25rem]"
+      className="fixed inset-y-0 end-0 z-40 flex w-full max-w-full sm:max-w-[26.25rem]"
       role="complementary"
       aria-label="Artifacts panel"
     >

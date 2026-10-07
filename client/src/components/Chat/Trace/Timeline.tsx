@@ -237,11 +237,11 @@ function Timeline({
         {selection && (
           <>
             <div
-              className="bg-presentation/60 pointer-events-none absolute inset-y-0 left-0"
+              className="bg-presentation/60 pointer-events-none absolute inset-y-0 start-0"
               style={{ width: percent(selection.from) }}
             />
             <div
-              className="bg-presentation/60 pointer-events-none absolute inset-y-0 right-0"
+              className="bg-presentation/60 pointer-events-none absolute inset-y-0 end-0"
               style={{ width: percent(1 - selection.to) }}
             />
             <div

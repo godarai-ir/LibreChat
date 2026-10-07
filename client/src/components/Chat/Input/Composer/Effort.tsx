@@ -398,7 +398,7 @@ function Effort({ setting, conversation, value, onChange }: EffortProps) {
         <span
           aria-hidden="true"
           style={{ height: TRACK_H, width: fillWidth(shownIndex) }}
-          className="composer-effort-glide absolute top-1/2 left-0 -translate-y-1/2"
+          className="composer-effort-glide absolute top-1/2 start-0 -translate-y-1/2"
         >
           <span
             data-dragging={dragging || undefined}

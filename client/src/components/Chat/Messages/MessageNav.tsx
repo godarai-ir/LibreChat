@@ -341,7 +341,7 @@ const MessageIndicator = memo(function MessageIndicator({
       <span
         className={cn(
           'block rounded-full',
-          entry.isEnd === true || entry.isStart === true ? 'mr-[0.28125rem]' : '',
+          entry.isEnd === true || entry.isStart === true ? 'me-[0.28125rem]' : '',
           tone,
         )}
         style={{ width: pxToRem(dims.baseW), height: pxToRem(dims.baseH) }}
@@ -351,7 +351,7 @@ const MessageIndicator = memo(function MessageIndicator({
 });
 
 const chevronButtonClasses = cn(
-  '-mr-1 rounded-md p-0.5 text-text-tertiary opacity-40 transition-[color,opacity] duration-300 high-contrast:opacity-50',
+  '-me-1 rounded-md p-0.5 text-text-tertiary opacity-40 transition-[color,opacity] duration-300 high-contrast:opacity-50',
   'group-hover/nav:text-text-secondary group-hover/nav:opacity-100',
   'group-focus-within/nav:text-text-secondary group-focus-within/nav:opacity-100',
   'group-hover/nav:hover:text-text-primary',
@@ -1605,7 +1605,7 @@ function MessageNav({ scrollableRef }: { scrollableRef: React.RefObject<HTMLDivE
       aria-label={localize('com_ui_message_nav')}
       aria-keyshortcuts="Shift+Alt+M"
       className={cn(
-        'group/nav absolute top-1/2 right-2 z-40 hidden max-h-[min(24rem,calc(100%-2rem))]',
+        'group/nav absolute top-1/2 end-2 z-40 hidden max-h-[min(24rem,calc(100%-2rem))]',
         '-translate-y-1/2 flex-col items-end gap-1.5 px-1.5 py-2 md:flex',
       )}
     >

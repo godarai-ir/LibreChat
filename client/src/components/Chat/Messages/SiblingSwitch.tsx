@@ -53,7 +53,7 @@ export default function SiblingSwitch({
         aria-label={localize('com_ui_previous_sibling')}
         aria-disabled={siblingIdx == 0}
       >
-        <ChevronLeft size="19" aria-hidden="true" />
+        <ChevronLeft size="19" className="rtl:-scale-x-100" aria-hidden="true" />
       </Button>
       <span
         className="shrink-0 grow tabular-nums"
@@ -71,7 +71,7 @@ export default function SiblingSwitch({
         aria-label={localize('com_ui_next_sibling')}
         aria-disabled={siblingIdx == siblingCount - 1}
       >
-        <ChevronRight size="19" aria-hidden="true" />
+        <ChevronRight size="19" className="rtl:-scale-x-100" aria-hidden="true" />
       </Button>
     </nav>
   ) : null;

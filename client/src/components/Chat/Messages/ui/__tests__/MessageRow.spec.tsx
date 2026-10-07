@@ -130,7 +130,7 @@ describe('MessageRow', () => {
     ).toContainElement(screen.getByTestId('message-icon'));
     expect(avatar).toHaveAttribute('aria-hidden', 'true');
     expect(avatar).toHaveClass('size-6');
-    expect(avatar).not.toHaveClass('md:absolute', 'md:left-0');
+    expect(avatar).not.toHaveClass('md:absolute', 'md:start-0');
   });
 
   it('keeps the icon and provider name on the message content edge', () => {
@@ -139,7 +139,7 @@ describe('MessageRow', () => {
     const row = screen.getByLabelText('Assistant message');
     const agentTurn = row.querySelector('.agent-turn');
 
-    expect(agentTurn).not.toHaveClass('md:pl-9', 'pl-9');
+    expect(agentTurn).not.toHaveClass('md:ps-9', 'ps-9');
     expect(row).not.toHaveClass('gap-3');
     expect(row.children).toHaveLength(1);
     expect(screen.getAllByTestId('message-icon')).toHaveLength(1);
@@ -151,7 +151,7 @@ describe('MessageRow', () => {
     const heading = screen.getByRole('heading', { name: 'Message from Assistant Model: gpt-5.6' });
 
     expect(heading).toHaveClass('w-full', 'gap-2');
-    expect(screen.getByTestId('message-timestamp')).toHaveClass('ml-auto');
+    expect(screen.getByTestId('message-timestamp')).toHaveClass('ms-auto');
   });
 
   it('keeps the model name ready to replace the provider on hover', () => {
@@ -199,7 +199,7 @@ describe('MessageRow', () => {
     const messageSurface = screen.getByTestId('message-body');
 
     expect(row.querySelector('.agent-turn')).toHaveClass('w-full');
-    expect(row.querySelector('.agent-turn')).not.toHaveClass('md:pl-9');
+    expect(row.querySelector('.agent-turn')).not.toHaveClass('md:ps-9');
     expect(messageSurface).toHaveClass('w-full');
   });
 

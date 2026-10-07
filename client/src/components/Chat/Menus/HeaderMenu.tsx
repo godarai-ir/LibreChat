@@ -180,7 +180,7 @@ export default function HeaderMenu({
                 <Ellipsis className="icon-md" aria-hidden="true" />
                 {exportShare.hasSharedLink && (
                   <span
-                    className="bg-status-info ring-presentation absolute -top-0.5 -right-0.5 size-2 rounded-full ring-2"
+                    className="bg-status-info ring-presentation absolute -top-0.5 -end-0.5 size-2 rounded-full ring-2"
                     data-testid="header-menu-shared-link-indicator"
                     aria-hidden="true"
                   />

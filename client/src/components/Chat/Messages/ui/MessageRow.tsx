@@ -57,7 +57,7 @@ function renderAuthorHeader({
   return (
     <h2 className={authorHeaderClasses[align]}>
       {align === 'end' && (
-        <MessageTimestamp value={timestamp} className="mr-auto shrink-0 font-normal" />
+        <MessageTimestamp value={timestamp} className="me-auto shrink-0 font-normal" />
       )}
       <span
         aria-hidden="true"
@@ -68,7 +68,7 @@ function renderAuthorHeader({
       <span className="sr-only">{headerPrefix}</span>
       <HeaderLabel label={label} hoverLabel={hoverLabel} />
       {align === 'start' && (
-        <MessageTimestamp value={timestamp} className="ml-auto shrink-0 font-normal" />
+        <MessageTimestamp value={timestamp} className="ms-auto shrink-0 font-normal" />
       )}
     </h2>
   );
@@ -131,12 +131,12 @@ export default function MessageRow({
           (hasParallelContent || isEditing) && 'w-full',
           !hasParallelContent &&
             isUserSide &&
-            cn('ml-auto items-end', !isEditing && 'w-fit max-w-[90%] sm:max-w-[85%]'),
+            cn('ms-auto items-end', !isEditing && 'w-fit max-w-[90%] sm:max-w-[85%]'),
           !hasParallelContent && !isUserSide && !isEditing && 'flex-1',
         )}
       >
         {isSystem && (
-          <h2 className="text-text-secondary mb-1 flex items-center gap-1.5 pr-1.5 text-xs font-medium tracking-wide uppercase select-none">
+          <h2 className="text-text-secondary mb-1 flex items-center gap-1.5 pe-1.5 text-xs font-medium tracking-wide uppercase select-none">
             <Zap size={12} aria-hidden="true" />
             {systemLabel}
             <span className="sr-only">

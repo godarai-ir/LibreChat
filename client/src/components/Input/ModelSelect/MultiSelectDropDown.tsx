@@ -81,7 +81,7 @@ function MultiSelectDropDown({
             <>
               <ListboxButton
                 className={cn(
-                  'border-border-light bg-surface-secondary relative flex w-full cursor-default flex-col rounded-md border py-2 pr-10 pl-3 text-left focus:ring-0 focus:ring-offset-0 focus:outline-hidden sm:text-sm',
+                  'border-border-light bg-surface-secondary relative flex w-full cursor-default flex-col rounded-md border py-2 pe-10 ps-3 text-start focus:ring-0 focus:ring-offset-0 focus:outline-hidden sm:text-sm',
                   className ?? '',
                 )}
                 id={excludeIds[0]}
@@ -132,7 +132,7 @@ function MultiSelectDropDown({
                     </span>
                   </span>
                 </span>
-                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                <span className="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-2">
                   <svg
                     stroke="currentColor"
                     fill="none"
@@ -175,7 +175,7 @@ function MultiSelectDropDown({
                       <ListboxOption
                         key={i}
                         value={option[optionValueKey]}
-                        className="group border-border-light text-text-primary hover:bg-surface-hover relative flex h-[2.625rem] cursor-pointer items-center overflow-hidden border-b pr-9 pl-3 select-none last:border-0"
+                        className="group border-border-light text-text-primary hover:bg-surface-hover relative flex h-[2.625rem] cursor-pointer items-center overflow-hidden border-b pe-9 ps-3 select-none last:border-0"
                       >
                         <span className="flex items-center gap-1.5 truncate">
                           {!option.isButton && (
@@ -203,12 +203,12 @@ function MultiSelectDropDown({
                             {option.name}
                           </span>
                           {option.isButton && (
-                            <span className="text-text-primary absolute inset-y-0 right-0 flex items-center pr-3">
-                              <ArrowRight />
+                            <span className="text-text-primary absolute inset-y-0 end-0 flex items-center pe-3">
+                              <ArrowRight className="rtl:-scale-x-100" />
                             </span>
                           )}
                           {selected && !option.isButton && (
-                            <span className="text-text-primary absolute inset-y-0 right-0 flex items-center pr-3">
+                            <span className="text-text-primary absolute inset-y-0 end-0 flex items-center pe-3">
                               <CheckMark />
                             </span>
                           )}

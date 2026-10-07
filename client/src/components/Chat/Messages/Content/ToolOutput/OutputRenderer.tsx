@@ -213,7 +213,7 @@ export default function OutputRenderer({
           disabled={contentPending}
           iconOnly
           label={localize('com_ui_copy')}
-          className={cn('bg-presentation absolute right-0 bottom-0 z-[1]', PANE_COPY_REVEAL)}
+          className={cn('bg-presentation absolute end-0 bottom-0 z-[1]', PANE_COPY_REVEAL)}
         />
       </div>
       {error && rawError && rawError !== displayText && (
