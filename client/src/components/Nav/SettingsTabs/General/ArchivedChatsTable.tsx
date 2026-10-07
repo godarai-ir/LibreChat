@@ -25,8 +25,9 @@ import {
 } from '~/data-provider';
 import { MinimalIcon } from '~/components/Endpoints';
 import { NotificationSeverity } from '~/common';
+import useCalendar from '~/hooks/useCalendar';
 import { formatDate, logger } from '~/utils';
-import { useLocalize, useCalendar } from '~/hooks';
+import { useLocalize } from '~/hooks';
 import store from '~/store';
 
 const DEFAULT_PARAMS: ConversationListParams = {

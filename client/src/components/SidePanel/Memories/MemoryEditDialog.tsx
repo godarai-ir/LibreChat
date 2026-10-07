@@ -15,8 +15,9 @@ import type { TUserMemory } from 'librechat-data-provider';
 import { getMemoryKeyError, getMemoryValueError, getMemoryApiErrorMessage } from '~/utils/memory';
 import { useUpdateMemoryMutation, useMemoriesQuery } from '~/data-provider';
 import { getMemoryAddress, getMemoryUpdateAddress } from './address';
-import { useLocalize, useHasAccess, useClockFormat, useCalendar } from '~/hooks';
+import { useLocalize, useHasAccess, useClockFormat } from '~/hooks';
 import MemoryUsageBadge from './MemoryUsageBadge';
+import useCalendar from '~/hooks/useCalendar';
 
 interface MemoryEditDialogProps {
   memory: TUserMemory | null;

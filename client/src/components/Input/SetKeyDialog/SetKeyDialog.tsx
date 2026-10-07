@@ -19,9 +19,10 @@ import {
   OGDialogTrigger,
 } from '@librechat/client';
 import type { TDialogProps } from '~/common';
-import { useUserKey, useLocalize, useClockFormat, useCalendar } from '~/hooks';
+import { useUserKey, useLocalize, useClockFormat } from '~/hooks';
 import { NotificationSeverity } from '~/common';
 import { formatKeyExpiryLabel } from './utils';
+import useCalendar from '~/hooks/useCalendar';
 import CustomConfig from './CustomEndpoint';
 import BedrockConfig from './BedrockConfig';
 import GoogleConfig from './GoogleConfig';

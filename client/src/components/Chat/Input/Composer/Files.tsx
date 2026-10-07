@@ -13,7 +13,8 @@ import { getFileType, toAbsoluteFilePath, triggerDownload } from '~/utils';
 import DialogImage from '~/components/Chat/Messages/Content/DialogImage';
 import FilePreview from '~/components/Chat/Input/Files/FilePreview';
 import { useGetFiles, useFilePreviewBlob } from '~/data-provider';
-import { useLocalize, useAuthContext, useCalendar } from '~/hooks';
+import { useLocalize, useAuthContext } from '~/hooks';
+import useCalendar from '~/hooks/useCalendar';
 
 export type FileView = 'all' | 'images' | 'documents';
 

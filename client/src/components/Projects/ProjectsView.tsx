@@ -12,8 +12,9 @@ import ProjectDeleteDialog from './ProjectDeleteDialog';
 import ProjectEditDialog from './ProjectEditDialog';
 import ProjectsSortMenu from './ProjectsSortMenu';
 import ProjectsNavBar from './ProjectsNavBar';
-import { useLocalize, useCalendar } from '~/hooks';
+import useCalendar from '~/hooks/useCalendar';
 import { cn, formatShortDate } from '~/utils';
+import { useLocalize } from '~/hooks';
 
 function formatActivity(project: TChatProject, locale?: string) {
   const value = project.lastConversationAt ?? project.updatedAt ?? project.createdAt;

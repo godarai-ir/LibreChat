@@ -31,10 +31,11 @@ import {
   useUpdateScheduleMutation,
   useRunScheduleNowMutation,
 } from '~/data-provider';
-import { useLocalize, useHasAccess, useClockFormat, useWeekStart, useCalendar } from '~/hooks';
+import { useLocalize, useHasAccess, useClockFormat, useWeekStart } from '~/hooks';
 import { cn, getMessageTimestamp, rowActionClasses } from '~/utils';
 import ScheduleMCPRecovery from './ScheduleMCPRecovery';
 import { useAgentsMapContext } from '~/Providers';
+import useCalendar from '~/hooks/useCalendar';
 import ScheduleDialog from './ScheduleDialog';
 import { describeCadence } from './cadence';
 import { scheduleRowState } from './state';

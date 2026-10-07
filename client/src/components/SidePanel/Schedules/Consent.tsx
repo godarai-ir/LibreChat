@@ -6,7 +6,8 @@ import {
   useScheduleMCPConsent,
   useScheduleMCPConsentMutations,
 } from '~/data-provider/Schedules/consent';
-import { useLocalize, useCalendar } from '~/hooks';
+import useCalendar from '~/hooks/useCalendar';
+import { useLocalize } from '~/hooks';
 
 const statusKeys = {
   missing: 'com_ui_schedule_consent_missing',

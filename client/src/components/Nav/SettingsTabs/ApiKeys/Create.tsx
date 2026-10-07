@@ -4,7 +4,8 @@ import { Button, Input, Label, Radio, Spinner, useToastContext } from '@librecha
 import type { TAgentApiKeyCreateResponse } from 'librechat-data-provider';
 import type { FormEvent } from 'react';
 import { computeExpiresAt, formatDate, DEFAULT_EXPIRY, EXPIRY_OPTIONS } from './utils';
-import { useLocalize, useCalendar } from '~/hooks';
+import useCalendar from '~/hooks/useCalendar';
+import { useLocalize } from '~/hooks';
 
 type CreateProps = {
   onCreated: (result: TAgentApiKeyCreateResponse) => void;

@@ -19,8 +19,9 @@ import { messageFooterClasses } from '~/components/Chat/Messages/styles';
 import MessageRow from '~/components/Chat/Messages/ui/MessageRow';
 import { ElapsedTimer } from '~/components/Chat/Messages/Elapsed';
 import { showThinkingAtom } from '~/store/showThinking';
+import useCalendar from '~/hooks/useCalendar';
 import { useChatSurface } from './surface';
-import { useLocalize, useCalendar } from '~/hooks';
+import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
 const TRIGGER_LABELS = {
