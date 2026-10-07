@@ -486,7 +486,7 @@ export default function Artifacts() {
                   'h-full shadow-2xl',
                   isVisible && !isClosing
                     ? 'translate-x-0 opacity-100 transition-all duration-150'
-                    : 'translate-x-5 opacity-0 transition-all duration-300',
+                    : 'translate-x-5 rtl:-translate-x-5 opacity-0 transition-all duration-300',
                 ),
           )}
           style={
@@ -526,7 +526,7 @@ export default function Artifacts() {
                   'flex items-center transition-all duration-500 motion-reduce:transition-none',
                   isVisible && !isClosing
                     ? 'translate-x-0 opacity-100'
-                    : '-translate-x-2 opacity-0',
+                    : '-translate-x-2 rtl:translate-x-2 opacity-0',
                 )}
               >
                 <Radio
@@ -543,7 +543,7 @@ export default function Artifacts() {
               className={cn(
                 'flex items-center gap-2 transition-all duration-500 motion-reduce:transition-none',
                 isMobile ? 'min-w-max' : '',
-                isVisible && !isClosing ? 'translate-x-0 opacity-100' : 'translate-x-2 opacity-0',
+                isVisible && !isClosing ? 'translate-x-0 opacity-100' : 'translate-x-2 rtl:-translate-x-2 opacity-0',
               )}
             >
               {/* Refresh drives the Sandpack preview client; the Mermaid

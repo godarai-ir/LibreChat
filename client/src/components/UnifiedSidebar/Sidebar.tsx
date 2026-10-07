@@ -46,7 +46,7 @@ function Sidebar({
              *  the edge is drawn here. The panel and the content beside it now sit
              *  on the same surface, so the fill no longer separates them on its
              *  own and the boundary has to be a line in every theme. */
-            'border-border-light bg-surface-primary-alt min-h-0 flex-1 overflow-hidden border-r',
+            'border-border-light bg-surface-primary-alt min-h-0 flex-1 overflow-hidden border-e',
             expanded ? 'opacity-100' : 'pointer-events-none opacity-0',
           )}
           style={{ transition: expanded ? 'opacity 200ms ease 80ms' : 'opacity 150ms ease' }}
@@ -64,7 +64,7 @@ function Sidebar({
         aria-valuemax={Math.round(maxWidth)}
         tabIndex={expanded ? 0 : -1}
         className={cn(
-          'hover:bg-border-medium active:bg-border-heavy absolute top-0 right-0 z-10 h-full w-1 cursor-col-resize transition-colors',
+          'hover:bg-border-medium active:bg-border-heavy absolute top-0 end-0 z-10 h-full w-1 cursor-col-resize transition-colors',
           expanded ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         style={{ transition: expanded ? 'opacity 200ms ease 80ms' : 'opacity 150ms ease' }}

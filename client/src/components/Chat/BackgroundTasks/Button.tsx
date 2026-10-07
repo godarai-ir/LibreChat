@@ -111,7 +111,7 @@ function BackgroundTasksButton({
                 aria-hidden="true"
                 data-testid="background-tasks-indicator"
                 className={cn(
-                  'ring-presentation absolute -top-0.5 -right-0.5 size-2 rounded-full ring-2',
+                  'ring-presentation absolute -top-0.5 -end-0.5 size-2 rounded-full ring-2',
                   failedCount > 0 || incomplete ? 'bg-status-warning' : 'bg-status-info',
                   activeCount > 0 && 'animate-pulse motion-reduce:animate-none',
                 )}

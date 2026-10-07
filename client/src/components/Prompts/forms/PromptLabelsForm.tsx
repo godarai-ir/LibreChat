@@ -50,7 +50,7 @@ const PromptLabelsForm = ({ selectedPrompt }: { selectedPrompt?: TPrompt }) => {
         {labels.length ? (
           labels.map((label, index) => (
             <span
-              className="mb-1 mr-1 flex items-center gap-x-2 rounded-full border px-2"
+              className="mb-1 me-1 flex items-center gap-x-2 rounded-full border px-2"
               key={index}
             >
               {label}

@@ -13,6 +13,11 @@ describe('sanitizeIntegerInput', () => {
     expect(sanitizeIntegerInput('1 200 000')).toBe('1200000');
   });
 
+  test('reads Persian and Arabic-Indic digits as their ASCII values', () => {
+    expect(sanitizeIntegerInput('۱۲۰٬۰۰۰')).toBe('120000');
+    expect(sanitizeIntegerInput('٤٥')).toBe('45');
+  });
+
   test('drops stray non-numeric characters', () => {
     expect(sanitizeIntegerInput('12a3')).toBe('123');
     expect(sanitizeIntegerInput('abc')).toBe('');

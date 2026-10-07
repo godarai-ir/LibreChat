@@ -36,6 +36,10 @@ describe('resolveWeekStartsOn', () => {
     expect(resolveWeekStartsOn('monday', 'en-US')).toBe(1);
   });
 
+  it('forces Saturday (6) for the saturday preference regardless of locale', () => {
+    expect(resolveWeekStartsOn('saturday', 'en-US')).toBe(6);
+  });
+
   it('defers to the locale for the system preference', () => {
     // en-US: Sunday-first; fr-FR/de-DE/en-GB: Monday-first (CLDR week data)
     expect(resolveWeekStartsOn('system', 'en-US')).toBe(0);

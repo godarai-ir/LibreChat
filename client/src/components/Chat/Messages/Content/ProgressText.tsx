@@ -20,7 +20,7 @@ const wrapperClass =
  *  column; the label span truncates itself, so overflow stays visible for the
  *  button's focus ring. */
 const contentClass =
-  'progress-text-content absolute left-0 right-0 top-0 max-w-full overflow-visible whitespace-nowrap';
+  'progress-text-content absolute start-0 end-0 top-0 max-w-full overflow-visible whitespace-nowrap';
 
 /** A failed row is marked at its left edge, in the rail's column when the row
  *  sits under a header and in the gutter when it stands alone, so a failure
@@ -29,7 +29,7 @@ const contentClass =
  *  box, so a border would push it and change the row's geometry. It lies over
  *  the rail's hit area, so it lets the pointer through to the rail. */
 const failedStripeClass =
-  "before:pointer-events-none before:absolute before:-left-3 before:top-0 before:h-full before:w-0.5 before:rounded-full before:bg-status-error before:content-['']";
+  "before:pointer-events-none before:absolute before:-start-3 before:top-0 before:h-full before:w-0.5 before:rounded-full before:bg-status-error before:content-['']";
 
 const Wrapper = ({
   popover,

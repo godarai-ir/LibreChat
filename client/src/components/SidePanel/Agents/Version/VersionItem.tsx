@@ -10,8 +10,8 @@ import {
   TooltipAnchor,
 } from '@librechat/client';
 import type { VersionRecord } from './types';
-import { useLocalize, useClockFormat } from '~/hooks';
-import { cn } from '~/utils';
+import { useLocalize, useClockFormat, useCalendar } from '~/hooks';
+import { cn, formatTimeAgo } from '~/utils';
 
 type VersionItemProps = {
   version: VersionRecord;
@@ -46,6 +46,7 @@ export default function VersionItem({
 }: VersionItemProps) {
   const localize = useLocalize();
   const hour12 = useClockFormat();
+  const { dateLocale } = useCalendar();
   const [open, setOpen] = useState(false);
 
   const versionNumber = versionsLength - index;
@@ -60,8 +61,14 @@ export default function VersionItem({
       ? 'com_ui_agent_version_unknown_date'
       : 'com_ui_agent_version_no_date',
   );
-  const relativeLabel = date ? formatDistanceToNow(date, { addSuffix: true }) : fallbackDateLabel;
-  const absoluteLabel = date ? date.toLocaleString(undefined, { hour12 }) : relativeLabel;
+  let relativeLabel = fallbackDateLabel;
+  if (date) {
+    relativeLabel =
+      dateLocale != null
+        ? formatTimeAgo(date, dateLocale)
+        : formatDistanceToNow(date, { addSuffix: true });
+  }
+  const absoluteLabel = date ? date.toLocaleString(dateLocale, { hour12 }) : relativeLabel;
 
   const toolsCount = countItems(version.tools);
   const capabilitiesCount = countItems(version.capabilities);
@@ -119,7 +126,7 @@ export default function VersionItem({
       {/* Card */}
       <div
         className={cn(
-          'group relative mb-2 ml-2 flex flex-1 flex-col rounded-xl border p-3 transition-colors',
+          'group relative mb-2 ms-2 flex flex-1 flex-col rounded-xl border p-3 transition-colors',
           isActive
             ? 'border-status-success-border bg-status-success-subtle'
             : 'border-border-light hover:border-border-medium hover:bg-surface-secondary bg-transparent',
@@ -180,7 +187,7 @@ export default function VersionItem({
                 className="max-w-[28.125rem]"
                 main={
                   <div className="flex w-full flex-col gap-3 text-sm">
-                    <Label className="text-left font-medium">
+                    <Label className="text-start font-medium">
                       {localize('com_ui_agent_version_restore_description')}
                     </Label>
                     <div className="border-border-light bg-surface-secondary rounded-lg border px-3 py-2">

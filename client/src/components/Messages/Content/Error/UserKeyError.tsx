@@ -12,7 +12,7 @@ import {
   ProviderErrorCodes,
 } from './parts';
 import { SetKeyDialog } from '~/components/Input/SetKeyDialog';
-import { useLocalize } from '~/hooks';
+import { useLocalize, useCalendar } from '~/hooks';
 
 type UserKeyErrorCode =
   | ErrorTypes.NO_USER_KEY
@@ -31,6 +31,7 @@ const actionLabels: Partial<Record<UserKeyErrorCode, TranslationKeys>> = {
 
 export default function UserKeyError({ json, message }: ErrorRendererProps) {
   const localize = useLocalize();
+  const { dateLocale } = useCalendar();
   const [dialogOpen, setDialogOpen] = useState(false);
   const code = (readString(json, 'code') ?? readString(json, 'type')) as
     | UserKeyErrorCode
@@ -82,12 +83,12 @@ export default function UserKeyError({ json, message }: ErrorRendererProps) {
         errorMessage = localize('com_error_invalid_user_key');
       } else if (provider == null) {
         errorMessage = localize('com_error_expired_user_key_generic', {
-          0: formatTimestamp(expiredAt),
+          0: formatTimestamp(expiredAt, dateLocale),
         });
       } else {
         errorMessage = localize('com_error_expired_user_key', {
           0: provider,
-          1: formatTimestamp(expiredAt),
+          1: formatTimestamp(expiredAt, dateLocale),
         });
       }
       break;

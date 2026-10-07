@@ -368,11 +368,11 @@ export default function Search() {
         />
       </div>
       {isFetchingNextPage && (
-        <div className="pointer-events-none absolute right-0 bottom-0 left-0 flex justify-center py-4">
+        <div className="pointer-events-none absolute end-0 bottom-0 start-0 flex justify-center py-4">
           <Spinner className="text-text-primary" />
         </div>
       )}
-      <div className="from-surface-primary-alt pointer-events-none absolute right-0 bottom-0 left-0 h-[5%] bg-gradient-to-t to-transparent" />
+      <div className="from-surface-primary-alt pointer-events-none absolute end-0 bottom-0 start-0 h-[5%] bg-gradient-to-t to-transparent" />
     </div>
   );
 }

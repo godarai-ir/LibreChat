@@ -68,7 +68,7 @@ export default function OptionsPopover({
                   className="h-8 w-[9.375rem] justify-start rounded-md px-2 text-xs font-normal"
                   onClick={saveAsPreset}
                 >
-                  <Save className="mr-1 w-[0.875rem]" aria-hidden="true" />
+                  <Save className="me-1 w-[0.875rem]" aria-hidden="true" />
                   {localize('com_endpoint_save_as_preset')}
                 </Button>
               )}
@@ -77,7 +77,7 @@ export default function OptionsPopover({
                 variant="ghost"
                 size="icon"
                 type="button"
-                className="text-text-primary ml-auto size-8"
+                className="text-text-primary ms-auto size-8"
                 onClick={closePopover}
                 aria-label={localize('com_ui_close')}
               >

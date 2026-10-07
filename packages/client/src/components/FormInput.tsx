@@ -47,7 +47,7 @@ export default function FormInput<
       <div className="flex w-full items-center justify-start gap-2">
         <Label
           htmlFor={`${field.name}-input`}
-          className={cn('text-left text-sm font-semibold text-text-primary', labelClass)}
+          className={cn('text-start text-sm font-semibold text-text-primary', labelClass)}
         >
           {label}
         </Label>

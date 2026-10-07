@@ -26,12 +26,13 @@ import type {
 } from 'librechat-data-provider';
 import BackupCodeInput, { isBackupCode } from '~/components/Auth/BackupCodeInput';
 import { useRegenerateBackupCodesMutation } from '~/data-provider';
-import { useAuthContext, useLocalize } from '~/hooks';
+import { useAuthContext, useLocalize, useCalendar } from '~/hooks';
 import { useTwoFactorError } from './errors';
 import store from '~/store';
 
 const BackupCodesItem: React.FC = () => {
   const localize = useLocalize();
+  const { dateLocale } = useCalendar();
   const { user } = useAuthContext();
   const { showToast } = useToastContext();
   const showError = useTwoFactorError();
@@ -122,11 +123,17 @@ const BackupCodesItem: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   {user?.backupCodes.map((code, index) => {
                     const isUsed = code.used;
-                    const description = `Backup code number ${index + 1}, ${
-                      isUsed
-                        ? `used on ${code.usedAt ? new Date(code.usedAt).toLocaleDateString() : 'an unknown date'}`
-                        : 'not used yet'
-                    }`;
+                    const usedOn = code.usedAt
+                      ? new Date(code.usedAt).toLocaleDateString(dateLocale)
+                      : '';
+                    let description = localize('com_ui_backup_code_unused_label', {
+                      number: index + 1,
+                    });
+                    if (isUsed) {
+                      description = usedOn
+                        ? localize('com_ui_backup_code_used_label', { number: index + 1, date: usedOn })
+                        : localize('com_ui_backup_code_used_unknown_label', { number: index + 1 });
+                    }
 
                     return (
                       <motion.div
@@ -154,9 +161,7 @@ const BackupCodesItem: React.FC = () => {
                             {localize('com_ui_backup_code_number', { number: index + 1 })}
                           </span>
                           <TooltipAnchor
-                            description={
-                              code.usedAt ? new Date(code.usedAt).toLocaleDateString() : ''
-                            }
+                            description={usedOn}
                             disabled={!isUsed}
                             focusable={false}
                             className={isUsed ? 'cursor-pointer' : 'cursor-default'}
@@ -185,9 +190,9 @@ const BackupCodesItem: React.FC = () => {
                     size="wide"
                   >
                     {isLoading ? (
-                      <Spinner className="mr-2" />
+                      <Spinner className="me-2" />
                     ) : (
-                      <RefreshCcw className="mr-2 h-4 w-4" aria-hidden="true" />
+                      <RefreshCcw className="me-2 h-4 w-4" aria-hidden="true" />
                     )}
                     {isLoading
                       ? localize('com_ui_regenerating')
@@ -203,7 +208,7 @@ const BackupCodesItem: React.FC = () => {
                   variant="default"
                   size="wide"
                 >
-                  {isLoading && <Spinner className="mr-2" />}
+                  {isLoading && <Spinner className="me-2" />}
                   {localize('com_ui_regenerate_backup')}
                 </Button>
               </div>

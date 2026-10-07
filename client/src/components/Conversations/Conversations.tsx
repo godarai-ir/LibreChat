@@ -39,11 +39,17 @@ import {
   FINISHED_CHATS_GROUP,
   groupConversationsByStatus,
 } from './running';
-import { useLocalize, TranslationKeys, useElementSize, useOuterScrollWindow } from '~/hooks';
+import {
+  useLocalize,
+  useCalendar,
+  TranslationKeys,
+  useElementSize,
+  useOuterScrollWindow,
+} from '~/hooks';
 import { useActiveJobs, useRunningConversationsQuery } from '~/data-provider';
 import { facetFilterCountAtom, resetFacetsAtom } from './facets';
 import useDrawerViewport from '~/hooks/Nav/useDrawerViewport';
-import { groupConversations, cn } from '~/utils';
+import { groupConversations, formatYear, cn } from '~/utils';
 import Convo from './Convo';
 import store from '~/store';
 
@@ -148,7 +154,7 @@ const ChatsHeader: FC<ChatsHeaderProps> = memo(({ isExpanded, onToggle, trailing
   return (
     <div
       className={cn(
-        'flex h-8 w-full items-center pr-1',
+        'flex h-8 w-full items-center pe-1',
         highlight && 'bg-surface-nav-selected rounded-lg',
       )}
     >
@@ -182,6 +188,9 @@ type DateLabelProps = {
   count?: number;
 };
 
+/** Groups older than this year are named by a space-prefixed year, e.g. " 2023". */
+const YEAR_GROUP = /^ (\d+)$/;
+
 const statusSectionLabels: Record<string, TranslationKeys> = {
   [RUNNING_CHATS_GROUP]: 'com_a11y_chats_running_section',
   [FINISHED_CHATS_GROUP]: 'com_a11y_chats_finished_section',
@@ -190,7 +199,12 @@ const statusSectionLabels: Record<string, TranslationKeys> = {
 const DateLabel: FC<DateLabelProps> = memo(
   ({ groupName, isFirst, isAlphabetical = false, count }) => {
     const localize = useLocalize();
-    const displayName = localize(groupName as TranslationKeys) || groupName;
+    const { dateLocale } = useCalendar();
+    const year = YEAR_GROUP.exec(groupName)?.[1];
+    const displayName =
+      year != null && dateLocale != null
+        ? formatYear(Number(year), dateLocale)
+        : localize(groupName as TranslationKeys) || groupName;
     const statusLabel = statusSectionLabels[groupName] as TranslationKeys | undefined;
     let ariaLabel: string;
     if (statusLabel) {
@@ -204,7 +218,7 @@ const DateLabel: FC<DateLabelProps> = memo(
       <h2
         aria-label={ariaLabel}
         className={cn(
-          'text-text-secondary pt-0.5 pl-1 text-xs',
+          'text-text-secondary pt-0.5 ps-1 text-xs',
           isFirst === true ? 'mt-0' : 'mt-1.5',
         )}
       >
@@ -243,6 +257,7 @@ const Conversations: FC<ConversationsProps> = ({
   const localize = useLocalize();
   const search = useRecoilValue(store.search);
   const sort = useAtomValue(chatSortAtom);
+  const { calendar } = useCalendar();
   const isArchivedView = useAtomValue(isArchivedChatViewAtom);
   const activeFilterCount = useAtomValue(chatFilterCountAtom);
   const filterTags = useAtomValue(chatFilterTagsAtom);
@@ -345,8 +360,9 @@ const Conversations: FC<ConversationsProps> = ({
         field: sort.field,
         direction: sort.direction,
         includePinned,
+        calendar,
       }),
-    [filteredConversations, includePinned, sort.direction, sort.field],
+    [calendar, filteredConversations, includePinned, sort.direction, sort.field],
   );
   /** Running chats this list holds no row for — filed in a project, pinned, or past the
    *  loaded pages — join the Running group only while nothing narrows the list: a search
@@ -667,7 +683,7 @@ const Conversations: FC<ConversationsProps> = ({
     body = (
       <div className="text-text-primary flex flex-1 items-center justify-center">
         <Spinner className="m-0" />
-        <span className="shimmer ml-2">{localize('com_ui_loading')}</span>
+        <span className="shimmer ms-2">{localize('com_ui_loading')}</span>
       </div>
     );
   } else if (isListError) {

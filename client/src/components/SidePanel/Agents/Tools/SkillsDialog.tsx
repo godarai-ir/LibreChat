@@ -208,7 +208,7 @@ export default function SkillsDialog({ open, onOpenChange, agentId }: SkillsDial
       size="sm"
       onClick={() => setCreateOpen(true)}
       aria-label={localize('com_ui_create_skill')}
-      className={cn('h-[2.625rem] w-[2.625rem] shrink-0 p-0', !isDesktop && 'ml-auto')}
+      className={cn('h-[2.625rem] w-[2.625rem] shrink-0 p-0', !isDesktop && 'ms-auto')}
     >
       <Plus className="size-4" aria-hidden="true" />
     </Button>
@@ -219,7 +219,7 @@ export default function SkillsDialog({ open, onOpenChange, agentId }: SkillsDial
     >
       <div className="relative min-w-0 flex-1">
         <Search
-          className="text-text-tertiary pointer-events-none absolute top-1/2 left-3 z-[1] size-4 -translate-y-1/2"
+          className="text-text-tertiary pointer-events-none absolute top-1/2 start-3 z-[1] size-4 -translate-y-1/2"
           aria-hidden="true"
         />
         <Input
@@ -228,7 +228,7 @@ export default function SkillsDialog({ open, onOpenChange, agentId }: SkillsDial
           onChange={(e) => setSearch(e.target.value)}
           placeholder={localize('com_ui_search_skills')}
           aria-label={localize('com_ui_search_skills')}
-          className="h-[2.625rem] bg-transparent pl-9"
+          className="h-[2.625rem] bg-transparent ps-9"
         />
       </div>
       <CategoryFilter options={categoryOptions} value={category} onChange={setCategory} />
@@ -243,7 +243,7 @@ export default function SkillsDialog({ open, onOpenChange, agentId }: SkillsDial
         </OGDialogDescription>
         <div className="flex h-[80dvh] max-h-[47.5rem] flex-col">
           <div className="border-border-light flex flex-col gap-3 border-b px-4 pt-4 pb-3 md:px-6 md:pt-5 md:pb-4">
-            <div className="flex items-center gap-2 pr-10">
+            <div className="flex items-center gap-2 pe-10">
               <OGDialogTitle className="text-base font-semibold">
                 {localize('com_ui_skills')}
               </OGDialogTitle>

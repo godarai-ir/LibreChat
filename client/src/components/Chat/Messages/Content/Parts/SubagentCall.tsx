@@ -421,7 +421,7 @@ export default function SubagentCall({
         data-subagent-parent-message={parentMessageId}
         data-subagent-part-index={partIndex}
         className={cn(
-          'border-border-light bg-surface-secondary my-2 flex w-full flex-col gap-1 rounded-lg border px-3 py-2 text-left transition',
+          'border-border-light bg-surface-secondary my-2 flex w-full flex-col gap-1 rounded-lg border px-3 py-2 text-start transition',
           canOpenDetails ? 'group' : 'cursor-default opacity-80',
           running && !detachedStatusUnknown && 'animate-pulse-slow',
         )}
@@ -495,13 +495,13 @@ export default function SubagentCall({
           {canOpenDetails && (
             <ChevronRight
               size={14}
-              className="text-text-secondary shrink-0 transition group-hover:translate-x-0.5"
+              className="text-text-secondary shrink-0 transition group-hover:translate-x-0.5 rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5"
               aria-hidden="true"
             />
           )}
         </div>
 
-        <ul className="text-text-secondary w-full space-y-0.5 pl-5 font-mono text-xs">
+        <ul className="text-text-secondary w-full space-y-0.5 ps-5 font-mono text-xs">
           {displayedTickerLines.length === 0 && running ? (
             <li className="truncate opacity-70">{localize('com_ui_subagent_waiting')}</li>
           ) : null}
@@ -631,7 +631,7 @@ function TickerLineView({ line }: { line: SubagentTickerLine }): JSX.Element {
       <li className="text-text-primary flex w-full items-baseline overflow-hidden">
         <span
           dir="rtl"
-          className="min-w-0 flex-1 overflow-hidden text-left text-ellipsis whitespace-nowrap"
+          className="min-w-0 flex-1 overflow-hidden text-start text-ellipsis whitespace-nowrap"
         >
           {line.body}
         </span>
@@ -644,7 +644,7 @@ function TickerLineView({ line }: { line: SubagentTickerLine }): JSX.Element {
         <span className="shrink-0">{localize('com_ui_subagent_ticker_reasoning')}:</span>
         <span
           dir="rtl"
-          className="min-w-0 flex-1 overflow-hidden text-left text-ellipsis whitespace-nowrap"
+          className="min-w-0 flex-1 overflow-hidden text-start text-ellipsis whitespace-nowrap"
         >
           {line.body}
         </span>
@@ -681,7 +681,7 @@ function TickerLineView({ line }: { line: SubagentTickerLine }): JSX.Element {
         <span className="text-text-tertiary shrink-0">→</span>
         <span
           dir="rtl"
-          className="min-w-0 flex-1 overflow-hidden text-left text-ellipsis whitespace-nowrap"
+          className="min-w-0 flex-1 overflow-hidden text-start text-ellipsis whitespace-nowrap"
         >
           {line.outputSnippet ?? localize('com_ui_subagent_ticker_tool_done')}
         </span>

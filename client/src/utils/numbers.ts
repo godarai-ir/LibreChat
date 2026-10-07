@@ -13,7 +13,11 @@
  * which unsets the value and falls back to the model/server default.
  */
 export function sanitizeIntegerInput(value: string, allowNegative = false): string {
-  const digits = value.replace(/\D/g, '');
+  // Persian and Arabic keyboards type their own digits; fold them to ASCII first.
+  const digits = value
+    .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0))
+    .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660))
+    .replace(/\D/g, '');
   if (allowNegative && value.trimStart().startsWith('-')) {
     return `-${digits}`;
   }

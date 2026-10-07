@@ -376,7 +376,7 @@ html.high-contrast.dark .btn-neutral:hover {
     background-position: right 0.5rem center;
     background-repeat: no-repeat;
     background-size: 1.5em 1.5em;
-    padding-right: 2.5rem;
+    padding-inline-end: 2.5rem;
     background-color: #fff;
     border-color: #8e8ea0;
     border-radius: 0;
@@ -384,6 +384,10 @@ html.high-contrast.dark .btn-neutral:hover {
     font-size: 1rem;
     line-height: 1.5rem;
   }
+}
+
+[dir='rtl'] select {
+  background-position: left 0.5rem center;
 }
 
 .reset-rc-number-input input {
@@ -566,15 +570,15 @@ p > small {
   margin-top: 0.8em;
 }
 .prose :where(blockquote):not(:where([class~='not-prose'] *)) {
-  border-left-color: var(--tw-prose-quote-borders);
-  border-left-width: 0.25rem;
+  border-inline-start-color: var(--tw-prose-quote-borders);
+  border-inline-start-width: 0.25rem;
   color: var(--tw-prose-quotes);
   font-style: italic;
   font-style: normal;
   font-weight: 500;
   margin-bottom: 1.6em;
   margin-top: 1.6em;
-  padding-left: 1em;
+  padding-inline-start: 1em;
   quotes: '\201C' '\201D' '\2018' '\2019';
 }
 .prose :where(blockquote p:first-of-type):not(:where([class~='not-prose'] *)):before {
@@ -709,7 +713,7 @@ p > small {
   margin-bottom: 2em;
   margin-top: 2em;
   table-layout: auto;
-  text-align: left;
+  text-align: start;
   width: 100%;
 }
 .prose :where(thead):not(:where([class~='not-prose'] *)) {
@@ -720,8 +724,8 @@ p > small {
   color: var(--tw-prose-headings);
   font-weight: 600;
   padding-bottom: 0.5714286em;
-  padding-left: 0.5714286em;
-  padding-right: 0.5714286em;
+  padding-inline-start: 0.5714286em;
+  padding-inline-end: 0.5714286em;
   vertical-align: bottom;
 }
 .prose :where(tbody tr):not(:where([class~='not-prose'] *)) {
@@ -798,7 +802,7 @@ p > small {
   margin-top: 0.5em;
 }
 .prose :where(ul > li):not(:where([class~='not-prose'] *)) {
-  padding-left: 0.375em;
+  padding-inline-start: 0.375em;
 }
 .prose :where(.prose > ul > li p):not(:where([class~='not-prose'] *)) {
   margin-bottom: 0.75em;
@@ -830,19 +834,19 @@ p > small {
   margin-top: 0.4em;
 }
 .prose :where(thead th:first-child):not(:where([class~='not-prose'] *)) {
-  padding-left: 0;
+  padding-inline-start: 0;
 }
 .prose :where(thead th:last-child):not(:where([class~='not-prose'] *)) {
-  padding-right: 0;
+  padding-inline-end: 0;
 }
 .prose :where(tbody td, tfoot td):not(:where([class~='not-prose'] *)) {
   padding: 0.5714286em;
 }
 .prose :where(tbody td:first-child, tfoot td:first-child):not(:where([class~='not-prose'] *)) {
-  padding-left: 0;
+  padding-inline-start: 0;
 }
 .prose :where(tbody td:last-child, tfoot td:last-child):not(:where([class~='not-prose'] *)) {
-  padding-right: 0;
+  padding-inline-end: 0;
 }
 .prose :where(.prose > :first-child):not(:where([class~='not-prose'] *)) {
   margin-top: 0;
@@ -897,6 +901,8 @@ pre[class*='language-'] {
   font-size: 0.85rem;
   line-height: 1.5;
   tab-size: 4;
+  direction: ltr;
+  unicode-bidi: isolate;
   text-align: left;
   white-space: pre;
   word-break: normal;
@@ -1236,9 +1242,9 @@ html[data-drawer-nav] body {
 .markdown blockquote {
   --tw-border-opacity: 1;
   border-color: rgb(var(--prose-quote-bar));
-  border-left-width: 2px;
+  border-inline-start-width: 2px;
   line-height: 1rem;
-  padding-left: 1rem;
+  padding-inline-start: 1rem;
 }
 
 .markdown table {
@@ -1252,37 +1258,37 @@ html[data-drawer-nav] body {
 .markdown th {
   background-color: rgb(var(--table-header-fill));
   border-bottom-width: 1px;
-  border-left-width: 1px;
+  border-inline-start-width: 1px;
   border-top-width: 1px;
   padding: 0.25rem 0.75rem;
 }
 
 .markdown th:first-child {
-  border-top-left-radius: 0.375rem;
+  border-start-start-radius: 0.375rem;
 }
 
 .markdown th:last-child {
-  border-right-width: 1px;
+  border-inline-end-width: 1px;
   border-color: rgb(var(--border-medium));
-  border-top-right-radius: 0.375rem;
+  border-start-end-radius: 0.375rem;
 }
 
 .markdown td {
   border-bottom-width: 1px;
-  border-left-width: 1px;
+  border-inline-start-width: 1px;
   padding: 0.25rem 0.75rem;
 }
 
 .markdown td:last-child {
-  border-right-width: 1px;
+  border-inline-end-width: 1px;
 }
 
 .markdown tbody tr:last-child td:first-child {
-  border-bottom-left-radius: 0.375rem;
+  border-end-start-radius: 0.375rem;
 }
 
 .markdown tbody tr:last-child td:last-child {
-  border-bottom-right-radius: 0.375rem;
+  border-end-end-radius: 0.375rem;
 }
 
 /* The column rules take the inset share of the border-medium edge, so a theme that draws no inset
@@ -1402,9 +1408,9 @@ html {
 .markdown blockquote {
   --tw-border-opacity: 1;
   border-color: rgb(var(--prose-quote-bar));
-  border-left-width: 2px;
+  border-inline-start-width: 2px;
   line-height: 1rem;
-  padding-left: 1rem;
+  padding-inline-start: 1rem;
 }
 .markdown table {
   --tw-border-spacing-x: 0px;
@@ -1418,34 +1424,34 @@ html {
   background-color: rgb(var(--table-header-fill));
   color: rgb(var(--table-header-text));
   border-bottom-width: 1px;
-  border-left-width: 1px;
+  border-inline-start-width: 1px;
   border-top-width: 1px;
   border-color: rgb(var(--border-medium));
   padding: 0.25rem 0.75rem;
   font-weight: 600;
 }
 .markdown th:first-child {
-  border-top-left-radius: var(--theme-control-radius, 0.75rem);
+  border-start-start-radius: var(--theme-control-radius, 0.75rem);
 }
 .markdown th:last-child {
-  border-right-width: 1px;
-  border-top-right-radius: var(--theme-control-radius, 0.75rem);
+  border-inline-end-width: 1px;
+  border-start-end-radius: var(--theme-control-radius, 0.75rem);
 }
 .markdown td {
   border-bottom-width: 1px;
-  border-left-width: 1px;
+  border-inline-start-width: 1px;
   border-color: rgb(var(--border-medium));
   padding: 0.25rem 0.75rem;
 }
 .markdown td:last-child {
-  border-right-width: 1px;
+  border-inline-end-width: 1px;
   border-color: rgb(var(--border-medium));
 }
 .markdown tbody tr:last-child td:first-child {
-  border-bottom-left-radius: var(--theme-control-radius, 0.75rem);
+  border-end-start-radius: var(--theme-control-radius, 0.75rem);
 }
 .markdown tbody tr:last-child td:last-child {
-  border-bottom-right-radius: var(--theme-control-radius, 0.75rem);
+  border-end-end-radius: var(--theme-control-radius, 0.75rem);
 }
 .markdown a {
   text-decoration-line: underline;
@@ -1649,7 +1655,7 @@ html {
     Noto Sans,
     sans-serif;
   line-height: normal;
-  margin-left: 0.25rem;
+  margin-inline-start: 0.25rem;
   vertical-align: middle;
   font-size: 0.5rem;
 }
@@ -1669,7 +1675,7 @@ html {
       Noto Sans,
       sans-serif;
     line-height: normal;
-    margin-left: 0.25rem;
+    margin-inline-start: 0.25rem;
     vertical-align: middle;
     font-size: 0.5rem;
     display: inline-block;
@@ -1694,7 +1700,7 @@ html {
       Noto Sans,
       sans-serif;
     line-height: normal;
-    margin-left: 0.25rem;
+    margin-inline-start: 0.25rem;
     vertical-align: middle;
     font-size: 0.5rem;
     display: inline-block;
@@ -1793,7 +1799,7 @@ html {
   list-style-position: outside;
   margin-top: 1em;
   margin-bottom: 1em;
-  padding-left: 1em;
+  padding-inline-start: 1em;
 }
 
 .prose li,
@@ -1811,7 +1817,7 @@ html {
 .prose ol > li,
 .markdown ol > li {
   position: relative;
-  padding-left: 0.375em;
+  padding-inline-start: 0.375em;
 }
 
 .prose ol > li::marker,
@@ -1839,7 +1845,7 @@ html {
 
 .prose ul > li,
 .markdown ul > li {
-  padding-left: 0.375em;
+  padding-inline-start: 0.375em;
 }
 
 .prose ul > li::marker,
@@ -2193,6 +2199,10 @@ html[data-input-modality='keyboard']
 .animate-popover-left[data-enter] {
   opacity: 1;
   transform: scale(1) translateX(0);
+}
+[dir='rtl'] .animate-popover-left:not([data-enter]) {
+  transform-origin: right;
+  transform: scale(0.95) translateX(0.5rem);
 }
 
 /* Corners */
@@ -2571,4 +2581,27 @@ html[data-input-modality='keyboard']
    question card, so the card travels behind the ChatForm, not over it. */
 ::view-transition-group(chat-form) {
   z-index: 2;
+}
+
+/* Addresses, links and secrets read left to right on any page. An empty field keeps the
+ * page direction so a translated placeholder still sits at the start edge. */
+@layer base {
+  [dir='rtl']
+    :is(input[type='email'], input[type='url'], input[type='password']):not(:placeholder-shown) {
+    direction: ltr;
+  }
+
+  /* Free text follows its own script, paragraph by paragraph, so an English prompt or
+   * name typed into an RTL page starts at the left. A field with an explicit `dir`
+   * (the composer, the message editors) keeps the direction it was given. */
+  [dir='rtl']
+    :is(textarea, input:not([type]), input[type='text'], input[type='search']):not([dir]) {
+    unicode-bidi: plaintext;
+  }
+}
+
+/* react-virtualized writes `direction: ltr` inline on every Grid for its horizontal scroll
+ * math. Every list here scrolls vertically only, so the rows can follow the page direction. */
+[dir='rtl'] .ReactVirtualized__Grid {
+  direction: inherit !important;
 }

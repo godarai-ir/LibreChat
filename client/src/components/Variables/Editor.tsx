@@ -105,7 +105,7 @@ export default function VariableEditor({
           {label}
         </Label>
         {/* `ml-auto` keeps the actions right-aligned when the label is visually hidden. */}
-        <div className="ml-auto flex items-center gap-0.5">
+        <div className="ms-auto flex items-center gap-0.5">
           {showVariables && (
             <DropdownPopup
               portal={portal}
@@ -165,8 +165,8 @@ export default function VariableEditor({
           className="flex h-[85vh] max-h-[85vh] w-11/12 max-w-6xl flex-col gap-4 p-6"
           showCloseButton={false}
         >
-          <OGDialogHeader className="mb-2 pr-14">
-            <OGDialogTitle className="text-left text-2xl font-semibold">{label}</OGDialogTitle>
+          <OGDialogHeader className="mb-2 pe-14">
+            <OGDialogTitle className="text-start text-2xl font-semibold">{label}</OGDialogTitle>
           </OGDialogHeader>
           <Textarea
             value={value}

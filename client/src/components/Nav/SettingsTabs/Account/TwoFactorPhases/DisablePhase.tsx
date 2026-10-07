@@ -67,7 +67,7 @@ export const DisablePhase: React.FC<DisablePhaseProps> = ({ onDisable, isDisabli
         disabled={isDisabling || !(useBackup ? isBackupCode(token) : token.length === 6)}
         className="w-full rounded-xl px-6 py-3 transition-all disabled:opacity-50"
       >
-        {isDisabling && <Spinner className="mr-2" />}
+        {isDisabling && <Spinner className="me-2" />}
         {isDisabling ? localize('com_ui_disabling') : localize('com_ui_2fa_disable')}
       </Button>
       <Button type="button" variant="link" onClick={() => setUseBackup(!useBackup)} size="bare">

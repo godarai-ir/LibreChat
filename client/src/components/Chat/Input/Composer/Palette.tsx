@@ -35,7 +35,7 @@ import { useMCPRefresh } from '~/hooks/MCP/useMCPRefresh';
 import { isMacPlatform } from '~/utils/shortcuts';
 import { useBadgeRowContext } from '~/Providers';
 import { composerLiftFamily } from './state';
-import { useLocalize } from '~/hooks';
+import { useLocalize, useCalendar } from '~/hooks';
 import Catalog from './Catalog';
 
 const HEADER_HEIGHT = 26;
@@ -123,12 +123,12 @@ function scoreEntry(label: string, description: string | undefined, query: strin
 }
 
 /** The file's own date, in the user's locale, as the row's second line. */
-function formatFileDate(file: TFile): string {
+function formatFileDate(file: TFile, locale?: string): string {
   const raw = file.updatedAt ?? file.createdAt;
   if (raw == null) {
     return '';
   }
-  return new Date(raw).toLocaleDateString(undefined, {
+  return new Date(raw).toLocaleDateString(locale, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -214,6 +214,7 @@ function Palette({
   anchorRef,
 }: PaletteProps) {
   const localize = useLocalize();
+  const { dateLocale } = useCalendar();
   /* Ariakit owns the open state rather than a controlled `open`/`setOpen` pair:
      with the controlled form, hide-on-interact-outside fired on mousedown and
      the disclosure's own click re-opened it, so clicking `+` while the palette
@@ -927,7 +928,7 @@ function Palette({
               <button
                 type="button"
                 tabIndex={-1}
-                className="flex h-full w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 text-left"
+                className="flex h-full w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 text-start"
               >
                 <ChevronDown
                   aria-hidden="true"
@@ -969,7 +970,7 @@ function Palette({
               <button
                 type="button"
                 tabIndex={-1}
-                className="flex h-full w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 text-left"
+                className="flex h-full w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 text-start"
               >
                 {/* The wrapper carries the fallback tile color; the image itself
                     hides on error so an unreachable thumbnail (remote storage,
@@ -1003,7 +1004,7 @@ function Palette({
                 <span className="flex min-w-0 flex-1 flex-col justify-center">
                   <span className="truncate">{file.filename}</span>
                   <span className="text-text-secondary truncate text-xs">
-                    {formatFileDate(file)}
+                    {formatFileDate(file, dateLocale)}
                   </span>
                 </span>
               </button>
@@ -1056,7 +1057,7 @@ function Palette({
             {checked && (
               <span
                 aria-hidden="true"
-                className="bg-text-primary absolute inset-y-1 left-0 w-0.5 rounded-full"
+                className="bg-text-primary absolute inset-y-1 start-0 w-0.5 rounded-full"
               />
             )}
             <button
@@ -1066,7 +1067,7 @@ function Palette({
               aria-label={
                 favorited ? `${label}, ${localize('com_ui_tools_view_favorites')}` : undefined
               }
-              className="flex h-full min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-lg px-2 text-left"
+              className="flex h-full min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-lg px-2 text-start"
             >
               <span className="relative flex shrink-0" aria-hidden="true">
                 {icon}
@@ -1076,7 +1077,7 @@ function Palette({
                      out of the glyph. */
                   <span
                     className={cn(
-                      'border-presentation absolute -right-1 -bottom-1 size-2.5 rounded-full border-2',
+                      'border-presentation absolute -end-1 -bottom-1 size-2.5 rounded-full border-2',
                       status.tone,
                     )}
                   />
@@ -1139,7 +1140,7 @@ function Palette({
             </div>
           )}
           {canFavorite && (
-            <div role="gridcell" className="flex shrink-0 items-center pr-1">
+            <div role="gridcell" className="flex shrink-0 items-center pe-1">
               <span className={ROW_ACTION_REVEAL}>
                 <IconButton
                   size="xs"

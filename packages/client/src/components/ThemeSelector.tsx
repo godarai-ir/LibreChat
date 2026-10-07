@@ -175,7 +175,7 @@ const ThemeSelector = ({ returnThemeOnly }: { returnThemeOnly?: boolean }): JSX.
 
   return (
     <div className="flex flex-col items-center justify-center bg-surface-primary pt-6 sm:pt-0">
-      <div className="absolute bottom-0 left-0 m-4 flex items-center">
+      <div className="absolute bottom-0 start-0 m-4 flex items-center">
         <Theme theme={theme} highContrast={highContrast} onChange={changeScheme} />
         <ContrastToggle theme={theme} highContrast={highContrast} onChange={changeContrast} />
       </div>

@@ -3,8 +3,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { TooltipAnchor } from '@librechat/client';
 import { Zap, Circle, CheckCircle2 } from 'lucide-react';
 import type { TPrompt, TPromptGroup } from 'librechat-data-provider';
-import { useLocalize, useClockFormat } from '~/hooks';
-import { cn } from '~/utils';
+import { useLocalize, useClockFormat, useCalendar } from '~/hooks';
+import { cn, formatTimeAgo } from '~/utils';
 
 const VersionBadge = ({
   type,
@@ -76,6 +76,7 @@ const VersionCard = ({
 }) => {
   const localize = useLocalize();
   const hour12 = useClockFormat();
+  const { dateLocale } = useCalendar();
   const versionNumber = totalVersions - index;
 
   return (
@@ -105,7 +106,7 @@ const VersionCard = ({
       <button
         type="button"
         className={cn(
-          'group mb-2 ml-2 flex flex-1 flex-col rounded-lg border p-3 text-left',
+          'group mb-2 ms-2 flex flex-1 flex-col rounded-lg border p-3 text-start',
           isSelected
             ? 'border-status-success-border bg-status-success-subtle'
             : 'border-border-medium bg-transparent hover:border-border-heavy hover:bg-surface-hover',
@@ -143,9 +144,11 @@ const VersionCard = ({
         <time
           className="mt-1 text-xs text-text-secondary"
           dateTime={prompt.createdAt}
-          title={new Date(prompt.createdAt).toLocaleString(undefined, { hour12 })}
+          title={new Date(prompt.createdAt).toLocaleString(dateLocale, { hour12 })}
         >
-          {formatDistanceToNow(new Date(prompt.createdAt), { addSuffix: true })}
+          {dateLocale != null
+            ? formatTimeAgo(new Date(prompt.createdAt), dateLocale)
+            : formatDistanceToNow(new Date(prompt.createdAt), { addSuffix: true })}
         </time>
       </button>
     </li>

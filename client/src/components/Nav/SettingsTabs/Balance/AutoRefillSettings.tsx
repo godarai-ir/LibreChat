@@ -8,7 +8,7 @@ import type {
 } from 'librechat-data-provider';
 import type { TranslationKeys } from '~/hooks';
 
-import { useLocalize, useClockFormat } from '~/hooks';
+import { useLocalize, useClockFormat, useCalendar } from '~/hooks';
 
 function ensureExhaustive(value: never): void {
   void value;
@@ -35,6 +35,7 @@ const AutoRefillSettings: React.FC<AutoRefillSettingsProps> = ({
 }) => {
   const localize = useLocalize();
   const hour12 = useClockFormat();
+  const { dateLocale } = useCalendar();
   const reset = refillMode === 'reset';
 
   const lastRefillDate = lastRefill ? new Date(lastRefill) : null;
@@ -79,7 +80,7 @@ const AutoRefillSettings: React.FC<AutoRefillSettingsProps> = ({
         <span>
           {localize(reset ? 'com_nav_balance_last_reset' : 'com_nav_balance_last_refill')}
         </span>
-        <span>{lastRefillDate ? lastRefillDate.toLocaleString(undefined, { hour12 }) : '-'}</span>
+        <span>{lastRefillDate ? lastRefillDate.toLocaleString(dateLocale, { hour12 }) : '-'}</span>
       </div>
       {refillAmount != null && (
         <div className="mb-1 flex justify-between text-sm">
@@ -110,7 +111,7 @@ const AutoRefillSettings: React.FC<AutoRefillSettingsProps> = ({
         </div>
 
         <span className="text-text-primary text-sm font-medium" role="note">
-          {nextRefill ? nextRefill.toLocaleString(undefined, { hour12 }) : '-'}
+          {nextRefill ? nextRefill.toLocaleString(dateLocale, { hour12 }) : '-'}
         </span>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as SliderPrimitive from '@radix-ui/react-slider';
-import { cn, disabledFillClasses } from '~/utils';
+import { cn, isDocumentRTL, disabledFillClasses } from '~/utils';
 
 type SliderProps = React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root> & {
   className?: string;
@@ -29,6 +29,8 @@ const Slider: React.ForwardRefExoticComponent<SliderProps & React.RefAttributes<
     ) => (
       <SliderPrimitive.Root
         ref={ref}
+        /* This primitive bundles its own direction context, so the app's provider misses it. */
+        dir={isDocumentRTL() ? 'rtl' : 'ltr'}
         {...props}
         {...{
           className: cn(

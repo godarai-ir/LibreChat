@@ -206,13 +206,22 @@ export const getFileType = (
  * Format a date string to a human readable format
  * @example
  * formatDate('2020-01-01T00:00:00.000Z') // '1 Jan 2020'
+ *
+ * A `locale` (from the calendar setting) formats through `Intl` instead, whose
+ * month names follow the UI language and calendar rather than English.
  */
-export function formatDate(dateString: string, isSmallScreen = false) {
+export function formatDate(dateString: string, isSmallScreen = false, locale?: string) {
   if (!dateString) {
     return '';
   }
 
   const date = new Date(dateString);
+
+  if (locale != null) {
+    return isSmallScreen
+      ? date.toLocaleDateString(locale, { month: 'numeric', day: 'numeric', year: '2-digit' })
+      : date.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
+  }
 
   if (isSmallScreen) {
     return date.toLocaleDateString('en-US', {

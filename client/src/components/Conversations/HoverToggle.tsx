@@ -7,7 +7,7 @@ const HoverToggle = ({
   isActiveConvo,
   isPopoverActive,
   setIsPopoverActive,
-  className = 'absolute bottom-0 right-0 top-0',
+  className = 'absolute bottom-0 end-0 top-0',
   onClick,
 }: {
   children: React.ReactNode;
@@ -23,7 +23,7 @@ const HoverToggle = ({
       <div
         onClick={onClick}
         className={cn(
-          'peer text-text-primary items-center gap-1.5 rounded-r-lg pr-2 pl-2',
+          'peer text-text-primary items-center gap-1.5 rounded-e-lg pe-2 ps-2',
           isPopoverActive || isActiveConvo ? 'flex' : 'hidden group-hover:flex',
           isActiveConvo
             ? 'from-surface-secondary group-hover:from-surface-nav-selected from-85% to-transparent group-hover:bg-gradient-to-l'

@@ -75,7 +75,7 @@ const AssistantConversationStarters: React.FC<AssistantConversationStartersProps
             ref={(el) => (inputRefs.current[0] = el)}
             value={newStarter}
             maxLength={64}
-            className={`${inputClass} pr-10`}
+            className={`${inputClass} pe-10`}
             type="text"
             placeholder={
               hasReachedMax
@@ -108,7 +108,7 @@ const AssistantConversationStarters: React.FC<AssistantConversationStartersProps
                   ...transitionStyles[state as keyof typeof transitionStyles],
                   transition: state === 'entering' ? 'none' : defaultStyle.transition,
                 }}
-                className="absolute right-1 top-1"
+                className="absolute end-1 top-1"
               >
                 <TooltipAnchor
                   side="top"
@@ -134,7 +134,7 @@ const AssistantConversationStarters: React.FC<AssistantConversationStartersProps
                 newValue[index] = e.target.value;
                 field.onChange(newValue);
               }}
-              className={`${inputClass} pr-10`}
+              className={`${inputClass} pe-10`}
               type="text"
               maxLength={64}
             />
@@ -142,7 +142,7 @@ const AssistantConversationStarters: React.FC<AssistantConversationStartersProps
               side="top"
               description={localize('com_ui_delete')}
               aria-label={localize('com_ui_delete')}
-              className="absolute right-1 top-1 flex size-7 items-center justify-center rounded-lg transition-colors duration-200 hover:bg-surface-hover"
+              className="absolute end-1 top-1 flex size-7 items-center justify-center rounded-lg transition-colors duration-200 hover:bg-surface-hover"
               onClick={() => handleDeleteStarter(index)}
             >
               <X className="size-4" aria-hidden="true" />

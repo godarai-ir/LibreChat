@@ -18,7 +18,7 @@ import {
   TooltipAnchor,
 } from '@librechat/client';
 import type { TPasskey } from 'librechat-data-provider';
-import { useLocalize } from '~/hooks';
+import { useLocalize, useCalendar } from '~/hooks';
 
 const MAX_NAME_LENGTH = 60;
 
@@ -27,12 +27,12 @@ const focusOnMount = (input: HTMLInputElement | null): void => {
   input?.select();
 };
 
-const formatDate = (value: string | null): string | null => {
+const formatDate = (value: string | null, locale?: string): string | null => {
   if (value == null || value === '') {
     return null;
   }
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.toLocaleDateString();
+  return Number.isNaN(date.getTime()) ? null : date.toLocaleDateString(locale);
 };
 
 /** Restores focus to the rename control after the inline editor unmounts. */
@@ -69,6 +69,7 @@ function PasskeyItem({
   onDelete,
 }: PasskeyItemProps) {
   const localize = useLocalize();
+  const { dateLocale } = useCalendar();
   const [draftName, setDraftName] = useState(passkey.name);
   const [isConfirming, setIsConfirming] = useState(false);
   const [password, setPassword] = useState('');
@@ -86,8 +87,8 @@ function PasskeyItem({
   const passwordFieldId = `${rowId}-password`;
   const passwordErrorId = `${rowId}-password-error`;
 
-  const added = formatDate(passkey.createdAt);
-  const lastUsed = formatDate(passkey.lastUsedAt);
+  const added = formatDate(passkey.createdAt, dateLocale);
+  const lastUsed = formatDate(passkey.lastUsedAt, dateLocale);
 
   const beginRename = useCallback(() => {
     setDraftName(passkey.name);
