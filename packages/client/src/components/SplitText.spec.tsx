@@ -33,14 +33,6 @@ describe('SplitText', () => {
     }
   });
 
-  it('animates joining scripts a word at a time so their letters stay connected', () => {
-    const { container } = render(<SplitText text="سلام دنیا Hi" />);
-    const letters = Array.from(container.querySelectorAll('p > span > span.inline-block')).map(
-      (span) => span.textContent,
-    );
-    expect(letters).toEqual(['سلام', 'دنیا', 'H', 'i']);
-  });
-
   it.each([
     ['rtl', 'Welcome to reeva::chat', ['Welcome', 'to', 'reeva::chat']],
     ['ltr', 'שלום עולם', ['שלום', 'עולם']],
@@ -70,6 +62,22 @@ describe('SplitText', () => {
     } finally {
       document.documentElement.dir = previousDir;
     }
+  });
+
+  it.each([
+    ['a joining script', 'سلام روح‌الله'],
+    ['a right-to-left name in a left-to-right greeting', 'Good evening, דוד כהן?'],
+    ['a left-to-right name in a Persian greeting', 'عصر بخیر، John?'],
+  ])('keeps text with %s in one run so it shapes and reorders', (_case, text) => {
+    const { container } = render(<SplitText text={text} />);
+    const visible = container.querySelectorAll('p > span[aria-hidden="true"]');
+
+    expect(visible).toHaveLength(1);
+    expect(visible[0]).toHaveTextContent(text, { normalizeWhitespace: false });
+    const runs = visible[0].querySelectorAll('span');
+    expect(runs).toHaveLength(1);
+    expect(runs[0].textContent).toBe(text);
+    expect(container.querySelector('.sr-only')).toHaveTextContent(text);
   });
 
   it('reports new wrapping after scale changes without changing the text', () => {
