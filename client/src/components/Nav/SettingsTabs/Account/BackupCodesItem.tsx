@@ -132,7 +132,10 @@ const BackupCodesItem: React.FC = () => {
                     });
                     if (isUsed) {
                       description = usedOn
-                        ? localize('com_ui_backup_code_used_label', { number: index + 1, date: usedOn })
+                        ? localize('com_ui_backup_code_used_label', {
+                            number: index + 1,
+                            date: usedOn,
+                          })
                         : localize('com_ui_backup_code_used_unknown_label', { number: index + 1 });
                     }
 
@@ -228,7 +231,6 @@ const BackupCodesItem: React.FC = () => {
                       onChange={setOtpToken}
                       maxLength={6}
                       pattern={REGEXP_ONLY_DIGITS}
-                      className="gap-2"
                     >
                       <>
                         <InputOTPGroup>

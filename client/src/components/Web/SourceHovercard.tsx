@@ -73,8 +73,9 @@ function FileHovercardContent({
         <FileText className="text-text-secondary size-4 shrink-0" aria-hidden="true" />
         <Button
           variant="link"
+          size="bare"
           onClick={onClick}
-          className="h-auto min-w-0 justify-start truncate p-0 font-medium"
+          className="min-w-0 justify-start truncate font-medium"
         >
           {fileName}
         </Button>
@@ -182,7 +183,7 @@ export function SourceHovercard({
                 ) : (
                   <>
                     <div className="mb-1.5 overflow-hidden text-sm">
-                      <FaviconImage domain={domain} className="float-start mt-0.5 me-2" />
+                      <FaviconImage domain={domain} className="float-start me-2 mt-0.5" />
                       <span className="text-text-secondary float-end ms-2 max-w-[40%] truncate text-xs">
                         {domain}
                       </span>

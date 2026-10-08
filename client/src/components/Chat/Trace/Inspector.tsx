@@ -96,7 +96,7 @@ function RecordContent({
       <>
         {placeholder}
         <div className="flex justify-center py-4" role="status">
-          <Spinner className="text-text-secondary size-4" />
+          <Spinner tone="secondary" className="size-4" />
           <span className="sr-only">{localize('com_ui_trace_loading')}</span>
         </div>
       </>
@@ -193,7 +193,7 @@ function AgentCard({ agent, agentId }: { agent: RecordPresentation['agent']; age
       {agent == null && (
         <p className="text-text-secondary text-sm">{localize('com_ui_trace_agent_unavailable')}</p>
       )}
-      <div className="border-border-light bg-surface-primary-alt flex items-center gap-1 rounded-lg border py-0.5 pe-0.5 ps-2.5">
+      <div className="border-border-light bg-surface-primary-alt flex items-center gap-1 rounded-lg border py-0.5 ps-2.5 pe-0.5">
         <span className="text-text-secondary min-w-0 flex-1 truncate font-mono text-xs select-all">
           {agentId}
         </span>

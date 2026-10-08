@@ -77,7 +77,7 @@ export default function McpOAuthDialog({
            * open smoothly without a hardcoded height, matching MCPToolItem. */}
           <div
             className={cn(
-              'grid transition-[grid-template-rows] [transition-duration:var(--resize-dur)] [transition-timing-function:var(--resize-ease)] motion-reduce:transition-none',
+              'grid transition-all duration-(--resize-dur) ease-(--resize-ease) motion-reduce:transition-none',
               showQR ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
             )}
           >
@@ -126,7 +126,7 @@ export default function McpOAuthDialog({
                   copyUrl(setIsCopying);
                 }
               }}
-              className="absolute top-1/2 end-1 -translate-y-1/2"
+              className="absolute end-1 top-1/2 -translate-y-1/2"
             />
           </div>
 

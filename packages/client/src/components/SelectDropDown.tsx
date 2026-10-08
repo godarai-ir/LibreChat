@@ -119,7 +119,7 @@ function SelectDropDown({
                   }
                 }}
                 className={cn(
-                  'border-border-control bg-surface-secondary focus-visible:ring-focus-control disabled:bg-surface-secondary relative flex w-full cursor-default flex-col rounded-md border py-2 pe-10 ps-3 text-start focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden sm:text-sm',
+                  'border-border-control bg-surface-secondary focus-visible:ring-focus-control disabled:bg-surface-secondary relative flex w-full cursor-default flex-col rounded-md border py-2 ps-3 pe-10 text-start focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden sm:text-sm',
                   disabledFillClasses,
                   className ?? '',
                 )}
@@ -193,7 +193,7 @@ function SelectDropDown({
               >
                 <ListboxOptions
                   className={cn(
-                    'border-border-light bg-surface-secondary absolute z-10 mt-2 max-h-60 w-full overflow-auto rounded border text-xs md:w-[100%]',
+                    'border-border-light bg-surface-secondary absolute z-10 mt-2 max-h-60 w-full overflow-auto rounded-sm border text-xs md:w-[100%]',
                     optionsListClass ?? '',
                   )}
                 >
@@ -202,7 +202,7 @@ function SelectDropDown({
                       key={'listbox-render-option'}
                       value={null}
                       className={cn(
-                        'group text-text-primary hover:bg-surface-hover relative flex h-[2.625rem] cursor-pointer items-center overflow-hidden pe-9 ps-3 select-none',
+                        'group text-text-primary hover:bg-surface-hover relative flex h-[2.625rem] cursor-pointer items-center overflow-hidden ps-3 pe-9 select-none',
                         optionsClass ?? '',
                       )}
                     >
@@ -231,7 +231,7 @@ function SelectDropDown({
                         value={option}
                         className={({ active }) =>
                           cn(
-                            'group text-text-primary hover:bg-surface-hover relative flex h-[2.625rem] cursor-pointer items-center overflow-hidden pe-9 ps-3 select-none',
+                            'group text-text-primary hover:bg-surface-hover relative flex h-[2.625rem] cursor-pointer items-center overflow-hidden ps-3 pe-9 select-none',
                             active ? 'bg-surface-active text-text-primary' : '',
                             optionsClass ?? '',
                           )

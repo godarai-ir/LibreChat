@@ -130,7 +130,7 @@ function EmptyState({ message }: { message: string }) {
 function LoadingState({ message }: { message: string }) {
   return (
     <Panel className="flex min-h-52 flex-col items-center justify-center gap-3">
-      <Spinner className="text-text-secondary size-7" />
+      <Spinner tone="secondary" className="size-7" />
       <span className="text-text-secondary text-sm">{message}</span>
     </Panel>
   );
@@ -312,9 +312,7 @@ function TopUsersTable({
                 <th className="px-2 py-2 text-end font-medium">
                   {localize('com_insights_messages')}
                 </th>
-                <th className="px-2 py-2 text-end font-medium">
-                  {localize('com_insights_chats')}
-                </th>
+                <th className="px-2 py-2 text-end font-medium">{localize('com_insights_chats')}</th>
               </tr>
             </thead>
             <tbody className="divide-border-light divide-y">
@@ -449,11 +447,11 @@ function LatestConversations({
           <h2 className="text-base font-semibold">
             {localize('com_insights_latest_conversations')}
           </h2>
-          {isFetching && <Spinner className="text-text-secondary size-4" />}
+          {isFetching && <Spinner tone="secondary" className="size-4" />}
         </div>
         <div className="relative w-full sm:max-w-md">
           <Search
-            className="text-text-secondary pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2"
+            className="text-text-secondary pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2"
             aria-hidden="true"
           />
           <Input
@@ -827,7 +825,7 @@ export default function InsightsView() {
                 variant="ghost"
                 aria-pressed={!customDateRange && range === item.value}
                 className={cn(
-                  'h-8 rounded-md px-3',
+                  'h-8 rounded-md',
                   !customDateRange && range === item.value && 'bg-surface-active-alt',
                 )}
                 onClick={() => {

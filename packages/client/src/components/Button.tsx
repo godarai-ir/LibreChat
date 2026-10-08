@@ -15,11 +15,19 @@ type ButtonVariantOptions =
         | 'submit'
         | 'outline'
         | 'outline-toggle'
+        | 'floating'
         | 'choice'
         | 'subtle'
         | 'destructive'
+        | 'destructive-soft'
         | 'secondary'
         | 'ghost'
+        | 'quiet'
+        | 'message-action'
+        | 'inline-link'
+        | 'carousel-nav'
+        | 'toolbar'
+        | 'nav'
         | 'media'
         | 'row-action'
         | 'row-action-reveal'
@@ -66,9 +74,23 @@ const buttonVariantRecipe = cva(
         default:
           'bg-button-primary text-text-inverted hover:bg-button-primary-hover hover:active:bg-surface-inverted-pressed',
         destructive:
+          'bg-surface-destructive text-text-on-status hover:bg-surface-destructive-hover',
+        /**
+         * A destructive action offered inline, such as a row's delete or a revoke beside its
+         * label. A theme whose `destructiveStyle` is `soft` tints it; the confirming button of a
+         * destructive dialog stays `destructive`, the strongest action on screen.
+         */
+        'destructive-soft':
           'bg-surface-destructive text-text-on-status hover:bg-surface-destructive-hover theme-destructive-soft:bg-surface-destructive/10 theme-destructive-soft:text-text-destructive theme-destructive-soft:hover:bg-surface-destructive/14 theme-destructive-soft:hover:active:bg-surface-destructive/17',
         outline:
           'text-text-primary border border-border-light bg-transparent hover:bg-surface-hover hover:active:bg-surface-pressed hover:text-text-primary',
+        /**
+         * A control floating over scrolling content, such as the scroll-to-bottom chip. A theme that
+         * draws no chrome outline gives it an opaque fill and a lift instead, so it never reads as a
+         * bare glyph over the thread.
+         */
+        floating:
+          'border border-border-chrome bg-surface-chat/90 text-text-primary hover:bg-surface-hover hover:active:bg-surface-pressed theme-chrome-quiet:bg-surface-chat theme-chrome-quiet:shadow-md theme-chrome-quiet:hover:bg-surface-hover theme-chrome-quiet:hover:active:bg-surface-pressed',
         /** An outlined filter whose pressed state stays visible between activations. */
         'outline-toggle':
           'text-text-primary border border-border-control bg-transparent transition-none hover:bg-surface-hover hover:active:bg-surface-pressed hover:text-text-primary aria-pressed:border-border-heavy aria-pressed:bg-surface-active-alt aria-pressed:hover:bg-surface-active-alt',
@@ -87,6 +109,26 @@ const buttonVariantRecipe = cva(
         secondary:
           'bg-surface-secondary text-text-primary hover:bg-surface-hover hover:active:bg-surface-pressed',
         ghost: 'hover:bg-surface-hover hover:active:bg-surface-pressed hover:text-text-primary',
+        /** A ghost that rests in the secondary ink and rises to the primary one under the pointer,
+         *  for a control that should not compete with the content it sits beside. */
+        quiet:
+          'text-text-secondary hover:bg-surface-hover hover:active:bg-surface-pressed hover:text-text-primary',
+        /** An icon action under a message: a small padded square that rests in the alt secondary ink. */
+        'message-action':
+          'size-auto rounded-lg p-1.5 text-text-secondary-alt hover:bg-surface-hover hover:active:bg-surface-pressed hover:text-text-primary',
+        /** A text action that reads as a link in a list or footer: no fill at rest or under the pointer,
+         *  and a ring flush against the control. */
+        'inline-link':
+          'h-auto justify-start gap-2 rounded-none p-0 font-normal text-text-secondary hover:bg-transparent hover:text-text-primary focus-visible:ring-offset-0',
+        /** A previous or next arrow floating over a carousel's content, on the fixed surface. */
+        'carousel-nav':
+          'rounded-xl bg-surface-fixed p-2 text-text-fixed shadow-lg hover:bg-surface-fixed-hover hover:shadow-xl',
+        /** A compact text action in a toolbar, quiet until hovered. */
+        toolbar:
+          'rounded-sm bg-transparent px-2 py-1 text-xs font-normal text-text-secondary hover:bg-surface-hover',
+        /** A destination in a navigation rail. The fills are the theme's navigation roles, and the
+         *  current destination is marked with `aria-pressed`, so a caller sets no class for it. */
+        nav: 'text-text-secondary hover:bg-surface-nav-hover hover:text-text-primary hover:active:bg-surface-pressed aria-pressed:bg-surface-nav-selected aria-pressed:text-text-primary aria-pressed:hover:bg-surface-nav-selected',
         /**
          * A control drawn over the user's own media (a lightbox toolbar, an image preview's close):
          * ghost-shaped, with the media ink and a tint of it on hover, so it stays legible on the
@@ -184,7 +226,7 @@ const buttonVariantRecipe = cva(
         card: 'justify-start whitespace-normal rounded-2xl text-start font-normal hover:bg-surface-hover focus-visible:ring-inset focus-visible:ring-offset-0',
       },
       size: {
-        default: 'h-theme-button px-4 py-2',
+        default: 'h-theme-button px-theme-button-x py-2',
         /** Default-height actions with less horizontal padding, such as Copy link. */
         dense: 'h-theme-button px-3 py-2',
         /** Compact text controls that share a toolbar row with a compact dropdown. */
@@ -248,6 +290,11 @@ const buttonVariantRecipe = cva(
         size: 'default',
         class: 'h-auto px-1 py-2',
       },
+      /* These carry their own box, which the default size's height and padding would otherwise win. */
+      { variant: 'message-action', size: 'default', class: 'size-auto p-1.5' },
+      { variant: 'inline-link', size: 'default', class: 'h-auto p-0' },
+      { variant: 'carousel-nav', size: 'default', class: 'h-auto p-2' },
+      { variant: 'toolbar', size: 'default', class: 'h-auto px-2 py-1' },
       /* Sized by its own label, so a long option wraps instead of clipping. */
       {
         variant: 'option',

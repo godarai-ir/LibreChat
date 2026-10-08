@@ -18,7 +18,7 @@ export default function ActionsTableSkeleton() {
           {HEADER_KEYS.map((key) => (
             <th
               key={key}
-              className="text-text-secondary py-2 pe-3 text-start text-[11px] font-medium tracking-wide uppercase"
+              className="text-text-secondary text-2xs py-2 pe-3 text-start font-medium tracking-wide uppercase"
             >
               {localize(key)}
             </th>

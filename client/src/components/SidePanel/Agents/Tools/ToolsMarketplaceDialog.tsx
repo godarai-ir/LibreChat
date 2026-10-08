@@ -266,7 +266,7 @@ export default function ToolsMarketplaceDialog({
             <div className="flex items-center gap-2 px-4 py-3 pe-12 md:py-4 md:ps-6">
               <div className="relative flex-1">
                 <Search
-                  className="text-text-tertiary pointer-events-none absolute top-1/2 start-3 z-[1] size-4 -translate-y-1/2"
+                  className="text-text-tertiary pointer-events-none absolute start-3 top-1/2 z-[1] size-4 -translate-y-1/2"
                   aria-hidden="true"
                 />
                 <Input
@@ -275,7 +275,7 @@ export default function ToolsMarketplaceDialog({
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder={localize('com_ui_tools_marketplace_search')}
                   aria-label={localize('com_ui_tools_marketplace_search')}
-                  className="bg-transparent ps-9"
+                  className="ps-9"
                 />
               </div>
             </div>

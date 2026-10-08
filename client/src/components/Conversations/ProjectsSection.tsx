@@ -155,10 +155,10 @@ const ProjectChatsInline = memo(function ProjectChatsInline({
       {hasMore && (
         <Button
           type="button"
-          variant="ghost"
+          variant="quiet"
           size="sm"
           onClick={onShowAll}
-          className="text-text-secondary mt-0.5 ms-1 h-auto rounded-md px-2 py-1 text-xs font-medium"
+          className="ms-1 mt-0.5 h-auto rounded-md px-2 py-1 text-xs font-medium"
         >
           {localize('com_ui_show_all')}
         </Button>
@@ -317,7 +317,7 @@ const ProjectItem = memo(
             onClick={() => setExpanded((prev) => !prev)}
             aria-expanded={expanded}
             aria-label={project.name}
-            className="focus-visible:ring-text-primary flex w-full max-w-full min-w-0 flex-1 items-center gap-2 rounded-lg py-1.5 pe-16 ps-1.5 text-start outline-hidden focus-visible:ring-2 focus-visible:ring-inset"
+            className="focus-visible:ring-text-primary flex w-full max-w-full min-w-0 flex-1 items-center gap-2 rounded-lg py-1.5 ps-1.5 pe-16 text-start outline-hidden focus-visible:ring-2 focus-visible:ring-inset"
           >
             <ChevronRight
               className={cn(
@@ -333,7 +333,7 @@ const ProjectItem = memo(
             /* The 4px between the two controls, and from the row's trailing edge,
                that a pinned chat keeps between its unpin badge and its overflow
                menu. Each control reveals itself. */
-            className="absolute top-1/2 end-1 flex -translate-y-1/2 items-center gap-1"
+            className="absolute end-1 top-1/2 flex -translate-y-1/2 items-center gap-1"
           >
             <TooltipAnchor
               description={localize('com_ui_new_chat_in_project', { name: project.name })}
@@ -455,7 +455,7 @@ const ProjectsSection = ({ toggleNav, isAuthenticated }: ProjectsSectionProps) =
     if (isLoading && projects.length === 0) {
       return (
         <div className="flex justify-start py-2 ps-2">
-          <Spinner className="text-text-secondary h-4 w-4" />
+          <Spinner tone="secondary" className="h-4 w-4" />
         </div>
       );
     }

@@ -55,7 +55,7 @@ function HelpSubmenu({
       <Menu.Menu
         portal
         gutter={12}
-        className="account-settings-popover popover-ui popover-from-left z-[126] w-[min(15.25rem,90vw)] rounded-lg"
+        className="popover-ui popover-from-left z-[126] w-[min(15.25rem,90vw)] rounded-lg"
       >
         {hasHelpFaq && (
           <Menu.MenuItem
@@ -124,7 +124,7 @@ function AccountSettings({ collapsed = false }: { collapsed?: boolean }) {
         </div>
         {!collapsed && (
           <div
-            className="text-text-primary mt-2 grow overflow-hidden text-ellipsis whitespace-nowrap text-start"
+            className="text-text-primary mt-2 grow overflow-hidden text-start text-ellipsis whitespace-nowrap"
             style={{ marginTop: '0', marginLeft: '0' }}
           >
             {user?.name ?? user?.username ?? localize('com_nav_user')}
@@ -133,13 +133,13 @@ function AccountSettings({ collapsed = false }: { collapsed?: boolean }) {
       </Menu.MenuButton>
       <Menu.Menu
         portal
-        className="account-settings-popover popover-ui z-[125] w-[min(19.0625rem,90vw)] rounded-lg md:w-[min(15.25rem,90vw)]"
+        className="popover-ui z-[125] w-[min(19.0625rem,90vw)] rounded-lg md:w-[min(15.25rem,90vw)]"
         style={{
           transformOrigin: collapsed ? 'left bottom' : 'bottom',
           translate: collapsed ? '4px 0' : '0 -4px',
         }}
       >
-        <div className="text-text-secondary me-2 ms-3 py-2 text-sm" role="note">
+        <div className="text-text-secondary ms-3 me-2 py-2 text-sm" role="note">
           {user?.email ?? localize('com_nav_user')}
         </div>
         <DropdownMenuSeparator />

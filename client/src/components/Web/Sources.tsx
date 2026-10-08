@@ -59,7 +59,7 @@ function SourceItem({ source, expanded = false }: SourceItemProps) {
   }
 
   return (
-    <span className="not-prose relative inline-block h-full w-full">
+    <span className="relative inline-block h-full w-full">
       <Ariakit.HovercardProvider showTimeout={150} hideTimeout={150}>
         <div className="flex h-full items-center">
           <Ariakit.HovercardAnchor
@@ -103,7 +103,7 @@ function SourceItem({ source, expanded = false }: SourceItemProps) {
             <div className="flex gap-3">
               <div className="min-w-0 flex-1">
                 <div className="mb-1.5 overflow-hidden text-sm">
-                  <FaviconImage domain={domain} className="float-start mt-0.5 me-2" />
+                  <FaviconImage domain={domain} className="float-start me-2 mt-0.5" />
                   <span className="text-text-secondary float-end ms-2 max-w-[40%] truncate text-xs">
                     {domain}
                   </span>
@@ -156,7 +156,7 @@ function ImageItem({ image }: { image: ImageResult }) {
             className="size-full object-cover"
           />
           {image.title && (
-            <div className="bg-surface-media-overlay/80 text-text-on-media absolute end-0 bottom-0 start-0 w-full border-none p-1 text-xs font-medium backdrop-blur-xs">
+            <div className="bg-surface-media-overlay/80 text-text-on-media absolute start-0 end-0 bottom-0 w-full border-none p-1 text-xs font-medium backdrop-blur-xs">
               <span className="truncate">{image.title}</span>
             </div>
           )}

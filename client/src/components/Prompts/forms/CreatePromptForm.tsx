@@ -141,7 +141,7 @@ const CreatePromptForm = ({
                     {...field}
                     id="prompt-name"
                     type="text"
-                    className="peer border-border-medium text-text-primary me-2 w-full border p-2 text-2xl"
+                    className="peer border-border-medium text-text-primary me-2 w-full p-2 text-2xl"
                     placeholder=" "
                     tabIndex={0}
                     aria-label={localize('com_ui_prompt_name')}
@@ -150,7 +150,7 @@ const CreatePromptForm = ({
                   <label
                     htmlFor="prompt-name"
                     className={cn(
-                      'text-text-secondary peer-focus:text-text-primary pointer-events-none absolute -top-1 start-3 origin-[0] translate-y-3 scale-100 rounded px-1 text-base transition-transform duration-200 peer-placeholder-shown:translate-y-3 peer-placeholder-shown:scale-100 peer-focus:-translate-y-2 peer-focus:scale-75 peer-[:not(:placeholder-shown)]:-translate-y-2 peer-[:not(:placeholder-shown)]:scale-75',
+                      'text-text-secondary peer-focus:text-text-primary pointer-events-none absolute start-3 -top-1 origin-[0] translate-y-3 scale-100 rounded px-1 text-base transition-transform duration-200 peer-placeholder-shown:translate-y-3 peer-placeholder-shown:scale-100 peer-focus:-translate-y-2 peer-focus:scale-75 peer-[:not(:placeholder-shown)]:-translate-y-2 peer-[:not(:placeholder-shown)]:scale-75',
                       labelBgClassName,
                     )}
                   >

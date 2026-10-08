@@ -14,6 +14,7 @@ import type { AgentForm, AgentModelPanelProps, StringOption } from '~/common';
 import { pruneAgentModelParameters, resolveAgentParameterSettings } from './parameters';
 import { componentMapping } from '~/components/SidePanel/Parameters/components';
 import { useGetEndpointsQuery, useGetStartupConfig } from '~/data-provider';
+import { useModelReasoning } from '~/hooks/Endpoint/useModelReasoning';
 import { useLocalize, useHasAccess } from '~/hooks';
 import { useLiveAnnouncer } from '~/Providers';
 import { Panel } from '~/common';
@@ -64,6 +65,7 @@ export default function ModelPanel({
 
   const { data: endpointsConfig = {} } = useGetEndpointsQuery();
   const { data: startupConfig } = useGetStartupConfig();
+  const { modelReasoning } = useModelReasoning(endpointsConfig, provider, model ?? '');
 
   const bedrockRegions = useMemo(() => {
     return endpointsConfig?.[provider]?.availableRegions ?? [];
@@ -82,8 +84,9 @@ export default function ModelPanel({
         provider,
         startupConfig,
         webSearchAllowed,
+        modelReasoning,
       }),
-    [endpointsConfig, model, provider, startupConfig, webSearchAllowed],
+    [endpointsConfig, model, modelReasoning, provider, startupConfig, webSearchAllowed],
   );
   /** The rendered set omits role-gated controls; `parameterSettings.parameters`
    *  stays complete so the pruning effect below still recognises them. */
@@ -126,7 +129,7 @@ export default function ModelPanel({
           size="icon"
           onClick={() => setActivePanel(Panel.builder)}
           aria-label={localize('com_ui_back_to_builder')}
-          className="text-text-secondary hover:bg-surface-secondary hover:text-text-primary shrink-0 rounded-xl"
+          className="text-text-secondary hover:bg-surface-secondary shrink-0 rounded-xl"
         >
           <ChevronLeft className="h-5 w-5 rtl:-scale-x-100" strokeWidth={1.75} aria-hidden="true" />
         </Button>
@@ -144,7 +147,7 @@ export default function ModelPanel({
           <label
             id="provider-label"
             className={cn(
-              'text-text-secondary mb-1 block text-[11px] font-medium tracking-wide uppercase',
+              'text-text-secondary text-2xs mb-1 block font-medium tracking-wide uppercase',
               modelsPending && 'opacity-60',
             )}
             htmlFor="provider"
@@ -213,7 +216,7 @@ export default function ModelPanel({
           <label
             id="model-label"
             className={cn(
-              'text-text-secondary mb-1 block text-[11px] font-medium tracking-wide uppercase',
+              'text-text-secondary text-2xs mb-1 block font-medium tracking-wide uppercase',
               (!provider || modelsPending) && 'opacity-60',
             )}
             htmlFor="model"
@@ -310,7 +313,7 @@ export default function ModelPanel({
       <Button
         variant="outline"
         onClick={handleResetParameters}
-        className="text-text-secondary hover:bg-surface-secondary hover:text-text-primary mt-2 h-9 w-full rounded-xl px-4 font-medium"
+        className="text-text-secondary hover:bg-surface-secondary mt-2 h-9 w-full rounded-xl font-medium"
       >
         <RotateCcw className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
         {localize('com_ui_reset_var', { 0: localize('com_ui_model_parameters') })}

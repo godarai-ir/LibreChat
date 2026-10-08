@@ -167,9 +167,10 @@ const AgentDetailContent: React.FC<AgentDetailContentProps> = ({
   const descriptionMotion = {
     layout: 'position' as const,
     layoutId: morphing ? agentMorphId('description', agent.id) : undefined,
-    style: { willChange: morphing ? 'transform' : undefined },
-    className:
+    className: cn(
+      morphing && 'will-change-transform',
       'relative mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-text-secondary sm:text-base',
+    ),
     ...shared,
   };
   useLayoutEffect(() => {
@@ -198,7 +199,7 @@ const AgentDetailContent: React.FC<AgentDetailContentProps> = ({
       className={cn(
         'inset-0 m-auto h-fit w-11/12 max-w-3xl',
         !morphing &&
-          'duration-150 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+          'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-150',
       )}
       /* While morphing, the dim is owned by the grid: it has to outlive this
          dialog's mount so it can fade out across the whole contraction. */
@@ -215,11 +216,11 @@ const AgentDetailContent: React.FC<AgentDetailContentProps> = ({
            does not promote it on its own. The hint stands for as long as this
            dialog shares the card's surface, and is never set on a dialog that
            has no morph to run. */
-        style={{
-          borderRadius: surfaceRadius,
-          willChange: morphing ? 'transform' : undefined,
-        }}
-        className="bg-surface-dialog high-contrast:border-border-medium relative flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-theme-surface shadow-lg high-contrast:border high-contrast:border-solid high-contrast:shadow-none"
+        style={{ borderRadius: surfaceRadius }}
+        className={cn(
+          morphing && 'will-change-transform',
+          'rounded-theme-surface bg-surface-dialog high-contrast:border high-contrast:border-solid high-contrast:border-border-medium high-contrast:shadow-none relative flex max-h-[88dvh] w-full flex-col overflow-hidden shadow-lg',
+        )}
         {...shared}
       >
         {/* Card-coloured wash so the surface interpolates its fill and border
@@ -269,7 +270,7 @@ const AgentDetailContent: React.FC<AgentDetailContentProps> = ({
         <motion.div
           {...pinned}
           layoutScroll
-          className="relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5 pt-4 sm:px-6 sm:pb-6"
+          className="relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-4 pb-5 sm:px-6 sm:pb-6"
         >
           <OGDialogHeader className="space-y-0 text-start">
             {/* The avatar holds the top of the row and the copy centres on it,
@@ -299,7 +300,7 @@ const AgentDetailContent: React.FC<AgentDetailContentProps> = ({
                     focusOutline="hidden"
                     ref={titleRef}
                     tabIndex={-1}
-                    className="text-text-primary break-words text-2xl font-semibold leading-tight sm:text-3xl"
+                    className="text-2xl leading-tight font-semibold break-words sm:text-3xl"
                   >
                     {agent.name?.trim() || localize('com_ui_agent')}
                   </OGDialogTitle>

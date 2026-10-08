@@ -16,6 +16,7 @@ import {
 import type { TPreset } from 'librechat-data-provider';
 import { groupParameters, countModified, hasControl, isWideParameter } from './groups';
 import { useGetEndpointsQuery, useGetStartupConfig } from '~/data-provider';
+import { useModelReasoning } from '~/hooks/Endpoint/useModelReasoning';
 import { useChatContext, useLiveAnnouncer } from '~/Providers';
 import { SaveAsPresetDialog } from '~/components/Endpoints';
 import { useSetIndexOptions, useLocalize } from '~/hooks';
@@ -38,6 +39,7 @@ export default function Parameters() {
   const { data: endpointsConfig = {} } = useGetEndpointsQuery();
   const provider = conversation?.endpoint ?? '';
   const model = conversation?.model ?? '';
+  const { modelReasoning } = useModelReasoning(endpointsConfig, provider, model);
 
   const bedrockRegions = useMemo(() => {
     return endpointsConfig?.[conversation?.endpoint ?? '']?.availableRegions ?? [];
@@ -75,9 +77,10 @@ export default function Parameters() {
       overriddenEndpointKey,
       model,
       endpointsConfig?.[provider ?? '']?.responsesApiRouting,
+      modelReasoning,
     ).map((param) => (overriddenParamsMap[param.key] as SettingDefinition) ?? param);
     return { parameters, visibleParameters };
-  }, [endpointType, endpointsConfig, model, provider, startupConfig]);
+  }, [endpointType, endpointsConfig, model, modelReasoning, provider, startupConfig]);
 
   useEffect(() => {
     if (!parameters) {
@@ -277,7 +280,7 @@ export default function Parameters() {
           type="button"
           onClick={resetParameters}
           aria-label={localize('com_ui_reset_var', { 0: localize('com_ui_model_parameters') })}
-          className="flex h-auto min-h-9 flex-auto items-center justify-center gap-2 px-4 py-2 text-sm whitespace-normal active:scale-[0.98] motion-reduce:transform-none"
+          className="flex h-auto min-h-9 flex-auto items-center justify-center whitespace-normal active:scale-[0.98] motion-reduce:transform-none"
         >
           <RotateCcw
             key={resetCount}
@@ -292,7 +295,7 @@ export default function Parameters() {
         <Button
           variant="default"
           onClick={openDialog}
-          className="flex h-auto min-h-9 flex-auto items-center justify-center px-4 py-2 font-semibold whitespace-normal"
+          className="flex h-auto min-h-9 flex-auto items-center justify-center font-semibold whitespace-normal"
           type="button"
         >
           {localize('com_endpoint_save_as_preset')}

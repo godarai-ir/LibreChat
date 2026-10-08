@@ -84,7 +84,7 @@ const AgentCard = memo(
         className={cn(
           /* The article keeps a plain resting fill so the grid slot still reads as a
              card while the surface layer is away being the dialog. */
-          'bg-surface-card group relative flex h-full min-h-[17.5rem] min-w-0 flex-col rounded-theme-surface p-5',
+          'bg-surface-card group rounded-theme-surface relative flex h-full min-h-[17.5rem] min-w-0 flex-col p-5',
           className,
         )}
       >
@@ -93,11 +93,11 @@ const AgentCard = memo(
           layoutId={agentMorphId('surface', agent.id)}
           /* Promoted only while this card's surface is in flight; a grid of
              permanently layered cards is a cost, not a saving. */
-          style={{
-            borderRadius: surfaceRadius,
-            willChange: morphing ? 'transform' : undefined,
-          }}
-          className="border-border-light bg-surface-card group-hover:border-border-medium group-hover:bg-surface-card-hover pointer-events-none absolute inset-0 z-0 rounded-theme-surface border transition-colors duration-150"
+          style={{ borderRadius: surfaceRadius }}
+          className={cn(
+            morphing && 'will-change-transform',
+            'rounded-theme-surface border-border-light bg-surface-card group-hover:border-border-medium group-hover:bg-surface-card-hover pointer-events-none absolute inset-0 z-0 border transition-colors duration-150',
+          )}
           {...shared}
         />
 
@@ -105,7 +105,7 @@ const AgentCard = memo(
           ref={ref}
           type="button"
           className={cn(
-            'focus-visible:ring-text-primary focus-visible:outline-hidden absolute inset-0 z-10 cursor-pointer rounded-theme-surface border-0 bg-transparent p-0 text-start focus-visible:ring-2 focus-visible:ring-inset',
+            'focus-visible:ring-text-primary rounded-theme-surface absolute inset-0 z-10 cursor-pointer border-0 bg-transparent p-0 text-start focus-visible:ring-2 focus-visible:outline-hidden focus-visible:ring-inset',
             morphing && 'focus-visible:ring-0',
           )}
           aria-label={expanded ? name : undefined}
@@ -138,7 +138,7 @@ const AgentCard = memo(
               <motion.div
                 layout="position"
                 layoutId={agentMorphId('category', agent.id)}
-                className="min-w-0 max-w-[60%] shrink-0 text-end"
+                className="max-w-[60%] min-w-0 shrink-0 text-end"
                 {...shared}
               >
                 <AgentCategoryBadge
@@ -155,7 +155,7 @@ const AgentCard = memo(
             layout
             layoutId={agentMorphId('title', agent.id)}
             id={titleId}
-            className="text-text-primary mt-4 line-clamp-2 break-words text-lg font-semibold leading-6"
+            className="text-text-primary mt-4 line-clamp-2 text-lg leading-6 font-semibold break-words"
             {...shared}
           >
             {name}
@@ -170,8 +170,10 @@ const AgentCard = memo(
             layout="position"
             layoutId={agentMorphId('description', agent.id)}
             id={descriptionId}
-            style={{ willChange: morphing ? 'transform' : undefined }}
-            className="text-text-secondary mb-5 mt-2 line-clamp-3 break-words text-sm leading-6"
+            className={cn(
+              morphing && 'will-change-transform',
+              'text-text-secondary mt-2 mb-5 line-clamp-3 text-sm leading-6 break-words',
+            )}
             {...shared}
           >
             {description}

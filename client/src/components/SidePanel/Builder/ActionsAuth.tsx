@@ -91,11 +91,14 @@ export default function ActionsAuth({ disableOAuth }: { disableOAuth?: boolean }
                 {localize(current.descKey)}
               </span>
             </span>
-            <ChevronRight className="text-text-secondary size-4 shrink-0 rtl:-scale-x-100" aria-hidden={true} />
+            <ChevronRight
+              className="text-text-secondary size-4 shrink-0 rtl:-scale-x-100"
+              aria-hidden={true}
+            />
           </button>
         </OGDialogTrigger>
       </div>
-      <OGDialogContent className="bg-surface-dialog text-text-primary w-full max-w-lg">
+      <OGDialogContent className="text-text-primary w-full max-w-lg">
         <OGDialogHeader>
           <OGDialogTitle className="text-lg font-semibold">
             {localize('com_ui_authentication')}
