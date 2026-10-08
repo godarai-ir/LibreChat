@@ -2,9 +2,10 @@ import { format } from 'date-fns';
 import { TooltipAnchor } from '@librechat/client';
 import { User, Calendar, EarthIcon, BarChart3 } from 'lucide-react';
 import type { TPromptGroup } from 'librechat-data-provider';
-import { useLocalize, useAuthContext, useCalendar } from '~/hooks';
-import { formatShortDate } from '~/utils';
+import { useLocalize, useAuthContext } from '~/hooks';
 import CategoryIcon from '../utils/CategoryIcon';
+import useCalendar from '~/hooks/useCalendar';
+import { formatShortDate } from '~/utils';
 
 interface PromptDetailHeaderProps {
   group: TPromptGroup;

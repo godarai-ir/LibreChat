@@ -12,7 +12,8 @@ import {
   ProviderErrorCodes,
 } from './parts';
 import { SetKeyDialog } from '~/components/Input/SetKeyDialog';
-import { useLocalize, useCalendar } from '~/hooks';
+import useCalendar from '~/hooks/useCalendar';
+import { useLocalize } from '~/hooks';
 
 type UserKeyErrorCode =
   | ErrorTypes.NO_USER_KEY

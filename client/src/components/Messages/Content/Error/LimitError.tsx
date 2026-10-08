@@ -10,7 +10,8 @@ import {
   useWindowLabel,
   formatTimestamp,
 } from './parts';
-import { useLocalize, useCalendar } from '~/hooks';
+import useCalendar from '~/hooks/useCalendar';
+import { useLocalize } from '~/hooks';
 
 type RetryTargetInput = {
   type: string | undefined;

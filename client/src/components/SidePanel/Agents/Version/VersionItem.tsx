@@ -10,7 +10,8 @@ import {
   TooltipAnchor,
 } from '@librechat/client';
 import type { VersionRecord } from './types';
-import { useLocalize, useClockFormat, useCalendar } from '~/hooks';
+import { useLocalize, useClockFormat } from '~/hooks';
+import useCalendar from '~/hooks/useCalendar';
 import { cn, formatTimeAgo } from '~/utils';
 
 type VersionItemProps = {

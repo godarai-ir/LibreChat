@@ -1,6 +1,7 @@
 import type { TUserMemory } from 'librechat-data-provider';
 import MemoryCardActions from './MemoryCardActions';
-import { useLocalize, useCalendar } from '~/hooks';
+import useCalendar from '~/hooks/useCalendar';
+import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
 interface MemoryCardProps {

@@ -4,7 +4,8 @@ import { Button } from '@librechat/client';
 import type { TAgentApiKeyListItem } from 'librechat-data-provider';
 import { formatDate, formatRelativeTime, getExpiryStatus } from './utils';
 import DeleteKeyDialog from './DeleteKeyDialog';
-import { useLocalize, useCalendar } from '~/hooks';
+import useCalendar from '~/hooks/useCalendar';
+import { useLocalize } from '~/hooks';
 
 type ItemProps = {
   apiKey: TAgentApiKeyListItem;

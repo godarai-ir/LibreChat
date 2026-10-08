@@ -4,9 +4,10 @@ import { alternateName, getEndpointField } from 'librechat-data-provider';
 import type { TEndpointsConfig } from 'librechat-data-provider';
 import { ResolvedProviderIcon } from '~/components/Endpoints/ResolvedProviderIcon';
 import { formatKeyExpiryLabel } from '~/components/Input/SetKeyDialog/utils';
-import { useUserKey, useLocalize, useClockFormat, useCalendar } from '~/hooks';
+import { useUserKey, useLocalize, useClockFormat } from '~/hooks';
 import { SetKeyDialog } from '~/components/Input/SetKeyDialog';
 import { useProviderIcon } from '~/hooks/Endpoint';
+import useCalendar from '~/hooks/useCalendar';
 
 interface ProviderKeyRowProps {
   endpoint: string;

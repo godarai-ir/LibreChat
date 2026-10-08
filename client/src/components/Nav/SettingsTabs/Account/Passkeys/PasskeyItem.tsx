@@ -18,7 +18,8 @@ import {
   TooltipAnchor,
 } from '@librechat/client';
 import type { TPasskey } from 'librechat-data-provider';
-import { useLocalize, useCalendar } from '~/hooks';
+import useCalendar from '~/hooks/useCalendar';
+import { useLocalize } from '~/hooks';
 
 const MAX_NAME_LENGTH = 60;
 

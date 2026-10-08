@@ -34,8 +34,9 @@ import useAttachItems from '~/hooks/Input/useAttachItems';
 import { useMCPRefresh } from '~/hooks/MCP/useMCPRefresh';
 import { isMacPlatform } from '~/utils/shortcuts';
 import { useBadgeRowContext } from '~/Providers';
+import useCalendar from '~/hooks/useCalendar';
 import { composerLiftFamily } from './state';
-import { useLocalize, useCalendar } from '~/hooks';
+import { useLocalize } from '~/hooks';
 import Catalog from './Catalog';
 
 const HEADER_HEIGHT = 26;

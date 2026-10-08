@@ -28,12 +28,13 @@ import SharedSubagentActivityDialog from '~/components/Chat/Subagents/SharedSuba
 import { cn, DEFAULT_APP_TITLE, getResponseStatus, selectActiveBranchTail } from '~/utils';
 import { siblingIdxFamily, siblingKey } from '~/components/Chat/Messages/Thread/state';
 import { useDeploymentThemeOverride } from '~/Providers/DeploymentTheme';
-import { useLocalize, useCalendar, useDocumentTitle, useAuthContext } from '~/hooks';
+import { useLocalize, useDocumentTitle, useAuthContext } from '~/hooks';
 import { ThemeSelector, LangSelector } from '~/components/Appearance';
 import { ShareMessagesProvider } from './ShareMessagesProvider';
 import { useForkSharedConvoMutation } from '~/data-provider';
 import { useGetSharedStartupConfig } from '~/data-provider';
 import { ShareArtifactsContainer } from './ShareArtifacts';
+import useCalendar from '~/hooks/useCalendar';
 import AppChatSurface from '../Chat/Surface';
 import { ShareContext } from '~/Providers';
 import MessagesView from './MessagesView';

@@ -41,7 +41,6 @@ import {
 } from './running';
 import {
   useLocalize,
-  useCalendar,
   TranslationKeys,
   useElementSize,
   useOuterScrollWindow,
@@ -50,6 +49,7 @@ import { useActiveJobs, useRunningConversationsQuery } from '~/data-provider';
 import { facetFilterCountAtom, resetFacetsAtom } from './facets';
 import useDrawerViewport from '~/hooks/Nav/useDrawerViewport';
 import { groupConversations, formatYear, cn } from '~/utils';
+import useCalendar from '~/hooks/useCalendar';
 import Convo from './Convo';
 import store from '~/store';
 

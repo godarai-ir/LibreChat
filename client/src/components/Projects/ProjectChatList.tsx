@@ -17,11 +17,12 @@ import type { TConversation } from 'librechat-data-provider';
 import type { MeasuredCellParent } from '~/components/Conversations/Conversations';
 import ConversationEndpointIcon from '~/components/Conversations/ConversationEndpointIcon';
 import { areConversationListItemFieldsEqual } from '~/components/Conversations/utils';
-import { useLocalize, useNavigateToConvo, useClockFormat, useCalendar } from '~/hooks';
+import { useLocalize, useNavigateToConvo, useClockFormat } from '~/hooks';
 import { DateLabel } from '~/components/Conversations/Conversations';
 import ProjectChatOptions from './ProjectChatOptions';
 import { cn, groupConversations } from '~/utils';
 import { useActiveJobs } from '~/data-provider';
+import useCalendar from '~/hooks/useCalendar';
 
 type ChatSortField = 'updatedAt' | 'createdAt';
 

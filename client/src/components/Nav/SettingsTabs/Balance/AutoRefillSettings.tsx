@@ -8,7 +8,8 @@ import type {
 } from 'librechat-data-provider';
 import type { TranslationKeys } from '~/hooks';
 
-import { useLocalize, useClockFormat, useCalendar } from '~/hooks';
+import { useLocalize, useClockFormat } from '~/hooks';
+import useCalendar from '~/hooks/useCalendar';
 
 function ensureExhaustive(value: never): void {
   void value;
