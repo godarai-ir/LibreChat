@@ -60,19 +60,40 @@ const getSegmenter = (): IntlSegmenter | null => {
   return segmenter;
 };
 
-/** Scripts whose letters join; animating them one by one breaks the joins. */
-const JOINING_SCRIPT = /[\p{Script=Arabic}\p{Script=Syriac}\p{Script=Nko}\p{Script=Mongolian}]/u;
-
 const splitGraphemes = (text: string): string[] => {
-  if (JOINING_SCRIPT.test(text)) {
-    return [text];
-  }
   const instance = getSegmenter();
   if (instance) {
     return Array.from(instance.segment(text)).map((s: SegmentData) => s.segment);
   }
   return [...text];
 };
+
+const JOINING_SCRIPT =
+  /[\p{Script=Arabic}\p{Script=Syriac}\p{Script=Nko}\p{Script=Mandaic}\p{Script=Adlam}\p{Script=Hanifi_Rohingya}\p{Script=Mongolian}]/u;
+const RTL_SCRIPTS = [
+  'Arabic',
+  'Hebrew',
+  'Syriac',
+  'Thaana',
+  'Nko',
+  'Samaritan',
+  'Mandaic',
+  'Adlam',
+  'Hanifi_Rohingya',
+]
+  .map((script) => `\\p{Script=${script}}`)
+  .join('');
+const RTL_LETTER = new RegExp(`[${RTL_SCRIPTS}]`, 'u');
+const LTR_LETTER = new RegExp(`(?![${RTL_SCRIPTS}])\\p{L}`, 'u');
+
+/**
+ * Whether the text must reach the browser as one run. Every animated box is an atomic inline,
+ * so letters in separate boxes cannot join (Arabic, Persian) and words in separate boxes are not
+ * reordered against each other, which scrambles a right-to-left name inside a left-to-right
+ * greeting.
+ */
+const needsWholeText = (text: string): boolean =>
+  JOINING_SCRIPT.test(text) || (RTL_LETTER.test(text) && LTR_LETTER.test(text));
 
 const SplitText: React.FC<SplitTextProps> = ({
   text = '',
@@ -87,7 +108,11 @@ const SplitText: React.FC<SplitTextProps> = ({
   onLetterAnimationComplete,
   onLineCountChange,
 }) => {
+  const whole = useMemo(() => needsWholeText(text), [text]);
   const { words, letterCount, offsets } = useMemo(() => {
+    if (whole) {
+      return { words: [[text]], letterCount: 1, offsets: [0] };
+    }
     const split = text.split(' ').map(splitGraphemes);
     const starts: number[] = [];
     let total = 0;
@@ -96,7 +121,7 @@ const SplitText: React.FC<SplitTextProps> = ({
       total += w.length;
     }
     return { words: split, letterCount: total, offsets: starts };
-  }, [text]);
+  }, [text, whole]);
   const [inView, setInView] = useState(false);
   const ref = useRef<HTMLParagraphElement>(null);
   const animatedCount = useRef(0);
@@ -164,12 +189,14 @@ const SplitText: React.FC<SplitTextProps> = ({
       >
         {/* The paragraph's auto direction ignores word boxes with their own dir. */}
         <span className="sr-only">{text}</span>
+        {/* A whole run wraps like ordinary text, and its taller line keeps Arabic-script
+            descenders inside the parent's overflow clip. */}
         {words.map((word, wordIndex) => (
           <span
             key={wordIndex}
             dir="auto"
             aria-hidden="true"
-            style={{ display: 'inline-block', whiteSpace: 'nowrap' }}
+            className={whole ? undefined : 'inline-block whitespace-nowrap'}
           >
             {word.map((letter, letterIndex) => {
               const index = offsets[wordIndex] + letterIndex;
@@ -178,7 +205,7 @@ const SplitText: React.FC<SplitTextProps> = ({
                 <animated.span
                   key={index}
                   style={springs[index]}
-                  className="inline-block transform transition-opacity will-change-transform"
+                  className={`inline-block transform transition-opacity will-change-transform ${whole ? 'leading-snug' : ''}`}
                 >
                   {letter}
                 </animated.span>
