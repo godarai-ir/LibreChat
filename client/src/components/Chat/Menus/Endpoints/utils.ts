@@ -187,6 +187,14 @@ export function getSelectedIcon({
   return null;
 }
 
+/**
+ * The distinctive tail of a raw model id. Gateway and router ids namespace the model behind
+ * provider and route prefixes (`openai:route:gpt-4o`, `meta-llama/Llama-3-70b`); in a button that
+ * truncates, the prefix fills the space and the model's own name is the part cut off.
+ */
+export const shortModelName = (model: string): string =>
+  model.split(/[:/]/).filter(Boolean).pop() ?? model;
+
 export const getDisplayValue = ({
   localize,
   mappedEndpoints,
@@ -230,7 +238,7 @@ export const getDisplayValue = ({
       return endpoint.assistantNames[selectedValues.model];
     }
 
-    return selectedValues.model;
+    return shortModelName(selectedValues.model);
   }
 
   if (selectedValues.endpoint) {

@@ -1,6 +1,6 @@
 import type { useLocalize } from '~/hooks';
 import type { Endpoint } from '~/common';
-import { filterItems } from '../utils';
+import { filterItems, getDisplayValue, shortModelName } from '../utils';
 
 const agentsEndpoint: Endpoint = {
   value: 'agents',
@@ -42,5 +42,30 @@ describe('model selector utilities', () => {
   it('does not match agents when there are no selectable agent options', () => {
     const results = filterItems([disabledAgentsEndpoint], 'my agents', undefined, undefined);
     expect(results).toEqual([]);
+  });
+});
+
+describe('model selector trigger label', () => {
+  const localize = ((key: string) => key) as ReturnType<typeof useLocalize>;
+  const openAI: Endpoint = { value: 'openAI', label: 'OpenAI', hasModels: true, icon: null };
+
+  it('keeps the model name from a namespaced gateway id', () => {
+    expect(shortModelName('openai:openai-nimble-breeze:gpt-6-luna')).toBe('gpt-6-luna');
+    expect(shortModelName('meta-llama/Llama-3-70b')).toBe('Llama-3-70b');
+    expect(shortModelName('gpt-4o')).toBe('gpt-4o');
+  });
+
+  it('labels a raw model selection by its short name', () => {
+    const label = getDisplayValue({
+      localize,
+      modelSpecs: [],
+      mappedEndpoints: [openAI],
+      selectedValues: {
+        endpoint: 'openAI',
+        model: 'openai:openai-nimble-breeze:gpt-6-luna',
+        modelSpec: '',
+      },
+    });
+    expect(label).toBe('gpt-6-luna');
   });
 });

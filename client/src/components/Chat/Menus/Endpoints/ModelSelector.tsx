@@ -81,7 +81,10 @@ function ModelSelectorContent() {
               {selectedIcon}
             </div>
           )}
-          <span className="truncate text-start">{selectedDisplayValue}</span>
+          {/* `dir="auto"`: a Latin model name truncates at its own end, not at the RTL end. */}
+          <span dir="auto" className="truncate text-start">
+            {selectedDisplayValue}
+          </span>
         </button>
       }
     />
