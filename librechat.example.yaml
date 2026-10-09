@@ -1125,6 +1125,9 @@ endpoints:
       titleConvo: true
       titleModel: 'grok-4.7'
       modelDisplayLabel: 'xAI'
+      # Optional: a separate icon for the dark theme, for a mark drawn for one background.
+      # iconURL: 'https://example.com/logo-on-light.svg'
+      # iconURLDark: 'https://example.com/logo-on-dark.svg'
 
     # Anthropic-compatible Example (native `/v1/messages` API)
     # Set `provider: anthropic` to use the native Anthropic client instead of the
