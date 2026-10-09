@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Link2 } from 'lucide-react';
 import type { TOptions } from 'i18next';
 import type { TranslationKeys } from '~/hooks/useLocalize';
 import { cn, getDisplayTitle } from '~/utils';
@@ -162,7 +163,7 @@ const ConvoLink: React.FC<ConvoLinkProps> = ({
         dir="auto"
         className={cn(
           isUnseen && !isGenerating && 'font-semibold',
-          'min-w-0 flex-1 overflow-hidden [mask-size:100%_100%] [mask-position:left] [mask-repeat:no-repeat] whitespace-nowrap [transition-property:mask-size] duration-0 ease-linear [--convo-title-fade-width:24px] [--convo-title-reveal-duration:800ms] [&:dir(rtl)]:[mask-position:right]',
+          'min-w-0 flex-initial overflow-hidden [mask-size:100%_100%] [mask-position:left] [mask-repeat:no-repeat] whitespace-nowrap [transition-property:mask-size] duration-0 ease-linear [--convo-title-fade-width:24px] [--convo-title-reveal-duration:800ms] [&:dir(rtl)]:[mask-position:right]',
           isOverflowing &&
             '[mask-image:linear-gradient(to_right,currentColor_calc(100%_-_var(--convo-title-fade-width)),transparent)] [&:dir(rtl)]:[mask-image:linear-gradient(to_left,currentColor_calc(100%_-_var(--convo-title-fade-width)),transparent)]',
           'data-[title-revealed=true]:[mask-size:calc(100%_+_var(--convo-title-fade-width))_100%] data-[title-revealed=true]:duration-(--convo-title-reveal-duration)',
@@ -180,6 +181,11 @@ const ConvoLink: React.FC<ConvoLinkProps> = ({
           {displayTitle}
         </span>
       </span>
+      {/* The badge follows the title rather than the row's far edge, where a short title left it
+          floating apart from what it marks. The title only grows to its text for that reason. */}
+      {isSharedBadgeVisible && (
+        <Link2 className="icon-sm text-text-secondary shrink-0" aria-hidden="true" />
+      )}
     </button>
   );
 };

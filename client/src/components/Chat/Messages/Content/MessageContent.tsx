@@ -8,6 +8,7 @@ import useSmoothStreaming from '~/hooks/Messages/useSmoothStreaming';
 import Error from '~/components/Messages/Content/Error';
 import ToolCallLimitNotice from './ToolCallLimitNotice';
 import CollapsibleText from './Parts/CollapsibleText';
+import EmptyResponse from './Parts/EmptyResponse';
 import { useMessageContext } from '~/Providers';
 import EmptyText from './Parts/EmptyText';
 import MarkdownLite from './MarkdownLite';
@@ -190,6 +191,20 @@ const MessageContent = ({
 
   if (edit) {
     return <EditMessage text={text} isSubmitting={isSubmitting} {...props} />;
+  }
+
+  if (
+    !isSubmitting &&
+    !unfinished &&
+    !message.isCreatedByUser &&
+    thinkingContent.length === 0 &&
+    regularContent.trim().length === 0
+  ) {
+    return (
+      <Container message={message}>
+        <EmptyResponse />
+      </Container>
+    );
   }
 
   return (
