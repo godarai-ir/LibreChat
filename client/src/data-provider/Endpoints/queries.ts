@@ -1,4 +1,6 @@
+import { useCallback } from 'react';
 import { useRecoilValue } from 'recoil';
+import { useTheme } from '@librechat/client';
 import { useQuery } from '@tanstack/react-query';
 import { Time, QueryKeys, dataService } from 'librechat-data-provider';
 import type { QueryObserverResult, UseQueryOptions } from '@tanstack/react-query';
@@ -6,10 +8,47 @@ import type t from 'librechat-data-provider';
 import { normalizeStartupConfigModelSpecs } from '~/utils';
 import store from '~/store';
 
+const darkIconConfigs = new WeakMap<object, t.TEndpointsConfig>();
+
+/**
+ * The endpoints config as the dark color scheme shows it: each endpoint that names an
+ * `iconURLDark` serves it as `iconURL`, so every reader of the endpoint icon picks the variant
+ * drawn for the background in effect without knowing about the theme. Returns the same object
+ * when nothing changes, and one stable object per response otherwise, so memoized readers keyed
+ * on the config do not rerun.
+ */
+export const withDarkIcons = (config: t.TEndpointsConfig): t.TEndpointsConfig => {
+  if (config == null) {
+    return config;
+  }
+  const cached = darkIconConfigs.get(config);
+  if (cached) {
+    return cached;
+  }
+  let themed: t.TEndpointsConfig = config;
+  for (const [name, endpoint] of Object.entries(config)) {
+    if (endpoint?.iconURLDark) {
+      themed = { ...themed, [name]: { ...endpoint, iconURL: endpoint.iconURLDark } };
+    }
+  }
+  darkIconConfigs.set(config, themed);
+  return themed;
+};
+
 export const useGetEndpointsQuery = <TData = t.TEndpointsConfig>(
   config?: UseQueryOptions<t.TEndpointsConfig, unknown, TData>,
 ): QueryObserverResult<TData> => {
   const queriesEnabled = useRecoilValue<boolean>(store.queriesEnabled);
+  const dark = useTheme().resolvedMode === 'dark';
+  const callerSelect = config?.select;
+  /** Without a caller `select`, `TData` is the default `TEndpointsConfig`. */
+  const select = useCallback(
+    (data: t.TEndpointsConfig): TData => {
+      const themed = dark ? withDarkIcons(data) : data;
+      return callerSelect ? callerSelect(themed) : (themed as TData);
+    },
+    [dark, callerSelect],
+  );
   return useQuery<t.TEndpointsConfig, unknown, TData>(
     [QueryKeys.endpoints],
     () => dataService.getAIEndpoints(),
@@ -19,6 +58,7 @@ export const useGetEndpointsQuery = <TData = t.TEndpointsConfig>(
       refetchOnReconnect: false,
       refetchOnMount: false,
       ...config,
+      select,
       enabled: (config?.enabled ?? true) === true && queriesEnabled,
     },
   );

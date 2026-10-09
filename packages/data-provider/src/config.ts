@@ -2049,6 +2049,10 @@ export const endpointSchema = baseEndpointSchema.merge(
       userIdQuery: z.boolean().optional(),
     }),
     iconURL: z.string().optional(),
+    /** Icon for the dark color scheme. A mark drawn for one background often disappears on the
+     *  other (a white logo on the light theme); when set, the client shows it in place of
+     *  `iconURL` while dark is in effect. Unset keeps `iconURL` in both schemes. */
+    iconURLDark: z.string().optional(),
     modelDisplayLabel: z.string().optional(),
     /**
      * Forces the endpoint to use a provider's native client / request format

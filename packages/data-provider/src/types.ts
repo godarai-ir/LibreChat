@@ -698,6 +698,8 @@ export type TConfig = {
   plugins?: Record<string, string>;
   name?: string;
   iconURL?: string;
+  /** Icon shown instead of `iconURL` while the dark color scheme is in effect. */
+  iconURLDark?: string;
   /** Canonical provider identity resolved at config load, used for branding. */
   providerId?: ProviderId;
   version?: string;
