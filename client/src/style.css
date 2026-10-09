@@ -2059,6 +2059,14 @@ html[data-input-modality='keyboard']
 .popover-ui.popover-from-left[data-enter] {
   translate: 0 0;
 }
+/* A submenu placed with `mirrorPlacement` opens to the left of its parent under RTL, so it
+   grows from its right edge, the one beside the parent, and slides in leftward. */
+[dir='rtl'] .popover-ui.popover-from-left {
+  transform-origin: right;
+}
+[dir='rtl'] .popover-ui.popover-from-left:not([data-enter]) {
+  translate: 0.5rem 0;
+}
 
 .animate-popover-top,
 .animate-popover {
