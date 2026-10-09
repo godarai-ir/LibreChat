@@ -1,6 +1,5 @@
 import React, { memo, useId, useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useDrag } from 'react-dnd';
-import { Link2 } from 'lucide-react';
 import { useRecoilValue } from 'recoil';
 import { useParams } from 'react-router-dom';
 import { Spinner, useToastContext, useMediaQuery } from '@librechat/client';
@@ -441,9 +440,6 @@ function Conversation({
           </span>
         </ConvoLink>
       )}
-      {isSharedBadgeVisible && (
-        <Link2 className="icon-sm text-text-secondary me-1 shrink-0" aria-hidden="true" />
-      )}
       {projectBadgeProjectId && (
         <ProjectBadge projectId={projectBadgeProjectId} labelId={projectLabelId} />
       )}
@@ -460,7 +456,7 @@ function Conversation({
       )}
       <div
         className={cn(
-          'me-1 flex shrink-0 origin-left items-center justify-center',
+          'me-1 flex shrink-0 origin-left items-center justify-center rtl:origin-right',
           actionVisibilityClassName,
           actionWidthClassName,
         )}

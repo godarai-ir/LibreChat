@@ -13,7 +13,8 @@ export default function Section({ heading, icon, danger, children }: SectionProp
     <section className="mb-7">
       <h3
         className={cn(
-          'mb-1 flex items-center gap-1.5 px-1 text-xs font-medium tracking-wide uppercase',
+          /* Letter spacing pulls joined Arabic-script letters apart, so RTL drops it. */
+          'mb-1 flex items-center gap-1.5 px-1 text-xs font-medium tracking-wide uppercase rtl:tracking-normal',
           danger ? 'text-text-destructive' : 'text-text-secondary',
         )}
       >
