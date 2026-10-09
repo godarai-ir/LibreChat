@@ -5,7 +5,7 @@ import { VisuallyHidden } from '@ariakit/react';
 import { GitFork, InfoIcon } from 'lucide-react';
 import { ForkOptions } from 'librechat-data-provider';
 import { GitCommit, GitBranchPlus, ListTree } from 'lucide-react';
-import { Button, Label, Checkbox, useToastContext } from '@librechat/client';
+import { Button, Label, Checkbox, useToastContext, mirrorPlacement } from '@librechat/client';
 import { TranslationKeys, useLocalize, useNavigateToConvo } from '~/hooks';
 import { useForkConvoMutation } from '~/data-provider';
 import { hoverButtonClasses } from './styles';
@@ -54,7 +54,7 @@ const PopoverButton: React.FC<PopoverButtonProps> = ({
   const localize = useLocalize();
 
   return (
-    <Ariakit.HovercardProvider placement="right-start">
+    <Ariakit.HovercardProvider placement={mirrorPlacement('right-start')}>
       <div className="flex flex-col items-center">
         <Ariakit.HovercardAnchor
           render={
@@ -148,7 +148,7 @@ const CheckboxOption: React.FC<CheckboxOptionProps> = ({
   const localize = useLocalize();
   const { showToast } = useToastContext();
   return (
-    <Ariakit.HovercardProvider placement="right-start">
+    <Ariakit.HovercardProvider placement={mirrorPlacement('right-start')}>
       <div className="flex items-center justify-between">
         <Ariakit.HovercardAnchor
           render={
@@ -171,14 +171,15 @@ const CheckboxOption: React.FC<CheckboxOptionProps> = ({
               />
               <Label
                 htmlFor={id}
-                className="text-text-secondary hover:text-text-primary ml-2 w-auto cursor-pointer text-sm break-normal select-none"
+                variant="secondary"
+                className="hover:text-text-primary ms-2 w-auto cursor-pointer text-sm break-normal select-none"
               >
                 {localize(labelKey)}
               </Label>
             </div>
           }
         />
-        <Ariakit.HovercardDisclosure className="text-text-secondary focus:ring-text-primary ml-1 rounded-full focus:ring-2 focus:outline-hidden">
+        <Ariakit.HovercardDisclosure className="text-text-secondary focus:ring-text-primary ms-1 rounded-full focus:ring-2 focus:outline-hidden">
           <VisuallyHidden>{localize(infoKey)}</VisuallyHidden>
           {chevronDown}
         </Ariakit.HovercardDisclosure>
@@ -354,19 +355,15 @@ function Fork({
       <Ariakit.Popover
         store={popoverStore}
         gutter={10}
-        className={`popover-animate ${isActive ? 'open' : ''} border-border-medium bg-surface-secondary rounded-theme-popover flex w-[min(15rem,90vw)] flex-col gap-3 overflow-hidden border p-2 px-4 shadow-lg`}
-        style={{
-          outline: 'none',
-          pointerEvents: 'auto',
-          zIndex: 50,
-        }}
+        className={`popover-animate ${isActive ? 'open' : ''} border-border-medium bg-surface-secondary rounded-theme-popover pointer-events-auto flex w-[min(15rem,90vw)] flex-col gap-3 overflow-hidden border p-2 px-4 shadow-lg outline-none`}
+        style={{ zIndex: 50 }}
         portal={true}
         unmountOnHide={true}
       >
         <div className="text-text-primary flex h-8 w-full items-center justify-center text-sm">
           {localize(activeSetting)}
-          <Ariakit.HovercardProvider placement="right-start">
-            <div className="ml-auto flex h-6 w-6 items-center justify-center gap-1">
+          <Ariakit.HovercardProvider placement={mirrorPlacement('right-start')}>
+            <div className="ms-auto flex h-6 w-6 items-center justify-center gap-1">
               <Ariakit.HovercardAnchor
                 render={
                   <button

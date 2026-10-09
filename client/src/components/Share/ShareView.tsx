@@ -34,6 +34,7 @@ import { ShareMessagesProvider } from './ShareMessagesProvider';
 import { useForkSharedConvoMutation } from '~/data-provider';
 import { useGetSharedStartupConfig } from '~/data-provider';
 import { ShareArtifactsContainer } from './ShareArtifacts';
+import useCalendar from '~/hooks/useCalendar';
 import AppChatSurface from '../Chat/Surface';
 import { ShareContext } from '~/Providers';
 import MessagesView from './MessagesView';
@@ -144,7 +145,9 @@ function SharedView() {
 
   useDocumentTitle(docTitle);
 
+  const { dateLocale } = useCalendar();
   const locale =
+    dateLocale ||
     langcode ||
     (typeof navigator !== 'undefined'
       ? navigator.language || navigator.languages?.[0] || 'en-US'
@@ -376,11 +379,7 @@ export function ShareHeader({
 
           <div className="flex flex-wrap items-center justify-end gap-2 md:flex-nowrap md:self-start">
             {langfuseSessionUrl && (
-              <Button
-                asChild
-                variant="outline"
-                className="border-border-medium text-text-primary gap-2 rounded-full px-4 py-2 text-sm"
-              >
+              <Button asChild variant="outline" shape="round" className="border-border-medium">
                 <a href={langfuseSessionUrl} target="_blank" rel="noopener noreferrer">
                   <span>{langfuseSessionLabel}</span>
                   <ExternalLink className="size-4 shrink-0" aria-hidden="true" />
@@ -392,7 +391,7 @@ export function ShareHeader({
               variant="submit"
               onClick={onContinue}
               disabled={isContinuing}
-              className="gap-2 rounded-full px-4 py-2 text-sm"
+              shape="round"
             >
               {isContinuing ? (
                 <Spinner className="size-4" />
@@ -407,11 +406,12 @@ export function ShareHeader({
                   size={isMobile ? 'icon' : 'default'}
                   type="button"
                   variant="outline"
+                  shape="round"
                   aria-label={settingsLabel}
                   className={cn(
-                    'border-border-medium text-text-primary rounded-full text-sm transition-colors',
+                    'border-border-medium transition-colors',
                     isMobile
-                      ? 'absolute right-4 bottom-4 justify-center p-0 shadow-lg'
+                      ? 'absolute end-4 bottom-4 justify-center p-0 shadow-lg'
                       : 'gap-2 self-start px-4 py-2',
                   )}
                 >
@@ -426,7 +426,7 @@ export function ShareHeader({
                 onPointerDownOutside={handleDialogOutside}
                 onInteractOutside={handleDialogOutside}
               >
-                <OGDialogHeader className="text-left">
+                <OGDialogHeader className="text-start">
                   <OGDialogTitle>{settingsLabel}</OGDialogTitle>
                 </OGDialogHeader>
                 <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto pt-2 text-sm">

@@ -52,6 +52,7 @@ jest.mock('~/utils', () => ({
   setDocumentTitle: jest.fn(),
   isConversationUnseen: () => mockIsUnseen,
   hasRealTitle: (title: string) => !!title && title !== 'New Chat',
+  getDisplayTitle: jest.requireActual('~/utils/documentTitle').getDisplayTitle,
 }));
 
 jest.mock('../ConvoOptions', () => ({
@@ -122,7 +123,7 @@ describe('Conversation row status', () => {
 
     const className = screen.getByTestId('status-ring').getAttribute('class') ?? '';
     expect(className).toContain('-top-[0.4375rem]');
-    expect(className).toContain('-left-[0.4375rem]');
+    expect(className).toContain('-start-[0.4375rem]');
     expect(className).not.toMatch(/\[\d+px\]/);
   });
 

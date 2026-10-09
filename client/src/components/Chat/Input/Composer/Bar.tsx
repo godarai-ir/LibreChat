@@ -142,7 +142,7 @@ export function ChipModes({ modes }: ChipModesProps) {
             : localize('com_ui_mode')
         }
         onClick={(e) => e.stopPropagation()}
-        className="text-text-secondary hover:bg-surface-tertiary hover:text-text-primary focus-visible:ring-border-xheavy -mr-0.5 flex shrink-0 items-center gap-0.5 rounded px-1 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+        className="text-text-secondary hover:bg-surface-tertiary hover:text-text-primary focus-visible:ring-border-xheavy -me-0.5 flex shrink-0 items-center gap-0.5 rounded px-1 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
       >
         {active != null && <span className="max-w-[7rem] truncate">{active.label}</span>}
         <ChevronDown
@@ -180,7 +180,6 @@ export function ChipModes({ modes }: ChipModesProps) {
 
 interface BarProps {
   index: number;
-  isRTL: boolean;
   disabled: boolean;
   agentId?: string | null;
   endpoint?: string | null;
@@ -217,7 +216,6 @@ interface BarProps {
  */
 function Bar({
   index,
-  isRTL,
   disabled,
   agentId,
   endpoint,
@@ -316,10 +314,7 @@ function Bar({
   const above = chipsInline ? EMPTY_ENTRIES : packedEntries;
   const inline = chipsInline ? packedEntries : EMPTY_ENTRIES;
 
-  const rowClass = cn(
-    'flex flex-wrap items-center gap-1.5',
-    isRTL ? 'flex-row-reverse' : 'flex-row',
-  );
+  const rowClass = 'flex flex-row flex-wrap items-center gap-1.5';
   const barClass = 'flex flex-col gap-1.5 px-2 pb-2';
 
   const renderChip = (entry: PaletteEntry) => {
@@ -330,7 +325,7 @@ function Bar({
       <IconButton
         label={localize('com_ui_select_var', { 0: entry.label })}
         size="xs"
-        className="-mr-1"
+        className="-me-1"
         onClick={entry.onSelect}
       >
         {/* Matches the chip's own `tone="surface"` text color: IconButton owns
@@ -452,7 +447,7 @@ function Bar({
             what has no job during a recording actually moves. */}
         <div
           ref={controlsRef}
-          className={cn('flex shrink-0 items-center gap-1.5', isRTL ? 'mr-auto' : 'ml-auto')}
+          className="ms-auto flex shrink-0 items-center gap-1.5"
         >
           {/* One cell holding both: the settled controls drop out of it as the
               elapsed time rises into their place, and the row keeps one width

@@ -79,7 +79,7 @@ export default function Settings({
     <div className="grid grid-cols-5 gap-6">
       <div className="col-span-5 flex flex-col items-center justify-start gap-6 sm:col-span-3">
         <div className="grid w-full items-center gap-2">
-          <Label htmlFor="chatGptLabel" className="text-left text-sm font-medium">
+          <Label htmlFor="chatGptLabel" className="text-start text-sm font-medium">
             {localize('com_endpoint_custom_name')}{' '}
             <small className="high-contrast:opacity-100 opacity-40">
               ({localize('com_endpoint_default_blank')})
@@ -99,7 +99,7 @@ export default function Settings({
           />
         </div>
         <div className="grid w-full items-center gap-2">
-          <Label htmlFor="promptPrefix" className="text-left text-sm font-medium">
+          <Label htmlFor="promptPrefix" className="text-start text-sm font-medium">
             {localize('com_endpoint_prompt_prefix')}{' '}
             <small className="high-contrast:opacity-100 opacity-40">
               ({localize('com_endpoint_default_blank')})
@@ -122,7 +122,7 @@ export default function Settings({
         <HoverCard openDelay={300}>
           <HoverCardTrigger className="grid w-full items-center gap-2">
             <div className="flex justify-between">
-              <Label htmlFor="temp-int" className="text-left text-sm font-medium">
+              <Label htmlFor="temp-int" className="text-start text-sm font-medium">
                 {localize('com_endpoint_temperature')}{' '}
                 <small className="high-contrast:opacity-100 opacity-40">
                   ({localize('com_endpoint_default_with_num', { 0: '1' })})
@@ -137,13 +137,8 @@ export default function Settings({
                 min={0}
                 step={0.01}
                 controls={false}
-                className={cn(
-                  defaultTextProps,
-                  cn(
-                    optionText,
-                    'reset-rc-number-input reset-rc-number-input-text-right group-hover/temp:border-border-light h-auto w-12 border-0',
-                  ),
-                )}
+                variant="option"
+                className="w-12"
               />
             </div>
             <Slider
@@ -163,7 +158,7 @@ export default function Settings({
         <HoverCard openDelay={300}>
           <HoverCardTrigger className="grid w-full items-center gap-2">
             <div className="flex justify-between">
-              <Label htmlFor="top-p-int" className="text-left text-sm font-medium">
+              <Label htmlFor="top-p-int" className="text-start text-sm font-medium">
                 {localize('com_endpoint_top_p')}{' '}
                 <small className="high-contrast:opacity-100 opacity-40">
                   ({localize('com_endpoint_default_with_num', { 0: '1' })})
@@ -178,13 +173,8 @@ export default function Settings({
                 min={0}
                 step={0.01}
                 controls={false}
-                className={cn(
-                  defaultTextProps,
-                  cn(
-                    optionText,
-                    'reset-rc-number-input reset-rc-number-input-text-right group-hover/temp:border-border-light h-auto w-12 border-0',
-                  ),
-                )}
+                variant="option"
+                className="w-12"
               />
             </div>
             <Slider
@@ -205,7 +195,7 @@ export default function Settings({
         <HoverCard openDelay={300}>
           <HoverCardTrigger className="grid w-full items-center gap-2">
             <div className="flex justify-between">
-              <Label htmlFor="freq-penalty-int" className="text-left text-sm font-medium">
+              <Label htmlFor="freq-penalty-int" className="text-start text-sm font-medium">
                 {localize('com_endpoint_frequency_penalty')}{' '}
                 <small className="high-contrast:opacity-100 opacity-40">
                   ({localize('com_endpoint_default_with_num', { 0: '0' })})
@@ -220,13 +210,8 @@ export default function Settings({
                 min={-2}
                 step={0.01}
                 controls={false}
-                className={cn(
-                  defaultTextProps,
-                  cn(
-                    optionText,
-                    'reset-rc-number-input reset-rc-number-input-text-right group-hover/temp:border-border-light h-auto w-12 border-0',
-                  ),
-                )}
+                variant="option"
+                className="w-12"
               />
             </div>
             <Slider
@@ -247,7 +232,7 @@ export default function Settings({
         <HoverCard openDelay={300}>
           <HoverCardTrigger className="grid w-full items-center gap-2">
             <div className="flex justify-between">
-              <Label htmlFor="pres-penalty-int" className="text-left text-sm font-medium">
+              <Label htmlFor="pres-penalty-int" className="text-start text-sm font-medium">
                 {localize('com_endpoint_presence_penalty')}{' '}
                 <small className="high-contrast:opacity-100 opacity-40">
                   ({localize('com_endpoint_default_with_num', { 0: '0' })})
@@ -262,13 +247,8 @@ export default function Settings({
                 min={-2}
                 step={0.01}
                 controls={false}
-                className={cn(
-                  defaultTextProps,
-                  cn(
-                    optionText,
-                    'reset-rc-number-input reset-rc-number-input-text-right group-hover/temp:border-border-light h-auto w-12 border-0',
-                  ),
-                )}
+                variant="option"
+                className="w-12"
               />
             </div>
             <Slider

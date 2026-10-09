@@ -10,6 +10,7 @@ import {
   useWindowLabel,
   formatTimestamp,
 } from './parts';
+import useCalendar from '~/hooks/useCalendar';
 import { useLocalize } from '~/hooks';
 
 type RetryTargetInput = {
@@ -106,6 +107,7 @@ function useRetryCountdown(target?: number): number | undefined {
 
 export default function LimitError({ json, message }: ErrorRendererProps) {
   const localize = useLocalize();
+  const { dateLocale } = useCalendar();
   const type = readString(json, 'type');
   const createdAt = message?.createdAt as string | Date | undefined;
   const max = readNumber(json, 'max');
@@ -186,7 +188,7 @@ export default function LimitError({ json, message }: ErrorRendererProps) {
                 {localize('com_error_retry_countdown', { 0: formatDuration(remaining) })}
               </span>
               <span className="sr-only">
-                {localize('com_error_retry_at', { 0: formatTimestamp(retryTarget) })}
+                {localize('com_error_retry_at', { 0: formatTimestamp(retryTarget, dateLocale) })}
               </span>
             </>
           ) : (

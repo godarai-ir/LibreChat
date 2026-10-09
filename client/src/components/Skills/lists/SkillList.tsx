@@ -38,8 +38,8 @@ export default function SkillList({
         >
           <ChevronRight
             className={cn(
-              'size-3 shrink-0 text-text-secondary transition-transform duration-200',
-              sectionOpen && 'rotate-90',
+              'size-3 shrink-0 text-text-secondary transition-transform duration-200 rtl:-scale-x-100',
+              sectionOpen && 'rotate-90 rtl:-rotate-90',
             )}
             aria-hidden="true"
           />

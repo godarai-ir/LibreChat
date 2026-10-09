@@ -1,5 +1,6 @@
 import * as React from 'react';
 import * as Ariakit from '@ariakit/react';
+import { mirrorPlacement } from '@librechat/client';
 import { cn } from '~/utils';
 
 export interface CustomMenuProps extends Ariakit.MenuButtonProps<'div'> {
@@ -35,7 +36,7 @@ export const CustomMenu = React.forwardRef<HTMLDivElement, CustomMenuProps>(func
 
   const menuStore = Ariakit.useMenuStore({
     showTimeout: 100,
-    placement: parent ? 'right' : 'left',
+    placement: parent ? mirrorPlacement('right') : 'left',
     defaultOpen: defaultOpen,
   });
   const isOpen = menuStore.useState('open');
@@ -56,7 +57,7 @@ export const CustomMenu = React.forwardRef<HTMLDivElement, CustomMenuProps>(func
         {...props}
         className={cn(
           !parent &&
-            'border-border-light text-text-primary rounded-theme-control flex h-10 w-full items-center justify-center gap-2 border px-3 py-2 text-sm',
+            'border-border-light text-text-primary flex h-10 w-full items-center justify-center gap-2 rounded-theme-control border px-3 py-2 text-sm',
           parent ? nestedMenuStateClass : rootMenuStateClass,
           props.className,
         )}
@@ -72,9 +73,9 @@ export const CustomMenu = React.forwardRef<HTMLDivElement, CustomMenuProps>(func
         unmountOnHide
         gutter={parent ? -4 : 4}
         className={cn(
-          parent ? 'animate-popover-left ml-3' : 'animate-popover',
-          'z-40 flex max-h-[min(28.125rem,var(--popover-available-height))] w-full outline-hidden!',
-          'border-border-menu rounded-theme-menu-panel w-[var(--menu-width,auto)] min-w-[min(18.75rem,90vw)] flex-col overflow-auto border',
+          parent ? 'animate-popover-left ms-3' : 'animate-popover',
+          'outline-hidden! z-40 flex max-h-[min(28.125rem,var(--popover-available-height))] w-full',
+          'border-border-menu w-[var(--menu-width,auto)] min-w-[min(18.75rem,90vw)] flex-col overflow-auto rounded-theme-menu-panel border',
           'bg-surface-menu text-text-primary text-sm shadow-lg',
           parent ? 'px-0.5 py-0.5' : 'px-3 py-2',
           'max-w-[calc(100vw-4rem)] sm:max-h-[calc(65vh)] sm:max-w-[25rem]',
@@ -92,11 +93,11 @@ export const CustomMenu = React.forwardRef<HTMLDivElement, CustomMenuProps>(func
                     className={cn(
                       'peer flex h-10 w-full items-center justify-center rounded-lg border-none bg-transparent px-2 text-base',
                       'sm:h-8 sm:text-sm',
-                      'focus-visible:ring-focus-control focus:ring-0 focus:outline-hidden focus-visible:ring-2',
+                      'focus-visible:ring-focus-control focus:outline-hidden focus:ring-0 focus-visible:ring-2',
                     )}
                   />
                   {comboboxLabel && (
-                    <label className="text-text-secondary peer-[:not(:placeholder-shown)]:bg-surface-menu pointer-events-none absolute top-2.5 left-2.5 text-sm transition-all duration-200 peer-[:not(:placeholder-shown)]:-top-1.5 peer-[:not(:placeholder-shown)]:left-1.5 peer-[:not(:placeholder-shown)]:text-xs sm:top-1.5">
+                    <label className="text-text-secondary peer-[:not(:placeholder-shown)]:bg-surface-menu pointer-events-none absolute start-2.5 top-2.5 text-sm transition-all duration-200 peer-[:not(:placeholder-shown)]:-top-1.5 peer-[:not(:placeholder-shown)]:start-1.5 peer-[:not(:placeholder-shown)]:text-xs sm:top-1.5">
                       {comboboxLabel}
                     </label>
                   )}
@@ -179,7 +180,7 @@ export const CustomMenuItem = React.forwardRef<HTMLDivElement, CustomMenuItemPro
          *  bg-presentation, which resolves to the same value as
          *  surface-secondary in dark and within 3/255 of it in light, so an
          *  active item styled that way cannot render against its own popover. */
-        'relative flex w-full min-w-0 cursor-default scroll-m-1 scroll-mt-[calc(var(--combobox-height,0px)+var(--label-height,0.25rem))] items-center gap-2 rounded-lg px-2 py-1 outline-hidden! hover:bg-surface-hover aria-disabled:opacity-25 aria-selected:bg-surface-hover data-[active-item]:bg-surface-hover data-[active-item]:text-text-primary sm:text-sm before:absolute before:bottom-1 before:left-0 before:top-1 before:w-0.5 before:rounded-full before:bg-transparent data-[active-item]:before:bg-text-primary',
+        'relative flex w-full min-w-0 cursor-default scroll-m-1 scroll-mt-[calc(var(--combobox-height,0px)+var(--label-height,0.25rem))] items-center gap-2 rounded-lg px-2 py-1 outline-hidden! hover:bg-surface-hover aria-disabled:opacity-25 aria-selected:bg-surface-hover data-[active-item]:bg-surface-hover data-[active-item]:text-text-primary sm:text-sm before:absolute before:bottom-1 before:start-0 before:top-1 before:w-0.5 before:rounded-full before:bg-transparent data-[active-item]:before:bg-text-primary',
         props.className,
       ),
     };

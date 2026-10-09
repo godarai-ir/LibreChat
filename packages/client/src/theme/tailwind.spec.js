@@ -116,6 +116,7 @@ describe('LibreChat Tailwind preset', () => {
       ['h-theme-field', '--theme-field-height', defaultAppearance.fieldHeight],
       ['py-theme-field-y', '--theme-field-padding-y', defaultAppearance.fieldPaddingY],
       ['font-theme-control', '--theme-control-font-weight', defaultAppearance.controlFontWeight],
+      ['px-theme-button-x', '--theme-button-padding-x', defaultAppearance.buttonPaddingX],
       ['px-theme-dialog-x', '--theme-dialog-padding-x', defaultAppearance.dialogPaddingX],
       [
         'font-theme-dialog-title-weight',
@@ -412,7 +413,7 @@ describe('radius, font and shadow scales', () => {
     expect(defaultAppearance.radius2xl).toBe(tailwindDefault('--radius-2xl'));
     expect(defaultAppearance.radius3xl).toBe(tailwindDefault('--radius-3xl'));
 
-    expect(defaultAppearance.fontFamily).toBe('Inter, sans-serif');
+    expect(defaultAppearance.fontFamily).toBe('Inter, Vazirmatn, sans-serif');
     expect(defaultAppearance.monoFontFamily).toBe(
       "'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, 'Cascadia Mono', 'Liberation Mono', Consolas, monospace",
     );

@@ -2,7 +2,7 @@ import * as React from 'react';
 import { ClassProp } from 'class-variance-authority/types';
 import * as ProgressPrimitive from '@radix-ui/react-progress';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '~/utils';
+import { cn, isDocumentRTL } from '~/utils';
 
 /** Fill tone for the indicator; the track stays neutral in every variant. */
 const progressIndicatorVariants: (
@@ -43,7 +43,9 @@ const Progress: React.ForwardRefExoticComponent<
     >
       <ProgressPrimitive.Indicator
         className={progressIndicatorVariants({ variant })}
-        style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+        style={{
+          transform: `translateX(${isDocumentRTL() ? '' : '-'}${100 - (value || 0)}%)`,
+        }}
       />
     </ProgressPrimitive.Root>
   ),

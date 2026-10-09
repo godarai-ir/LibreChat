@@ -139,7 +139,7 @@ export default function DataTable<TData, TValue>({ columns, data }: DataTablePro
           ) : (
             <TrashIcon className="text-text-destructive size-3.5 sm:size-4" />
           )}
-          {!isSmallScreen && <span className="ml-2">{localize('com_ui_delete')}</span>}
+          {!isSmallScreen && <span className="ms-2">{localize('com_ui_delete')}</span>}
         </Button>
         <FilterInput
           inputId="files-filter"
@@ -225,7 +225,7 @@ export default function DataTable<TData, TValue>({ columns, data }: DataTablePro
                             key={cell.id}
                             size="compact"
                             className={cn(
-                              'align-start px-2 text-xs sm:px-4 sm:text-sm [tr[data-disabled=true]_&]:opacity-50',
+                              'px-2 text-xs sm:px-4 sm:text-sm [tr[data-disabled=true]_&]:opacity-50',
                               cell.column.id === 'select' ? 'overflow-visible' : 'overflow-x-auto',
                             )}
                             style={style}
@@ -255,7 +255,7 @@ export default function DataTable<TData, TValue>({ columns, data }: DataTablePro
       </div>
 
       <div className="flex items-center justify-end gap-2 py-4">
-        <div className="text-text-secondary ml-2 flex-1 truncate text-xs sm:ml-4 sm:text-sm">
+        <div className="text-text-secondary ms-2 flex-1 truncate text-xs sm:ms-4 sm:text-sm">
           <span className="hidden sm:inline">
             {localize('com_files_number_selected', {
               0: `${table.getFilteredSelectedRowModel().rows.length}`,

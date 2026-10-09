@@ -93,7 +93,7 @@ export default function UiScaleSelector() {
           className="text-text-primary w-12 text-center text-sm tabular-nums"
           aria-live="polite"
         >
-          {percent}%
+          {localize('com_nav_ui_scale_value', { 0: percent })}
         </span>
         <Button
           variant="outline"

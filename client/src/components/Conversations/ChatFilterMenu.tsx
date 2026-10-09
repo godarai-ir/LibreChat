@@ -2,8 +2,13 @@ import { memo, useCallback, useId, useMemo, useRef, useState } from 'react';
 import * as Ariakit from '@ariakit/react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { BookmarkFilledIcon, BookmarkIcon } from '@radix-ui/react-icons';
-import { TooltipAnchor, buttonVariants, usePopoverZIndex } from '@librechat/client';
 import { alternateName, PermissionTypes, Permissions } from 'librechat-data-provider';
+import {
+  TooltipAnchor,
+  buttonVariants,
+  mirrorPlacement,
+  usePopoverZIndex,
+} from '@librechat/client';
 import {
   Archive,
   ArrowDownAZ,
@@ -68,9 +73,9 @@ const groupLabelClassName = 'px-2 pb-1 pt-1.5 text-xs font-medium text-text-seco
 /** Keeps every row's label on the same x, checked or not. */
 const CheckSlot = ({ checked }: { checked: boolean }) =>
   checked ? (
-    <Check className="text-text-primary ml-auto size-4 shrink-0" aria-hidden="true" />
+    <Check className="text-text-primary ms-auto size-4 shrink-0" aria-hidden="true" />
   ) : (
-    <span className="ml-auto size-4 shrink-0" aria-hidden="true" />
+    <span className="ms-auto size-4 shrink-0" aria-hidden="true" />
   );
 
 type ChoiceProps = {
@@ -153,7 +158,7 @@ const PropertyRow = ({
   const zIndex = usePopoverZIndex();
 
   return (
-    <Ariakit.MenuProvider placement="right-start" focusLoop={true}>
+    <Ariakit.MenuProvider placement={mirrorPlacement('right-start')} focusLoop={true}>
       <Ariakit.MenuButton
         render={<Ariakit.MenuItem />}
         data-testid={testId}
@@ -163,10 +168,13 @@ const PropertyRow = ({
           {icon}
         </span>
         <span className="shrink-0">{label}</span>
-        <span className="text-text-secondary ml-auto flex min-w-0 items-center gap-1.5 pl-4">
+        <span className="text-text-secondary ms-auto flex min-w-0 items-center gap-1.5 ps-4">
           {valueIcon}
           <span className="truncate">{value}</span>
-          <ChevronRight className="text-text-tertiary size-4 shrink-0" aria-hidden="true" />
+          <ChevronRight
+            className="text-text-tertiary size-4 shrink-0 rtl:-scale-x-100"
+            aria-hidden="true"
+          />
         </span>
       </Ariakit.MenuButton>
       <Ariakit.Menu
@@ -176,7 +184,7 @@ const PropertyRow = ({
         unmountOnHide={true}
         initialFocus={initialFocus}
         /** Portaled beside modal dialog layers, which disable pointer events on body. */
-        className="popover-ui pointer-events-auto max-w-72 min-w-48"
+        className="popover-ui pointer-events-auto min-w-48 max-w-72"
         style={{ zIndex }}
       >
         {children}
@@ -250,7 +258,7 @@ const BookmarkChoices = memo(() => {
               )}
             </span>
             <span className="truncate">{bookmark.tag}</span>
-            <span className="text-text-tertiary ml-auto shrink-0 text-xs tabular-nums">
+            <span className="text-text-tertiary ms-auto shrink-0 text-xs tabular-nums">
               {bookmark.count}
             </span>
           </Ariakit.MenuItem>
@@ -418,7 +426,7 @@ const FacetSearch = ({
   const inputId = useId();
 
   return (
-    <div className="px-1 pt-0.5 pb-1.5">
+    <div className="px-1 pb-1.5 pt-0.5">
       <label className="sr-only" htmlFor={inputId}>
         {localize('com_ui_search_filters')}
       </label>
@@ -439,7 +447,7 @@ const FacetSearch = ({
             event.preventDefault();
             menu?.move(menu.first());
           }}
-          className="text-text-primary placeholder:text-text-tertiary w-full bg-transparent py-1 text-sm outline-hidden"
+          className="text-text-primary placeholder:text-text-tertiary outline-hidden w-full bg-transparent py-1 text-sm"
         />
       </div>
     </div>
@@ -869,7 +877,7 @@ const ChatFilterMenu = () => {
             <ListFilter aria-hidden="true" className="size-4" />
             {totalCount > 0 && (
               <span
-                className="bg-text-primary absolute top-0.5 right-0.5 size-1.5 rounded-full"
+                className="bg-text-primary absolute end-0.5 top-0.5 size-1.5 rounded-full"
                 aria-hidden="true"
               />
             )}
@@ -882,11 +890,11 @@ const ChatFilterMenu = () => {
         gutter={8}
         unmountOnHide={true}
         aria-label={localize('com_ui_filter_and_sort_chats')}
-        className="popover-ui pointer-events-auto max-w-80 min-w-60"
+        className="popover-ui pointer-events-auto min-w-60 max-w-80"
         /** Portaled beside modal dialog layers, which disable pointer events on body. */
         style={{ zIndex }}
       >
-        <div className="flex items-center justify-between gap-2 px-2 pt-0.5 pb-1.5">
+        <div className="flex items-center justify-between gap-2 px-2 pb-1.5 pt-0.5">
           <span className="text-text-secondary text-xs font-medium">
             {localize('com_ui_chat_list')}
           </span>
@@ -900,7 +908,7 @@ const ChatFilterMenu = () => {
                *  ways out of a filter are the same control in two places. It stays a
                *  MenuItem: a button here would leave the menu's arrow keys behind. */
               buttonVariants({ variant: 'ghost', size: 'xs' }),
-              'text-text-secondary cursor-pointer font-medium outline-hidden',
+              'text-text-secondary outline-hidden cursor-pointer font-medium',
               'aria-disabled:hover:text-text-secondary aria-disabled:opacity-50',
               'data-[active-item]:bg-surface-hover data-[active-item]:text-text-primary',
             )}

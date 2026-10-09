@@ -22,6 +22,7 @@ import type { TDialogProps } from '~/common';
 import { useUserKey, useLocalize, useClockFormat } from '~/hooks';
 import { NotificationSeverity } from '~/common';
 import { formatKeyExpiryLabel } from './utils';
+import useCalendar from '~/hooks/useCalendar';
 import CustomConfig from './CustomEndpoint';
 import BedrockConfig from './BedrockConfig';
 import GoogleConfig from './GoogleConfig';
@@ -112,8 +113,8 @@ const RevokeKeysButton = ({
       <OGDialog open={open} onOpenChange={setOpen}>
         <OGDialogTrigger asChild>
           <Button
-            variant="destructive"
-            className="flex items-center justify-center rounded-lg transition-colors duration-200"
+            variant="destructive-soft"
+            className="flex items-center justify-center duration-200"
             onClick={() => setOpen(true)}
             disabled={disabled}
           >
@@ -125,7 +126,7 @@ const RevokeKeysButton = ({
             <OGDialogTitle>{localize('com_ui_revoke_key_endpoint', { 0: endpoint })}</OGDialogTitle>
           </OGDialogHeader>
           <div className="py-4">
-            <Label className="text-left text-sm font-medium">
+            <Label className="text-start text-sm font-medium">
               {localize('com_ui_revoke_key_confirm')}
             </Label>
           </div>
@@ -137,7 +138,7 @@ const RevokeKeysButton = ({
               variant="destructive"
               onClick={onClick}
               disabled={isLoading}
-              className="bg-surface-destructive text-text-on-status hover:bg-surface-destructive-hover transition-all duration-200"
+              className="transition-all duration-200"
             >
               {isLoading ? <Spinner /> : localize('com_ui_revoke')}
             </Button>
@@ -365,11 +366,12 @@ const SetKeyDialog = ({
   const EndpointComponent = endpointComponents[configuredEndpoint] ?? endpointComponents['default'];
   const expiryTime = getExpiry();
   const hour12 = useClockFormat();
+  const { dateLocale } = useCalendar();
   let currentExpiryLabel: string | null = null;
   if (expiryTime === 'never') {
     currentExpiryLabel = localize('com_endpoint_config_key_never_expires');
   } else if (expiryTime !== undefined) {
-    currentExpiryLabel = formatKeyExpiryLabel(localize, expiryTime, hour12);
+    currentExpiryLabel = formatKeyExpiryLabel(localize, expiryTime, hour12, dateLocale);
   }
 
   return (

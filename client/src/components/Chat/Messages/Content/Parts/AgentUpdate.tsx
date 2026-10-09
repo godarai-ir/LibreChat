@@ -18,10 +18,10 @@ const AgentUpdate: React.FC<AgentUpdateProps> = ({ currentAgentId }) => {
   }
   return (
     <div className="relative">
-      <div className="absolute -left-6 flex h-full w-4 items-center justify-center">
+      <div className="absolute -start-6 flex h-full w-4 items-center justify-center">
         <div className="relative h-full w-4">
-          <div className="absolute left-0 top-0 h-1/2 w-px border border-border-medium"></div>
-          <div className="absolute left-0 top-1/2 h-px w-3 border border-border-medium"></div>
+          <div className="absolute start-0 top-0 h-1/2 w-px border border-border-medium"></div>
+          <div className="absolute start-0 top-1/2 h-px w-3 border border-border-medium"></div>
         </div>
       </div>
       <div className="my-4 flex items-center gap-2">

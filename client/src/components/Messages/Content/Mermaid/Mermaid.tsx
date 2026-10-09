@@ -327,7 +327,7 @@ export const MermaidRenderer = memo(function MermaidRenderer({
                 className={cn(
                   showCode
                     ? 'border-border-light bg-surface-secondary relative z-20 border-b'
-                    : 'absolute top-0 right-0 left-0 z-20',
+                    : 'absolute start-0 end-0 top-0 z-20',
                   showControls ? 'opacity-100' : 'pointer-events-none opacity-0',
                 )}
                 codeContent={children}
@@ -362,7 +362,7 @@ export const MermaidRenderer = memo(function MermaidRenderer({
               data-testid={fillContainer ? 'mermaid-artifact-canvas' : undefined}
               onMouseDown={handleMouseDown}
             >
-              <div className="border-border-light bg-surface-secondary text-text-secondary absolute top-2 left-2 z-10 flex items-center gap-1 rounded border px-2 py-1 text-xs">
+              <div className="border-border-light bg-surface-secondary text-text-secondary absolute start-2 top-2 z-10 flex items-center gap-1 rounded border px-2 py-1 text-xs">
                 <Spinner className="h-3 w-3" />
               </div>
               <div
@@ -388,7 +388,7 @@ export const MermaidRenderer = memo(function MermaidRenderer({
                 onZoomOut={handleZoomOut}
                 onReset={handleResetZoom}
                 className={cn(
-                  'absolute right-2 bottom-2 z-10 transition-opacity duration-200',
+                  'absolute end-2 bottom-2 z-10 transition-opacity duration-200',
                   showControls ? 'opacity-100' : 'pointer-events-none opacity-0',
                 )}
               />
@@ -457,10 +457,10 @@ export const MermaidRenderer = memo(function MermaidRenderer({
                 {localize('com_ui_mermaid_failed')}
               </span>
               <Button
-                variant="ghost"
+                variant="quiet"
                 size="sm"
                 onClick={handleRetry}
-                className="text-text-secondary hover:bg-surface-hover h-auto gap-1 rounded px-2 py-1 text-xs"
+                className="h-auto gap-1 rounded px-2 py-1 text-xs"
               >
                 <RefreshCw className="h-3 w-3" aria-hidden="true" />
                 {localize('com_ui_retry')}
@@ -558,7 +558,7 @@ export const MermaidRenderer = memo(function MermaidRenderer({
             onZoomOut={handleZoomOut}
             onReset={handleResetZoom}
             className={cn(
-              'absolute right-2 bottom-2 z-10 transition-opacity duration-200',
+              'absolute end-2 bottom-2 z-10 transition-opacity duration-200',
               showControls ? 'opacity-100' : 'pointer-events-none opacity-0',
             )}
           />

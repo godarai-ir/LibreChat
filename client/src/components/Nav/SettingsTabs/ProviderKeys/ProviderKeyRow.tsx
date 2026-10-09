@@ -7,6 +7,7 @@ import { formatKeyExpiryLabel } from '~/components/Input/SetKeyDialog/utils';
 import { useUserKey, useLocalize, useClockFormat } from '~/hooks';
 import { SetKeyDialog } from '~/components/Input/SetKeyDialog';
 import { useProviderIcon } from '~/hooks/Endpoint';
+import useCalendar from '~/hooks/useCalendar';
 
 interface ProviderKeyRowProps {
   endpoint: string;
@@ -25,6 +26,7 @@ export default function ProviderKeyRow({ endpoint, endpointsConfig }: ProviderKe
   const expiry = getExpiry();
   const hasKey = !!expiry && checkExpiry();
   const hour12 = useClockFormat();
+  const { dateLocale } = useCalendar();
   const expiryLabel = useMemo(() => {
     if (!expiry) {
       return localize('com_ui_provider_api_keys_not_set');
@@ -32,8 +34,8 @@ export default function ProviderKeyRow({ endpoint, endpointsConfig }: ProviderKe
     if (expiry === 'never') {
       return localize('com_endpoint_config_key_never_expires');
     }
-    return formatKeyExpiryLabel(localize, expiry, hour12);
-  }, [expiry, localize, hour12]);
+    return formatKeyExpiryLabel(localize, expiry, hour12, dateLocale);
+  }, [expiry, localize, hour12, dateLocale]);
 
   return (
     <>

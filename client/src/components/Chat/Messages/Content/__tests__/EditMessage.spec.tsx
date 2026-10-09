@@ -37,6 +37,7 @@ jest.mock('~/Providers', () => ({
 
 jest.mock('~/hooks', () => ({
   useLocalize: () => (key: string) => key,
+  useChatDirection: () => 'ltr',
 }));
 
 jest.mock('~/hooks/Chat', () => ({

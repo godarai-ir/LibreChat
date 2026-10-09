@@ -82,11 +82,11 @@ const SummaryButton = memo(
           aria-expanded={isExpanded}
           aria-controls={contentId}
           className={cn(
-            'group/button h-auto flex-1 justify-start gap-0 rounded-lg p-0 leading-[18px] font-normal',
+            'group/button flex-1 gap-0 rounded-lg leading-[18px] font-normal',
             fontSize,
           )}
         >
-          <span className="relative mr-1.5 inline-flex h-[1.125rem] w-[1.125rem] items-center justify-center">
+          <span className="relative me-1.5 inline-flex h-[1.125rem] w-[1.125rem] items-center justify-center">
             <ScrollText
               className="icon-sm text-text-secondary absolute opacity-100 transition-opacity group-hover/button:opacity-0"
               aria-hidden="true"
@@ -103,19 +103,16 @@ const SummaryButton = memo(
         </Button>
         {content && showCopyButton && (
           <Button
-            variant="ghost"
-            size="icon"
+            variant="message-action"
             onClick={onCopy}
             aria-label={
               isCopied ? localize('com_ui_copied_to_clipboard') : localize('com_ui_copy_summary')
             }
             className={cn(
-              'text-text-secondary-alt size-auto rounded-lg p-1.5',
               isExpanded
                 ? 'opacity-0 group-focus-within/summary-container:opacity-100 group-hover/summary-container:opacity-100'
                 : 'opacity-0',
-              'hover:bg-surface-hover hover:text-text-primary',
-              'focus-visible:ring-text-primary focus-visible:opacity-100 focus-visible:ring-2',
+              'focus-visible:opacity-100',
             )}
           >
             <span className="sr-only">
@@ -155,7 +152,7 @@ const FloatingSummaryBar = memo(
     return (
       <div
         className={cn(
-          'absolute right-3 bottom-3 flex items-center gap-2 transition-opacity duration-150',
+          'absolute end-3 bottom-3 flex items-center gap-2 transition-opacity duration-150',
           isVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
       >

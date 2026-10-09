@@ -19,9 +19,10 @@ import ConversationEndpointIcon from '~/components/Conversations/ConversationEnd
 import { areConversationListItemFieldsEqual } from '~/components/Conversations/utils';
 import { useLocalize, useNavigateToConvo, useClockFormat } from '~/hooks';
 import { DateLabel } from '~/components/Conversations/Conversations';
+import { cn, getDisplayTitle, groupConversations } from '~/utils';
 import ProjectChatOptions from './ProjectChatOptions';
-import { cn, groupConversations } from '~/utils';
 import { useActiveJobs } from '~/data-provider';
+import useCalendar from '~/hooks/useCalendar';
 
 type ChatSortField = 'updatedAt' | 'createdAt';
 
@@ -80,11 +81,12 @@ const ConversationRow = memo(
     const { navigateToConvo } = useNavigateToConvo();
     const localize = useLocalize();
     const hour12 = useClockFormat();
+    const { dateLocale } = useCalendar();
     const conversationId = conversation.conversationId ?? '';
-    const title = conversation.title || localize('com_ui_untitled');
+    const title = getDisplayTitle(conversation.title, localize);
     const updatedAt = conversation.updatedAt || conversation.createdAt;
     const formattedDate = updatedAt
-      ? new Date(updatedAt).toLocaleString(undefined, { hour12 })
+      ? new Date(updatedAt).toLocaleString(dateLocale, { hour12 })
       : '';
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -106,8 +108,10 @@ const ConversationRow = memo(
           <span className="flex h-10 w-10 shrink-0 items-center justify-center">
             <ConversationEndpointIcon conversation={conversation} size={40} context="landing" />
           </span>
-          <span className="min-w-0 flex-1">
-            <span className="text-text-primary block truncate text-sm font-medium">{title}</span>
+          <span className="min-w-0 flex-1 text-left rtl:text-right">
+            <span dir="auto" className="text-text-primary block truncate text-sm font-medium">
+              {title}
+            </span>
             <span className="text-text-secondary block truncate text-xs tabular-nums">
               {formattedDate}
             </span>
@@ -117,7 +121,7 @@ const ConversationRow = memo(
           ) : null}
         </Button>
         {conversationId ? (
-          <div className="pr-2">
+          <div className="pe-2">
             <ProjectChatOptions
               conversation={conversation}
               isMenuOpen={isMenuOpen}
@@ -145,6 +149,7 @@ const ProjectChatList = ({
   loadMore,
 }: ProjectChatListProps) => {
   const localize = useLocalize();
+  const { calendar } = useCalendar();
   const { data: activeJobsData } = useActiveJobs();
   const remScale = useRemScale();
   const activeJobIds = useMemo(
@@ -157,15 +162,17 @@ const ProjectChatList = ({
     }
 
     const items: FlattenedItem[] = [];
-    groupConversations(conversations, { field: sortBy }).forEach(([groupName, convos]) => {
-      items.push({ type: 'date', groupName });
-      convos.forEach((convo) => items.push({ type: 'convo', convo }));
-    });
+    groupConversations(conversations, { field: sortBy, calendar }).forEach(
+      ([groupName, convos]) => {
+        items.push({ type: 'date', groupName });
+        convos.forEach((convo) => items.push({ type: 'convo', convo }));
+      },
+    );
     if (isFetchingNextPage) {
       items.push({ type: 'loading' });
     }
     return items;
-  }, [conversations, isFetchingNextPage, isLoading, sortBy]);
+  }, [calendar, conversations, isFetchingNextPage, isLoading, sortBy]);
 
   const flattenedItemsRef = useRef(flattenedItems);
   flattenedItemsRef.current = flattenedItems;
@@ -279,8 +286,7 @@ const ProjectChatList = ({
             deferredMeasurementCache={cache}
             overscanRowCount={8}
             onRowsRendered={handleRowsRendered}
-            className="outline-hidden"
-            style={{ outline: 'none' }}
+            className="outline-none"
           />
         )}
       </AutoSizer>

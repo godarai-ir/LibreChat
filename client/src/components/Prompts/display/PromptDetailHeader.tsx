@@ -4,6 +4,8 @@ import { User, Calendar, EarthIcon, BarChart3 } from 'lucide-react';
 import type { TPromptGroup } from 'librechat-data-provider';
 import { useLocalize, useAuthContext } from '~/hooks';
 import CategoryIcon from '../utils/CategoryIcon';
+import useCalendar from '~/hooks/useCalendar';
+import { formatShortDate } from '~/utils';
 
 interface PromptDetailHeaderProps {
   group: TPromptGroup;
@@ -12,7 +14,13 @@ interface PromptDetailHeaderProps {
 const PromptDetailHeader = ({ group }: PromptDetailHeaderProps) => {
   const localize = useLocalize();
   const { user } = useAuthContext();
-  const formattedDate = group.createdAt ? format(new Date(group.createdAt), 'MMM d, yyyy') : null;
+  const { dateLocale } = useCalendar();
+  let formattedDate: string | null = null;
+  if (group.createdAt) {
+    const createdAt = new Date(group.createdAt);
+    formattedDate =
+      dateLocale != null ? formatShortDate(createdAt, dateLocale) : format(createdAt, 'MMM d, yyyy');
+  }
   const isSharedPrompt = group.author !== user?.id && Boolean(group.authorName);
 
   const isGlobalGroup = group.isPublic === true;

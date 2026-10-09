@@ -174,7 +174,7 @@ function Ledger({
       : '';
   const costCell = (cost?: number) =>
     showCost && (
-      <span className="text-text-secondary hidden truncate text-right text-xs font-normal tabular-nums md:block">
+      <span className="text-text-secondary hidden truncate text-end text-xs font-normal tabular-nums md:block">
         {cost != null ? formatCost(cost, currency) : ''}
       </span>
     );
@@ -288,8 +288,8 @@ function Ledger({
     <ChevronRight
       aria-hidden="true"
       className={cn(
-        'text-text-secondary size-3.5 shrink-0 transition-transform motion-reduce:transition-none',
-        expanded && 'rotate-90',
+        'text-text-secondary size-3.5 shrink-0 transition-transform motion-reduce:transition-none rtl:-scale-x-100',
+        expanded && 'rotate-90 rtl:-rotate-90',
       )}
     />
   );
@@ -376,7 +376,7 @@ function Ledger({
           active && ACTIVE_RING,
         )}
       >
-        <span className="flex min-w-0 items-center gap-1.5" style={{ paddingLeft: indent }}>
+        <span className="flex min-w-0 items-center gap-1.5" style={{ paddingInlineStart: indent }}>
           {chevron(row.expanded)}
           <span className="shrink-0 truncate">{label}</span>
           {agents.map(({ agentId, recordId }) => {
@@ -393,7 +393,7 @@ function Ledger({
                 }}
                 onKeyDown={(event) => event.stopPropagation()}
                 className={cn(
-                  'border-border-light hover:bg-surface-hover flex max-w-[45%] shrink-0 items-center gap-1 rounded-full border py-0.5 pr-2 pl-0.5 font-medium',
+                  'border-border-light hover:bg-surface-hover flex max-w-[45%] shrink-0 items-center gap-1 rounded-full border py-0.5 ps-0.5 pe-2 font-medium',
                   selectedId === recordId && 'bg-surface-active-alt',
                 )}
               >
@@ -409,7 +409,7 @@ function Ledger({
             <CircleAlert aria-hidden="true" className="text-status-error size-3.5 shrink-0" />
           )}
         </span>
-        <span className="text-text-secondary text-right font-normal tabular-nums">
+        <span className="text-text-secondary text-end font-normal tabular-nums">
           {format.duration(
             row.type === 'turn' ? row.turn.end - row.turn.start : row.step.end - row.step.start,
           )}
@@ -500,7 +500,7 @@ function Ledger({
       >
         <span
           className="flex min-w-0 items-center gap-1.5"
-          style={{ paddingLeft: (row.level - 2) * INDENT_PX }}
+          style={{ paddingInlineStart: (row.level - 2) * INDENT_PX }}
         >
           <span
             aria-hidden="true"
@@ -552,7 +552,7 @@ function Ledger({
             </span>
           )}
           {model.mode === 'full' && technicalName != null && (
-            <span className="text-text-tertiary hidden min-w-0 shrink-[6] truncate font-mono text-[11px] lg:inline">
+            <span className="text-text-tertiary text-2xs hidden min-w-0 shrink-[6] truncate font-mono lg:inline">
               {technicalName}
             </span>
           )}
@@ -568,10 +568,10 @@ function Ledger({
             <CircleDashed aria-hidden="true" className="text-text-secondary size-3.5 shrink-0" />
           )}
         </span>
-        <span className="text-text-secondary truncate text-right text-xs tabular-nums">
+        <span className="text-text-secondary truncate text-end text-xs tabular-nums">
           {duration}
         </span>
-        <span className="text-text-secondary hidden text-right text-xs tabular-nums md:block">
+        <span className="text-text-secondary hidden text-end text-xs tabular-nums md:block">
           {recordTokens(node)}
         </span>
         {costCell(record.cost)}
@@ -610,16 +610,14 @@ function Ledger({
         aria-hidden="true"
         className={cn(
           grid,
-          'border-border-light bg-presentation text-text-secondary sticky top-0 z-10 h-7 items-center gap-2 border-b px-2 text-[11px] font-medium tracking-wide uppercase',
+          'border-border-light bg-presentation text-text-secondary text-2xs sticky top-0 z-10 h-7 items-center gap-2 border-b px-2 font-medium tracking-wide uppercase',
         )}
       >
         <span>{localize('com_ui_trace_column_name')}</span>
-        <span className="text-right">{localize('com_ui_trace_column_duration')}</span>
-        <span className="hidden text-right md:block">{localize('com_ui_trace_column_tokens')}</span>
+        <span className="text-end">{localize('com_ui_trace_column_duration')}</span>
+        <span className="hidden text-end md:block">{localize('com_ui_trace_column_tokens')}</span>
         {showCost && (
-          <span className="hidden text-right md:block">
-            {localize('com_ui_trace_summary_cost')}
-          </span>
+          <span className="hidden text-end md:block">{localize('com_ui_trace_summary_cost')}</span>
         )}
         {viewDomain ? (
           <span className="flex justify-between tracking-normal normal-case tabular-nums">

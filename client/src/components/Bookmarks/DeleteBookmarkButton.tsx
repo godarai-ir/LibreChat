@@ -56,7 +56,7 @@ const DeleteBookmarkButton: FC<{
                 onFocus={onFocus}
                 onBlur={onBlur}
                 onClick={() => setOpen(!open)}
-                className="h-8 w-8 p-0"
+                size="icon-sm"
               >
                 <TrashIcon />
               </Button>
@@ -68,7 +68,7 @@ const DeleteBookmarkButton: FC<{
           title={localize('com_ui_bookmarks_delete')}
           className="w-11/12 max-w-lg"
           main={
-            <Label className="text-left text-sm font-medium">
+            <Label className="text-start text-sm font-medium">
               {localize('com_ui_bookmark_delete_confirm')} {bookmark}
             </Label>
           }

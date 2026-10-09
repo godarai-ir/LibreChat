@@ -167,7 +167,7 @@ function AskUserQuestionPopoverPanel({
         className="popover border-border-light bg-surface-secondary rounded-theme-popover flex max-h-[60vh] flex-col border p-2 shadow-lg [view-transition-name:ask-question]"
         onKeyDown={handlePopoverKeyDown}
       >
-        <div className="text-text-secondary flex shrink-0 items-start justify-between gap-2 p-1 pl-2">
+        <div className="text-text-secondary flex shrink-0 items-start justify-between gap-2 p-1 ps-2">
           <div className="max-h-[24vh] min-w-0 overflow-y-auto pt-1">
             <p className="text-text-primary text-sm font-medium [overflow-wrap:anywhere]">
               {liveAsk.question.question}
@@ -207,7 +207,7 @@ function AskUserQuestionPopoverPanel({
               should still come from the recipe. */}
           <Button
             variant="ghost"
-            className="text-text-secondary hover:text-text-primary h-auto cursor-text rounded-md p-0 text-xs font-normal hover:bg-transparent"
+            className="text-text-secondary h-auto cursor-text rounded-md p-0 text-xs font-normal hover:bg-transparent"
             onClick={() => textAreaRef?.current?.focus()}
           >
             {options.length === 0
@@ -226,7 +226,7 @@ function AskUserQuestionPopoverPanel({
                 onClick={() => submit(composerText)}
               >
                 {localize('com_ui_submit')}
-                <CornerDownLeft className="ml-1.5 h-4 w-4" aria-hidden="true" />
+                <CornerDownLeft className="ms-1.5 h-4 w-4" aria-hidden="true" />
               </Button>
             )}
           </div>

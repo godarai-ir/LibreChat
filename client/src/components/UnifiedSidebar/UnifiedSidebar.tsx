@@ -2,7 +2,7 @@ import { useCallback, useState, useEffect, useRef, memo } from 'react';
 import { useAtom } from 'jotai';
 import { useForm } from 'react-hook-form';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { pxToRem, useRemScale, useMediaQuery } from '@librechat/client';
+import { pxToRem, useRemScale, isDocumentRTL, useMediaQuery } from '@librechat/client';
 import type { ReactNode } from 'react';
 import type { ChatFormValues } from '~/common';
 import {
@@ -120,6 +120,8 @@ function UnifiedSidebar({
     const maxWidth = (window.innerWidth * 0.4) / remScale;
     /** The scaled minimum can exceed the viewport cap, so it yields to the cap. */
     const minWidth = Math.min(EXPANDED_MIN, maxWidth);
+    /** The sidebar hugs the right edge under RTL, so its width is measured from there. */
+    const rtl = isDocumentRTL();
     let rafId: number | null = null;
 
     const move = (e: MouseEvent) => {
@@ -128,7 +130,8 @@ function UnifiedSidebar({
       }
       rafId = requestAnimationFrame(() => {
         rafId = null;
-        const next = Math.max(minWidth, Math.min(e.clientX / remScale, maxWidth));
+        const edgeDistance = rtl ? window.innerWidth - e.clientX : e.clientX;
+        const next = Math.max(minWidth, Math.min(edgeDistance / remScale, maxWidth));
         setSidebarWidth(next);
       });
     };
@@ -218,13 +221,13 @@ function UnifiedSidebar({
          * a site banner above that container stays above the drawer too
          * instead of covering its header strip, as it already does for the
          * scrim and the pane. */
-        'bg-surface-primary-alt text-text-primary absolute inset-y-0 left-0 flex touch-pan-y touch-pinch-zoom flex-col',
+        'bg-surface-sidebar text-text-primary absolute inset-y-0 start-0 flex touch-pan-y touch-pinch-zoom flex-col',
         /** In dark mode the scrim and the drawer are both near-black, and no
          *  scrim opacity separates them by 3:1, so the drawer draws its own
          *  edge. Light palettes get that separation from the scrim, so the
          *  `drawer-edge` role defaults to the drawer's own fill there. */
-        'border-drawer-edge border-r',
-        expanded ? 'translate-x-0' : '-translate-x-full',
+        'border-drawer-edge border-e',
+        expanded ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full',
       )}
       style={{
         width: MOBILE_DRAWER_WIDTH,
@@ -260,10 +263,7 @@ function UnifiedSidebar({
           <div className="shrink-0 px-3 pt-2 empty:hidden">
             <AgentMarketplaceButton layout="row" onNavigate={handleCollapse} />
           </div>
-          <nav
-            id="chat-history-nav"
-            className="bg-surface-primary-alt min-h-0 flex-1 overflow-hidden"
-          >
+          <nav id="chat-history-nav" className="bg-surface-sidebar min-h-0 flex-1 overflow-hidden">
             <SidePanelNav links={links} />
           </nav>
           <MobileShortcutTargets

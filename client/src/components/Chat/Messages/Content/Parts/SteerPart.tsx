@@ -116,7 +116,8 @@ const SteerPart = memo(function SteerPart({
   return (
     <div
       id={steerId ? `steer-${steerId}` : undefined}
-      className="steer-render group relative my-5 flex w-full justify-end"
+      data-steer-render
+      className="group relative my-5 flex w-full justify-end"
       data-testid="steer-part"
     >
       <div className="user-turn relative flex w-fit max-w-[90%] flex-col items-end sm:max-w-[85%]">
@@ -133,7 +134,7 @@ const SteerPart = memo(function SteerPart({
                 />
               ))}
               {imageFiles.length > 0 && (
-                <div className="ml-auto flex max-w-full flex-wrap justify-end gap-2">
+                <div className="ms-auto flex max-w-full flex-wrap justify-end gap-2">
                   {imageFiles.map((file) => (
                     <Image
                       key={file.file_id}
@@ -150,7 +151,7 @@ const SteerPart = memo(function SteerPart({
           <CollapsibleText enabled={collapseLongUserMessages}>
             <div
               className={cn(
-                'markdown prose message-content dark:prose-invert light w-full break-words',
+                'markdown prose message-content light w-full break-words',
                 !enableUserMsgMarkdown && 'whitespace-pre-wrap',
                 'text-text-primary',
               )}
@@ -164,7 +165,7 @@ const SteerPart = memo(function SteerPart({
          *  park them wherever the hover-revealed time happens to end, and that
          *  width changes as the relative string ticks. */}
         <div className="text-text-secondary mt-1 flex min-h-8 items-center justify-end gap-2">
-          <MessageTimestamp value={timestamp} className="ml-0" />
+          <MessageTimestamp value={timestamp} className="ms-0" />
           <SteerReceipt state={receiptState} live={isSubmitting} animateIn={animateIn} />
         </div>
       </div>

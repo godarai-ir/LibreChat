@@ -25,6 +25,7 @@ import {
 } from '~/data-provider';
 import { MinimalIcon } from '~/components/Endpoints';
 import { NotificationSeverity } from '~/common';
+import useCalendar from '~/hooks/useCalendar';
 import { formatDate, logger } from '~/utils';
 import { useLocalize } from '~/hooks';
 import store from '~/store';
@@ -53,6 +54,7 @@ export default function ArchivedChatsTable() {
   const searchState = useRecoilValue(store.search);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const isSmallScreen = useMediaQuery('(max-width: 768px)');
+  const { dateLocale } = useCalendar();
   const [queryParams, setQueryParams] = useState<ConversationListParams>(DEFAULT_PARAMS);
   const [deleteConversation, setDeleteConversation] = useState<TConversation | null>(null);
 
@@ -203,7 +205,7 @@ export default function ArchivedChatsTable() {
       {
         accessorKey: 'archivedAt',
         header: localize('com_nav_archive_created_at'),
-        cell: ({ row }) => formatDate(getArchivedDate(row.original), isSmallScreen),
+        cell: ({ row }) => formatDate(getArchivedDate(row.original), isSmallScreen, dateLocale),
         meta: {
           width: 25,
           desktopOnly: true,
@@ -260,7 +262,7 @@ export default function ArchivedChatsTable() {
         },
       },
     ],
-    [isSmallScreen, localize, unarchiveConversation, isUnarchiving],
+    [dateLocale, isSmallScreen, localize, unarchiveConversation, isUnarchiving],
   );
 
   return (

@@ -1,5 +1,4 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
-import { useRecoilValue } from 'recoil';
 import { useForm } from 'react-hook-form';
 import { Alert, Button, TextareaAutosize } from '@librechat/client';
 import { useUpdateMessageMutation } from 'librechat-data-provider/react-query';
@@ -7,10 +6,9 @@ import type { TEditProps } from '~/common';
 import { useMessagesOperations, useMessagesConversation } from '~/Providers';
 import { findRerunParent } from './rerunParent';
 import { useGetAddedConvo } from '~/hooks/Chat';
-import { useLocalize } from '~/hooks';
+import { useLocalize, useChatDirection } from '~/hooks';
 import Container from './Container';
 import { cn } from '~/utils';
-import store from '~/store';
 
 const EditMessage = ({
   text,
@@ -41,8 +39,7 @@ const EditMessage = ({
   const updateMessageMutation = useUpdateMessageMutation(conversationId ?? '');
   const localize = useLocalize();
 
-  const chatDirection = useRecoilValue(store.chatDirection).toLowerCase();
-  const isRTL = chatDirection === 'rtl';
+  const isRTL = useChatDirection() === 'rtl';
 
   const getAddedConvo = useGetAddedConvo();
 

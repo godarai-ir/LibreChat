@@ -1,4 +1,5 @@
 import { formatDistanceToNow } from 'date-fns';
+import { formatTimeAgo } from '~/utils/messages';
 
 import type { TranslationKeys } from '~/hooks';
 
@@ -27,22 +28,26 @@ export function computeExpiresAt(option: string): string | null {
   return new Date(Date.now() + days * MS_PER_DAY).toISOString();
 }
 
-export function formatDate(dateStr: string): string {
+export function formatDate(dateStr: string, locale?: string): string {
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) {
     return '';
   }
-  return date.toLocaleDateString(undefined, {
+  return date.toLocaleDateString(locale, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
   });
 }
 
-export function formatRelativeTime(dateStr: string): string {
+/** `date-fns` words this in English only, so a calendar locale switches it to `Intl`. */
+export function formatRelativeTime(dateStr: string, locale?: string): string {
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) {
     return '';
+  }
+  if (locale != null) {
+    return formatTimeAgo(date, locale);
   }
   return formatDistanceToNow(date, { addSuffix: true });
 }

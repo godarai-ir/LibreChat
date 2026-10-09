@@ -116,10 +116,10 @@ export const PendingToolApprovalPanel = memo(function PendingToolApprovalPanel({
             render={
               <Button
                 type="button"
-                variant="ghost"
+                variant="quiet"
                 size="icon"
                 aria-label={localize('com_ui_collapse')}
-                className="text-text-secondary size-auto rounded-md p-1"
+                className="size-auto rounded-md p-1"
                 onClick={() => setOpen(false)}
               >
                 <ChevronDown className="size-4" aria-hidden="true" />
@@ -168,7 +168,7 @@ export const PendingToolApprovalPanel = memo(function PendingToolApprovalPanel({
                 />
               ) : (
                 <p className="text-text-warning mt-2 flex items-center text-xs" role="alert">
-                  <TriangleAlert className="mr-1.5 size-4" aria-hidden="true" />
+                  <TriangleAlert className="me-1.5 size-4" aria-hidden="true" />
                   {localize('com_ui_approval_unavailable')}
                 </p>
               )}
@@ -185,7 +185,7 @@ export const PendingToolApprovalPanel = memo(function PendingToolApprovalPanel({
           <div className="flex items-center gap-2">
             {(status === 'expired' || status === 'error') && (
               <span className="text-text-warning flex items-center text-xs" role="alert">
-                <TriangleAlert className="mr-1.5 size-4" aria-hidden="true" />
+                <TriangleAlert className="me-1.5 size-4" aria-hidden="true" />
                 {localize(
                   status === 'expired' ? 'com_ui_approval_expired' : 'com_ui_approval_error',
                 )}
@@ -226,12 +226,12 @@ export const PendingToolApprovalButton = memo(function PendingToolApprovalButton
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant="quiet"
       size="sm"
       aria-expanded={open}
       aria-controls="pending-tool-approval-panel"
       onClick={() => setOpen((current) => !current)}
-      className="text-text-secondary h-8 gap-1.5 rounded-full px-2"
+      className="h-8 gap-1.5 rounded-full px-2"
       data-testid="pending-tool-approval-button"
     >
       <ShieldQuestion className="size-4" aria-hidden="true" />

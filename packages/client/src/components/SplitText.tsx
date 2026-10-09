@@ -2,6 +2,15 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSprings, animated, SpringConfig } from '@react-spring/web';
 import useRemScale from '~/hooks/useRemScale';
 
+const TEXT_ALIGN: Record<NonNullable<SplitTextProps['textAlign']>, string> = {
+  left: 'text-left',
+  right: 'text-right',
+  center: 'text-center',
+  justify: 'text-justify',
+  start: 'text-start',
+  end: 'text-end',
+};
+
 interface SegmenterOptions {
   granularity?: 'grapheme' | 'word' | 'sentence';
   localeMatcher?: 'lookup' | 'best fit';
@@ -68,6 +77,33 @@ const splitGraphemes = (text: string): string[] => {
   return [...text];
 };
 
+const JOINING_SCRIPT =
+  /[\p{Script=Arabic}\p{Script=Syriac}\p{Script=Nko}\p{Script=Mandaic}\p{Script=Adlam}\p{Script=Hanifi_Rohingya}\p{Script=Mongolian}]/u;
+const RTL_SCRIPTS = [
+  'Arabic',
+  'Hebrew',
+  'Syriac',
+  'Thaana',
+  'Nko',
+  'Samaritan',
+  'Mandaic',
+  'Adlam',
+  'Hanifi_Rohingya',
+]
+  .map((script) => `\\p{Script=${script}}`)
+  .join('');
+const RTL_LETTER = new RegExp(`[${RTL_SCRIPTS}]`, 'u');
+const LTR_LETTER = new RegExp(`(?![${RTL_SCRIPTS}])\\p{L}`, 'u');
+
+/**
+ * Whether the text must reach the browser as one run. Every animated box is an atomic inline,
+ * so letters in separate boxes cannot join (Arabic, Persian) and words in separate boxes are not
+ * reordered against each other, which scrambles a right-to-left name inside a left-to-right
+ * greeting.
+ */
+const needsWholeText = (text: string): boolean =>
+  JOINING_SCRIPT.test(text) || (RTL_LETTER.test(text) && LTR_LETTER.test(text));
+
 const SplitText: React.FC<SplitTextProps> = ({
   text = '',
   className = '',
@@ -81,7 +117,11 @@ const SplitText: React.FC<SplitTextProps> = ({
   onLetterAnimationComplete,
   onLineCountChange,
 }) => {
+  const whole = useMemo(() => needsWholeText(text), [text]);
   const { words, letterCount, offsets } = useMemo(() => {
+    if (whole) {
+      return { words: [[text]], letterCount: 1, offsets: [0] };
+    }
     const split = text.split(' ').map(splitGraphemes);
     const starts: number[] = [];
     let total = 0;
@@ -90,7 +130,7 @@ const SplitText: React.FC<SplitTextProps> = ({
       total += w.length;
     }
     return { words: split, letterCount: total, offsets: starts };
-  }, [text]);
+  }, [text, whole]);
   const [inView, setInView] = useState(false);
   const ref = useRef<HTMLParagraphElement>(null);
   const animatedCount = useRef(0);
@@ -153,17 +193,18 @@ const SplitText: React.FC<SplitTextProps> = ({
       <p
         ref={ref}
         dir="auto"
-        className={`split-parent inline overflow-hidden ${className}`}
-        style={{ textAlign, whiteSpace: 'normal', wordWrap: 'break-word' }}
+        className={`split-parent inline overflow-hidden break-words whitespace-normal ${TEXT_ALIGN[textAlign]} ${className}`}
       >
         {/* The paragraph's auto direction ignores word boxes with their own dir. */}
         <span className="sr-only">{text}</span>
+        {/* A whole run wraps like ordinary text, and its taller line keeps Arabic-script
+            descenders inside the parent's overflow clip. */}
         {words.map((word, wordIndex) => (
           <span
             key={wordIndex}
             dir="auto"
             aria-hidden="true"
-            style={{ display: 'inline-block', whiteSpace: 'nowrap' }}
+            className={whole ? undefined : 'inline-block whitespace-nowrap'}
           >
             {word.map((letter, letterIndex) => {
               const index = offsets[wordIndex] + letterIndex;
@@ -172,14 +213,16 @@ const SplitText: React.FC<SplitTextProps> = ({
                 <animated.span
                   key={index}
                   style={springs[index]}
-                  className="inline-block transform transition-opacity will-change-transform"
+                  className={`inline-block transform transition-opacity will-change-transform ${whole ? 'leading-snug' : ''}`}
                 >
                   {letter}
                 </animated.span>
               );
             })}
             {wordIndex < words.length - 1 && (
-              <span style={{ display: 'inline-block', width: '0.3em' }}>&nbsp;</span>
+              <span className="inline-block" style={{ width: '0.3em' }}>
+                &nbsp;
+              </span>
             )}
           </span>
         ))}

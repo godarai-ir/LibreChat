@@ -13,6 +13,7 @@ import LanguageSync from '~/components/System/LanguageSync';
 import DeploymentTheme from '~/Providers/DeploymentTheme';
 import UiScaleSync from '~/components/System/UiScaleSync';
 import { initializeFontSize } from '~/store/fontSize';
+import Direction from '~/Providers/Direction';
 import { LiveAnnouncer } from '~/a11y';
 import { router } from './routes';
 
@@ -51,10 +52,11 @@ const App = () => {
         <UiScaleSync />
         <LiveAnnouncer>
           <DeploymentTheme>
-            <RadixToast.Provider>
-              <ToastProvider>
-                <DndProvider backend={HTML5Backend}>
-                  {/* Location updates commit in the caller's own task instead
+            <Direction>
+              <RadixToast.Provider>
+                <ToastProvider>
+                  <DndProvider backend={HTML5Backend}>
+                    {/* Location updates commit in the caller's own task instead
                       of React's transition lane. A transition keeps the
                       OUTGOING route painted until the incoming one finishes
                       rendering, so switching conversations left the previous
@@ -73,14 +75,15 @@ const App = () => {
                       transition-safe reads are gated behind
                       `_TRANSITION_SUPPORT_UNSTABLE` hooks this app does not use.
                       Worth revisiting once that state has moved to Jotai. */}
-                  <RouterProvider router={router} useTransitions={false} />
-                  <WakeLockManager />
-                  <QueryDevtoolsGate />
-                  <Toast />
-                  <ToastViewport />
-                </DndProvider>
-              </ToastProvider>
-            </RadixToast.Provider>
+                    <RouterProvider router={router} useTransitions={false} />
+                    <WakeLockManager />
+                    <QueryDevtoolsGate />
+                    <Toast />
+                    <ToastViewport />
+                  </DndProvider>
+                </ToastProvider>
+              </RadixToast.Provider>
+            </Direction>
           </DeploymentTheme>
         </LiveAnnouncer>
       </RecoilRoot>

@@ -85,7 +85,7 @@ function SubagentControlHistory({
               <span className="min-w-0 flex-1 font-medium">
                 {localize(CONTROL_ACTION_LABELS[control.action])}
               </span>
-              <span className="text-text-secondary ml-auto shrink-0 text-xs" aria-live="polite">
+              <span className="text-text-secondary ms-auto shrink-0 text-xs" aria-live="polite">
                 {localize(CONTROL_STATUS_LABELS[control.status])}
               </span>
               {control.status === 'accepted' &&
@@ -106,7 +106,7 @@ function SubagentControlHistory({
               <div className="text-text-secondary mt-1 break-words">
                 {control.message}
                 {control.messageTruncated === true && (
-                  <span className="ml-1 text-xs italic">
+                  <span className="ms-1 text-xs italic">
                     {localize('com_ui_subagent_control_message_truncated')}
                   </span>
                 )}
@@ -289,7 +289,7 @@ function SubagentPrompt({ prompt }: { prompt: string }) {
           aria-expanded={expanded}
           aria-label={toggleLabel}
           title={toggleLabel}
-          className="text-text-secondary hover:bg-surface-tertiary hover:text-text-primary focus:ring-text-primary h-8 gap-1.5 rounded-md px-2 text-xs font-medium transition focus:ring-2"
+          className="text-text-secondary hover:bg-surface-tertiary focus:ring-text-primary h-8 gap-1.5 rounded-md px-2 text-xs font-medium transition focus:ring-2"
         >
           {expanded ? <Minimize2 size={14} aria-hidden /> : <Maximize2 size={14} aria-hidden />}
           <span className="hidden sm:inline">{toggleLabel}</span>
@@ -302,7 +302,7 @@ function SubagentPrompt({ prompt }: { prompt: string }) {
           expanded ? 'overflow-visible' : 'max-h-32 overflow-hidden',
         )}
       >
-        <div className="markdown prose prose-sm message-content light dark:prose-invert text-text-primary w-full max-w-none break-words">
+        <div className="markdown prose prose-sm message-content light text-text-primary w-full max-w-none break-words">
           <MarkdownLite content={prompt} codeExecution={false} />
         </div>
         {!expanded && (

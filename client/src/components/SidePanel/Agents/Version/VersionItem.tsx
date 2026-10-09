@@ -11,7 +11,8 @@ import {
 } from '@librechat/client';
 import type { VersionRecord } from './types';
 import { useLocalize, useClockFormat } from '~/hooks';
-import { cn } from '~/utils';
+import useCalendar from '~/hooks/useCalendar';
+import { cn, formatTimeAgo } from '~/utils';
 
 type VersionItemProps = {
   version: VersionRecord;
@@ -46,6 +47,7 @@ export default function VersionItem({
 }: VersionItemProps) {
   const localize = useLocalize();
   const hour12 = useClockFormat();
+  const { dateLocale } = useCalendar();
   const [open, setOpen] = useState(false);
 
   const versionNumber = versionsLength - index;
@@ -60,8 +62,14 @@ export default function VersionItem({
       ? 'com_ui_agent_version_unknown_date'
       : 'com_ui_agent_version_no_date',
   );
-  const relativeLabel = date ? formatDistanceToNow(date, { addSuffix: true }) : fallbackDateLabel;
-  const absoluteLabel = date ? date.toLocaleString(undefined, { hour12 }) : relativeLabel;
+  let relativeLabel = fallbackDateLabel;
+  if (date) {
+    relativeLabel =
+      dateLocale != null
+        ? formatTimeAgo(date, dateLocale)
+        : formatDistanceToNow(date, { addSuffix: true });
+  }
+  const absoluteLabel = date ? date.toLocaleString(dateLocale, { hour12 }) : relativeLabel;
 
   const toolsCount = countItems(version.tools);
   const capabilitiesCount = countItems(version.capabilities);
@@ -119,7 +127,7 @@ export default function VersionItem({
       {/* Card */}
       <div
         className={cn(
-          'group relative mb-2 ml-2 flex flex-1 flex-col rounded-xl border p-3 transition-colors',
+          'group relative ms-2 mb-2 flex flex-1 flex-col rounded-xl border p-3 transition-colors',
           isActive
             ? 'border-status-success-border bg-status-success-subtle'
             : 'border-border-light hover:border-border-medium hover:bg-surface-secondary bg-transparent',
@@ -137,7 +145,7 @@ export default function VersionItem({
                 {versionTitle}
               </span>
               {isActive && (
-                <span className="bg-status-success-subtle text-status-success inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
+                <span className="bg-status-success-subtle text-status-success text-3xs inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold tracking-wide uppercase">
                   <span
                     className="bg-status-success-strong size-1.5 rounded-full"
                     aria-hidden="true"
@@ -146,7 +154,7 @@ export default function VersionItem({
                 </span>
               )}
               {!isActive && isLatest && (
-                <span className="bg-surface-tertiary text-text-secondary rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
+                <span className="bg-surface-tertiary text-text-secondary text-3xs rounded-full px-2 py-0.5 font-semibold tracking-wide uppercase">
                   {localize('com_ui_latest')}
                 </span>
               )}
@@ -165,10 +173,10 @@ export default function VersionItem({
                   side="left"
                   render={
                     <Button
-                      variant="ghost"
+                      variant="quiet"
                       size="icon"
                       aria-label={localize('com_ui_agent_version_restore')}
-                      className="border-border-light text-text-secondary hover:border-border-medium size-7 shrink-0 rounded-lg border opacity-0 transition-all group-hover:opacity-100 focus-visible:opacity-100"
+                      className="border-border-light hover:border-border-medium size-7 shrink-0 border opacity-0 transition-all group-hover:opacity-100 focus-visible:opacity-100"
                     >
                       <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
                     </Button>
@@ -180,7 +188,7 @@ export default function VersionItem({
                 className="max-w-[28.125rem]"
                 main={
                   <div className="flex w-full flex-col gap-3 text-sm">
-                    <Label className="text-text-primary text-left font-medium">
+                    <Label className="text-start font-medium">
                       {localize('com_ui_agent_version_restore_description')}
                     </Label>
                     <div className="border-border-light bg-surface-secondary rounded-lg border px-3 py-2">

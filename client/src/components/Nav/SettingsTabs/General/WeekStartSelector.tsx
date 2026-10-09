@@ -10,6 +10,7 @@ export default function WeekStartSelector() {
 
   const options = [
     { value: 'system', label: localize('com_nav_week_start_system') },
+    { value: 'saturday', label: localize('com_nav_week_start_saturday') },
     { value: 'sunday', label: localize('com_nav_week_start_sunday') },
     { value: 'monday', label: localize('com_nav_week_start_monday') },
   ];

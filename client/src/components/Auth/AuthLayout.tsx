@@ -100,7 +100,7 @@ function AuthLayout({
         </div>
       </BlinkAnimation>
       <DisplayError />
-      <div className="absolute bottom-0 left-0 md:m-4">
+      <div className="absolute bottom-0 start-0 md:m-4">
         <ThemeSelector />
       </div>
 
@@ -112,10 +112,7 @@ function AuthLayout({
           )}
         >
           {!hasStartupConfigError && !isFetching && header && (
-            <h1
-              className="text-text-primary mb-4 text-center text-3xl font-semibold"
-              style={{ userSelect: 'none' }}
-            >
+            <h1 className="text-text-primary mb-4 text-center text-3xl font-semibold select-none">
               {header}
             </h1>
           )}

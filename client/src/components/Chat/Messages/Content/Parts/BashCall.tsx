@@ -234,7 +234,7 @@ export default function BashCall({
                   isCopied={isCopied}
                   onClick={handleCopy}
                   disabled={contentPending}
-                  className={cn('bg-surface-code absolute top-1 right-1.5 z-[1]', PANE_COPY_REVEAL)}
+                  className={cn('bg-surface-code absolute top-1 end-1.5 z-[1]', PANE_COPY_REVEAL)}
                   label={localize('com_ui_copy_code')}
                 />
                 <div

@@ -153,7 +153,7 @@ function ThinkingControl({
           <span
             ref={ghostsRef}
             aria-hidden="true"
-            className="pointer-events-none invisible absolute top-0 left-0 w-max"
+            className="pointer-events-none invisible absolute top-0 start-0 w-max"
           >
             {optionLabels.map((text) => (
               <span key={text} className="block whitespace-nowrap">
@@ -164,7 +164,7 @@ function ThinkingControl({
           <span
             ref={currentRef}
             aria-hidden="true"
-            className="pointer-events-none invisible absolute top-0 left-0 w-max whitespace-nowrap"
+            className="pointer-events-none invisible absolute top-0 start-0 w-max whitespace-nowrap"
           >
             {display}
           </span>

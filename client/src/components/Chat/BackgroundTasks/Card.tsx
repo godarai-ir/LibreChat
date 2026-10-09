@@ -72,7 +72,7 @@ function TaskCard({
               aria-expanded={open}
               aria-controls={detailId}
               onClick={() => setOpen((value) => !value)}
-              className="text-text-primary focus-visible:ring-ring-primary flex max-w-full items-start gap-1 rounded text-left text-sm focus-visible:ring-2 focus-visible:outline-none"
+              className="text-text-primary focus-visible:ring-ring-primary flex max-w-full items-start gap-1 rounded text-start text-sm focus-visible:ring-2 focus-visible:outline-none"
             >
               <span className="line-clamp-2 break-words">{title}</span>
               <ChevronDown

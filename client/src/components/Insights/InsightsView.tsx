@@ -23,6 +23,7 @@ import OpenSidebar from '~/components/Chat/Menus/OpenSidebar';
 import useDrawerViewport from '~/hooks/Nav/useDrawerViewport';
 import { LocalizedDateRangePicker } from '~/components/ui';
 import { getRollingDateRange } from './dateRange';
+import useCalendar from '~/hooks/useCalendar';
 import { cn } from '~/utils';
 
 type ShortcutRange = Exclude<InsightsRange, 'custom'>;
@@ -129,7 +130,7 @@ function EmptyState({ message }: { message: string }) {
 function LoadingState({ message }: { message: string }) {
   return (
     <Panel className="flex min-h-52 flex-col items-center justify-center gap-3">
-      <Spinner className="text-text-secondary size-7" />
+      <Spinner tone="secondary" className="size-7" />
       <span className="text-text-secondary text-sm">{message}</span>
     </Panel>
   );
@@ -304,16 +305,14 @@ function TopUsersTable({
         <EmptyState message={localize('com_insights_no_data')} />
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[26.25rem] text-left text-sm">
+          <table className="w-full min-w-[26.25rem] text-start text-sm">
             <thead className="border-border-medium text-text-secondary border-b text-xs">
               <tr>
                 <th className="px-2 py-2 font-medium">{localize('com_insights_user')}</th>
-                <th className="px-2 py-2 text-right font-medium">
+                <th className="px-2 py-2 text-end font-medium">
                   {localize('com_insights_messages')}
                 </th>
-                <th className="px-2 py-2 text-right font-medium">
-                  {localize('com_insights_chats')}
-                </th>
+                <th className="px-2 py-2 text-end font-medium">{localize('com_insights_chats')}</th>
               </tr>
             </thead>
             <tbody className="divide-border-light divide-y">
@@ -322,10 +321,10 @@ function TopUsersTable({
                   <td className="px-2 py-3">
                     <UserCell {...entry} localize={localize} />
                   </td>
-                  <td className="px-2 py-3 text-right tabular-nums">
+                  <td className="px-2 py-3 text-end tabular-nums">
                     {formatExactValue(entry.messages, locale)}
                   </td>
-                  <td className="px-2 py-3 text-right tabular-nums">
+                  <td className="px-2 py-3 text-end tabular-nums">
                     {formatExactValue(entry.conversations, locale)}
                   </td>
                 </tr>
@@ -372,20 +371,20 @@ function ChurnedUsersTable({
         <EmptyState message={localize('com_insights_no_data')} />
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[35rem] table-fixed text-left text-sm">
+          <table className="w-full min-w-[35rem] table-fixed text-start text-sm">
             <thead className="border-border-medium text-text-secondary border-b text-xs">
               <tr>
                 <th className="w-[34%] px-2 py-2 font-medium">{localize('com_insights_user')}</th>
-                <th className="w-[12%] px-2 py-2 text-right font-medium">
+                <th className="w-[12%] px-2 py-2 text-end font-medium">
                   {localize('com_insights_messages')}
                 </th>
-                <th className="w-[12%] px-2 py-2 text-right font-medium">
+                <th className="w-[12%] px-2 py-2 text-end font-medium">
                   {localize('com_insights_chats')}
                 </th>
-                <th className="w-[21%] px-2 py-2 text-right font-medium">
+                <th className="w-[21%] px-2 py-2 text-end font-medium">
                   {localize('com_insights_first_seen')}
                 </th>
-                <th className="w-[21%] px-2 py-2 text-right font-medium">
+                <th className="w-[21%] px-2 py-2 text-end font-medium">
                   {localize('com_insights_last_seen')}
                 </th>
               </tr>
@@ -396,16 +395,16 @@ function ChurnedUsersTable({
                   <td className="overflow-hidden px-2 py-3">
                     <UserCell {...entry} localize={localize} />
                   </td>
-                  <td className="px-2 py-3 text-right tabular-nums">
+                  <td className="px-2 py-3 text-end tabular-nums">
                     {formatExactValue(entry.messages, locale)}
                   </td>
-                  <td className="px-2 py-3 text-right tabular-nums">
+                  <td className="px-2 py-3 text-end tabular-nums">
                     {formatExactValue(entry.conversations, locale)}
                   </td>
-                  <td className="text-text-secondary px-2 py-3 text-right whitespace-nowrap">
+                  <td className="text-text-secondary px-2 py-3 text-end whitespace-nowrap">
                     {formatDate(entry.firstSeen, locale)}
                   </td>
-                  <td className="text-text-secondary px-2 py-3 text-right whitespace-nowrap">
+                  <td className="text-text-secondary px-2 py-3 text-end whitespace-nowrap">
                     {formatDate(entry.lastSeen, locale)}
                   </td>
                 </tr>
@@ -448,16 +447,16 @@ function LatestConversations({
           <h2 className="text-base font-semibold">
             {localize('com_insights_latest_conversations')}
           </h2>
-          {isFetching && <Spinner className="text-text-secondary size-4" />}
+          {isFetching && <Spinner tone="secondary" className="size-4" />}
         </div>
         <div className="relative w-full sm:max-w-md">
           <Search
-            className="text-text-secondary pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+            className="text-text-secondary pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2"
             aria-hidden="true"
           />
           <Input
             aria-label={localize('com_insights_search_placeholder')}
-            className="pl-9"
+            className="ps-9"
             maxLength={INSIGHTS_SEARCH_MAX_LENGTH}
             onChange={(event) => setSearch(event.target.value)}
             placeholder={localize('com_insights_search_placeholder')}
@@ -466,17 +465,17 @@ function LatestConversations({
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[56.25rem] table-fixed text-left text-sm">
+        <table className="w-full min-w-[56.25rem] table-fixed text-start text-sm">
           <thead className="border-border-medium text-text-secondary border-b text-xs">
             <tr>
               <th className="w-[7.5rem] px-2 py-2 font-medium">{localize('com_insights_date')}</th>
               <th className="w-[12rem] px-2 py-2 font-medium">{localize('com_insights_user')}</th>
               <th className="w-[10rem] px-2 py-2 font-medium">{localize('com_insights_agent')}</th>
               <th className="px-2 py-2 font-medium">{localize('com_insights_first_message')}</th>
-              <th className="w-20 px-2 py-2 text-right font-medium">
+              <th className="w-20 px-2 py-2 text-end font-medium">
                 {localize('com_insights_messages')}
               </th>
-              <th className="w-20 px-2 py-2 text-right font-medium">
+              <th className="w-20 px-2 py-2 text-end font-medium">
                 {localize('com_insights_total_tokens')}
               </th>
             </tr>
@@ -499,10 +498,10 @@ function LatestConversations({
                     {conversation.firstMessage || localize('com_insights_no_message')}
                   </span>
                 </td>
-                <td className="px-2 py-3 text-right tabular-nums">
+                <td className="px-2 py-3 text-end tabular-nums">
                   {formatExactValue(conversation.messages, locale)}
                 </td>
-                <td className="px-2 py-3 text-right tabular-nums">
+                <td className="px-2 py-3 text-end tabular-nums">
                   {formatValue(conversation.totalTokens, locale)}
                 </td>
               </tr>
@@ -548,7 +547,8 @@ export default function InsightsView() {
   const localize = useLocalize();
   const [urlSearchParams, setUrlSearchParams] = useSearchParams();
   const { i18n } = useTranslation();
-  const locale = i18n.resolvedLanguage ?? i18n.language ?? 'en';
+  const { dateLocale } = useCalendar();
+  const locale = dateLocale ?? i18n.resolvedLanguage ?? i18n.language ?? 'en';
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   const { user } = useAuthContext();
   const { data: startupConfig, isLoading: configLoading } = useGetStartupConfig();
@@ -788,7 +788,7 @@ export default function InsightsView() {
                         ? localize('com_ui_clear_all')
                         : localize('com_insights_select_all_agents')
                     }
-                    className="text-text-primary hover:bg-surface-hover h-10 w-full justify-start gap-2 rounded-none px-4 font-medium"
+                    className="text-text-primary h-10 w-full justify-start rounded-none px-4 font-medium"
                     onClick={() =>
                       handleAgentSelection(
                         displayedAgentIds.length > 0 ? [] : agentItems.map((agent) => agent.value),
@@ -825,7 +825,7 @@ export default function InsightsView() {
                 variant="ghost"
                 aria-pressed={!customDateRange && range === item.value}
                 className={cn(
-                  'h-8 rounded-md px-3',
+                  'h-8 rounded-md',
                   !customDateRange && range === item.value && 'bg-surface-active-alt',
                 )}
                 onClick={() => {

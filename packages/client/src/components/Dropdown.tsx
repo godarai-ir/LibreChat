@@ -5,6 +5,7 @@ import * as Select from '@ariakit/react/select';
 import * as Combobox from '@ariakit/react/combobox';
 import type { Option } from '~/common';
 import { cn, disabledFillClasses } from '~/utils';
+import { focusOutlineRole } from './Focus';
 import { fieldControl } from './Field';
 import './Dropdown.css';
 
@@ -138,7 +139,7 @@ const Dropdown: React.FC<DropdownProps> = ({
       {option.icon != null && <span>{option.icon as React.ReactNode}</span>}
       <span className="block truncate">{option.label}</span>
       {selectedValue === option.value && (
-        <span className="ml-auto pl-2">
+        <span className="ms-auto ps-2">
           <svg
             width="24"
             height="24"
@@ -171,6 +172,7 @@ const Dropdown: React.FC<DropdownProps> = ({
           variant !== 'field' && [
             shapeClasses[shape],
             'hover:text-text-primary disabled:hover:text-text-primary',
+            focusOutlineRole,
           ],
           'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent',
           disabledFillClasses,
@@ -231,7 +233,7 @@ const Dropdown: React.FC<DropdownProps> = ({
             <div className="sticky -top-2 z-10 -mx-2 -mt-2 mb-1 bg-inherit px-2 pt-2 pb-1.5">
               <div className="relative">
                 <Search
-                  className="text-text-tertiary size-theme-icon pointer-events-none absolute top-1/2 left-2 -translate-y-1/2"
+                  className="text-text-tertiary size-theme-icon pointer-events-none absolute start-2 top-1/2 -translate-y-1/2"
                   aria-hidden="true"
                 />
                 <Combobox.Combobox
@@ -239,7 +241,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                   autoSelect
                   placeholder={searchPlaceholder}
                   aria-label={searchPlaceholder}
-                  className="border-border-control text-text-primary placeholder:text-text-secondary w-full rounded-lg border bg-inherit py-1.5 pr-2 pl-8 text-sm focus:outline-hidden"
+                  className="border-border-control text-text-primary placeholder:text-text-secondary w-full rounded-lg border bg-inherit py-1.5 ps-8 pe-2 text-sm focus:outline-hidden"
                 />
               </div>
             </div>

@@ -87,18 +87,20 @@ export default function LocalizedDateRangePicker({
     }
   }, [endDate, isOpen, startDate]);
 
+  const formatter = useMemo(
+    () => new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }),
+    [locale],
+  );
+  /** Native date fields only speak Gregorian, so another calendar gets the
+   *  picked date echoed beneath each field in its own terms. */
+  const showsCalendarEcho = formatter.resolvedOptions().calendar !== 'gregory';
+
   const formattedRange = useMemo(() => {
     if (!startDate || !endDate) {
       return placeholder;
     }
-
-    const formatter = new Intl.DateTimeFormat(locale, {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
     return `${formatter.format(startDate)} - ${formatter.format(endDate)}`;
-  }, [endDate, locale, placeholder, startDate]);
+  }, [endDate, formatter, placeholder, startDate]);
 
   const parsedStartDate = parseDateInput(pendingStartDate);
   const parsedEndDate = parseDateInput(pendingEndDate, true);
@@ -152,7 +154,7 @@ export default function LocalizedDateRangePicker({
       <Popover.Trigger asChild>
         <Button variant="outline" className="w-full min-w-0 justify-start px-3">
           <CalendarDays className="size-4 shrink-0" aria-hidden="true" />
-          <span className="min-w-0 flex-1 truncate text-left">{formattedRange}</span>
+          <span className="min-w-0 flex-1 truncate text-start">{formattedRange}</span>
           <ChevronDown className="text-text-secondary size-4 shrink-0" aria-hidden="true" />
         </Button>
       </Popover.Trigger>
@@ -174,6 +176,11 @@ export default function LocalizedDateRangePicker({
                   onChange={(event) => setPendingStartDate(event.target.value)}
                   className="border-border-medium bg-surface-primary text-text-primary focus:border-border-heavy h-9 min-w-0 rounded-md border px-2 text-sm outline-hidden"
                 />
+                {showsCalendarEcho && parsedStartDate && (
+                  <span className="text-text-secondary text-xs">
+                    {formatter.format(parsedStartDate)}
+                  </span>
+                )}
               </label>
               <label className="flex min-w-0 flex-col gap-1.5">
                 <span className="text-sm">{labels.endDate}</span>
@@ -186,6 +193,9 @@ export default function LocalizedDateRangePicker({
                   onChange={(event) => setPendingEndDate(event.target.value)}
                   className="border-border-medium bg-surface-primary text-text-primary focus:border-border-heavy h-9 min-w-0 rounded-md border px-2 text-sm outline-hidden"
                 />
+                {showsCalendarEcho && parsedEndDate && (
+                  <span className="text-text-secondary text-xs">{formatter.format(parsedEndDate)}</span>
+                )}
               </label>
             </div>
             {!isValidRange && pendingStartDate && pendingEndDate && (

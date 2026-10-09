@@ -79,14 +79,14 @@ function WakeupTaskCard({
             data-subagent-tool-call={selection.toolCallId}
             data-subagent-parent-message={selection.parentMessageId}
             data-subagent-part-index={selection.partIndex}
-            className="ml-auto h-6 shrink-0 px-2 text-xs"
+            className="ms-auto h-6 shrink-0 px-2 text-xs"
           >
             {localize('com_ui_wakeup_view_activity')}
           </Button>
         )}
       </div>
       {hasResult && (
-        <div className="markdown prose prose-sm message-content light dark:prose-invert text-text-primary mt-2 max-h-96 w-full max-w-none overflow-y-auto pr-1 break-words">
+        <div className="markdown prose prose-sm message-content light text-text-primary mt-2 max-h-96 w-full max-w-none overflow-y-auto pe-1 break-words">
           <MarkdownLite content={task.result} codeExecution={false} />
         </div>
       )}

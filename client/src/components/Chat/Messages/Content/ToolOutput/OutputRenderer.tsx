@@ -213,14 +213,14 @@ export default function OutputRenderer({
           disabled={contentPending}
           iconOnly
           label={localize('com_ui_copy')}
-          className={cn('bg-presentation absolute right-0 bottom-0 z-[1]', PANE_COPY_REVEAL)}
+          className={cn('bg-presentation absolute end-0 bottom-0 z-[1]', PANE_COPY_REVEAL)}
         />
       </div>
       {error && rawError && rawError !== displayText && (
         <Button
           variant="link"
-          size="sm"
-          className="text-text-secondary focus-visible:ring-border-heavy mt-1 block h-auto p-0 text-xs underline focus-visible:ring-2"
+          size="bare"
+          className="text-text-secondary focus-visible:ring-border-heavy mt-1 block text-xs underline"
           onClick={() => setShowErrorDetails((prev) => !prev)}
         >
           {localize('com_ui_details')}

@@ -14,6 +14,7 @@ import DialogImage from '~/components/Chat/Messages/Content/DialogImage';
 import FilePreview from '~/components/Chat/Input/Files/FilePreview';
 import { useGetFiles, useFilePreviewBlob } from '~/data-provider';
 import { useLocalize, useAuthContext } from '~/hooks';
+import useCalendar from '~/hooks/useCalendar';
 
 export type FileView = 'all' | 'images' | 'documents';
 
@@ -44,12 +45,12 @@ function previewOf(file: TFile): 'image' | 'pdf' | null {
     : null;
 }
 
-function formatDate(file: TFile): string {
+function formatDate(file: TFile, locale?: string): string {
   const raw = file.updatedAt ?? file.createdAt;
   if (raw == null) {
     return '';
   }
-  return new Date(raw).toLocaleDateString(undefined, {
+  return new Date(raw).toLocaleDateString(locale, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -95,6 +96,7 @@ interface FileCardProps {
  *  favourite star. */
 const FileCard = memo(function FileCard({ file, onAttach, onPreview, disabled }: FileCardProps) {
   const localize = useLocalize();
+  const { dateLocale } = useCalendar();
   const name = file.filename ?? '';
   const details = [
     getDisplayType(localize, file.type ?? undefined, name),
@@ -108,7 +110,7 @@ const FileCard = memo(function FileCard({ file, onAttach, onPreview, disabled }:
         type="button"
         onClick={() => onAttach(file)}
         disabled={disabled}
-        className="focus-visible:ring-ring-primary flex h-full w-full cursor-pointer flex-col gap-2 rounded-2xl p-4 text-left focus:outline-hidden focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50"
+        className="focus-visible:ring-ring-primary flex h-full w-full cursor-pointer flex-col gap-2 rounded-2xl p-4 text-start focus:outline-hidden focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <span className="flex w-full min-w-0 items-start gap-3">
           <Thumbnail file={file} />
@@ -117,10 +119,10 @@ const FileCard = memo(function FileCard({ file, onAttach, onPreview, disabled }:
             <span className="text-text-secondary truncate text-xs">{details.join(' · ')}</span>
           </span>
         </span>
-        <span className="text-text-secondary mt-auto text-xs">{formatDate(file)}</span>
+        <span className="text-text-secondary mt-auto text-xs">{formatDate(file, dateLocale)}</span>
       </button>
       {canPreview && (
-        <span className="absolute right-2 bottom-2">
+        <span className="absolute end-2 bottom-2">
           <IconButton
             size="xs"
             shape="square"

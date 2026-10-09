@@ -167,9 +167,10 @@ const AgentDetailContent: React.FC<AgentDetailContentProps> = ({
   const descriptionMotion = {
     layout: 'position' as const,
     layoutId: morphing ? agentMorphId('description', agent.id) : undefined,
-    style: { willChange: morphing ? 'transform' : undefined },
-    className:
+    className: cn(
+      morphing && 'will-change-transform',
       'relative mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-text-secondary sm:text-base',
+    ),
     ...shared,
   };
   useLayoutEffect(() => {
@@ -215,11 +216,11 @@ const AgentDetailContent: React.FC<AgentDetailContentProps> = ({
            does not promote it on its own. The hint stands for as long as this
            dialog shares the card's surface, and is never set on a dialog that
            has no morph to run. */
-        style={{
-          borderRadius: surfaceRadius,
-          willChange: morphing ? 'transform' : undefined,
-        }}
-        className="rounded-theme-surface bg-surface-dialog high-contrast:border high-contrast:border-solid high-contrast:border-border-medium high-contrast:shadow-none relative flex max-h-[88dvh] w-full flex-col overflow-hidden shadow-lg"
+        style={{ borderRadius: surfaceRadius }}
+        className={cn(
+          morphing && 'will-change-transform',
+          'rounded-theme-surface bg-surface-dialog high-contrast:border high-contrast:border-solid high-contrast:border-border-medium high-contrast:shadow-none relative flex max-h-[88dvh] w-full flex-col overflow-hidden shadow-lg',
+        )}
         {...shared}
       >
         {/* Card-coloured wash so the surface interpolates its fill and border
@@ -257,7 +258,7 @@ const AgentDetailContent: React.FC<AgentDetailContentProps> = ({
               <Button
                 variant="ghost"
                 size="icon-sm"
-                className="-mt-2 -mr-2 shrink-0 rtl:mr-0 rtl:-ml-2"
+                className="-me-2 -mt-2 shrink-0"
                 aria-label={localize('com_ui_close')}
               >
                 <X className="size-4" aria-hidden="true" />
@@ -271,7 +272,7 @@ const AgentDetailContent: React.FC<AgentDetailContentProps> = ({
           layoutScroll
           className="relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-4 pb-5 sm:px-6 sm:pb-6"
         >
-          <OGDialogHeader className="space-y-0 text-left sm:text-left rtl:text-right sm:rtl:text-right">
+          <OGDialogHeader className="space-y-0 text-start">
             {/* The avatar holds the top of the row and the copy centres on it,
                 so a title with a line or two of description reads as one block
                 beside it. Once the copy is the taller of the two there is
@@ -299,7 +300,7 @@ const AgentDetailContent: React.FC<AgentDetailContentProps> = ({
                     focusOutline="hidden"
                     ref={titleRef}
                     tabIndex={-1}
-                    className="text-text-primary text-2xl leading-tight font-semibold break-words sm:text-3xl"
+                    className="text-2xl leading-tight font-semibold break-words sm:text-3xl"
                   >
                     {agent.name?.trim() || localize('com_ui_agent')}
                   </OGDialogTitle>
@@ -362,7 +363,7 @@ const AgentDetailContent: React.FC<AgentDetailContentProps> = ({
                   <Button
                     key={`${starter}-${index}`}
                     variant="outline"
-                    className="h-auto min-h-14 items-start justify-between gap-3 px-4 py-3 text-left whitespace-normal rtl:text-right"
+                    className="h-auto min-h-14 items-start justify-between gap-3 py-3 text-start whitespace-normal"
                     aria-disabled={actionsDisabled || undefined}
                     onClick={() => {
                       if (!actionsDisabled) {
@@ -371,7 +372,10 @@ const AgentDetailContent: React.FC<AgentDetailContentProps> = ({
                     }}
                   >
                     <span className="min-w-0 break-words">{starter}</span>
-                    <ArrowUpRight className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                    <ArrowUpRight
+                      className="mt-0.5 size-4 shrink-0 rtl:-scale-x-100"
+                      aria-hidden="true"
+                    />
                   </Button>
                 ))}
               </div>

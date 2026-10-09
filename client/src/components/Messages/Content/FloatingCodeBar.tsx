@@ -24,7 +24,7 @@ const FloatingCodeBar: React.FC<FloatingCodeBarProps> = React.memo(
     return (
       <div
         className={cn(
-          'absolute bottom-2 right-2 flex items-center gap-2 font-sans text-xs text-text-secondary transition-opacity duration-150',
+          'absolute bottom-2 end-2 flex items-center gap-2 font-sans text-xs text-text-secondary transition-opacity duration-150',
           isVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
       >

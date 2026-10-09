@@ -12,10 +12,11 @@ import ProjectDeleteDialog from './ProjectDeleteDialog';
 import ProjectEditDialog from './ProjectEditDialog';
 import ProjectsSortMenu from './ProjectsSortMenu';
 import ProjectsNavBar from './ProjectsNavBar';
+import useCalendar from '~/hooks/useCalendar';
+import { cn, formatShortDate } from '~/utils';
 import { useLocalize } from '~/hooks';
-import { cn } from '~/utils';
 
-function formatActivity(project: TChatProject) {
+function formatActivity(project: TChatProject, locale?: string) {
   const value = project.lastConversationAt ?? project.updatedAt ?? project.createdAt;
   if (!value) {
     return null;
@@ -24,7 +25,7 @@ function formatActivity(project: TChatProject) {
   if (Number.isNaN(date.getTime())) {
     return null;
   }
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  return formatShortDate(date, locale);
 }
 
 function ProjectCard({
@@ -35,6 +36,7 @@ function ProjectCard({
   onOpen: (projectId: string) => void;
 }) {
   const localize = useLocalize();
+  const { dateLocale } = useCalendar();
   const menuId = useId();
   const editMenuRef = useRef<HTMLButtonElement>(null);
   const deleteMenuRef = useRef<HTMLButtonElement>(null);
@@ -49,7 +51,7 @@ function ProjectCard({
   };
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const activity = formatActivity(project);
+  const activity = formatActivity(project, dateLocale);
   const menuItems = useMemo<MenuItemProps[]>(
     () => [
       {
@@ -118,7 +120,7 @@ function ProjectCard({
           ) : null}
         </span>
       </Button>
-      <div className="absolute top-2 right-2">
+      <div className="absolute top-2 end-2">
         <DropdownPopup
           portal={true}
           focusLoop={true}
@@ -128,7 +130,7 @@ function ProjectCard({
           setIsOpen={setIsMenuOpen}
           className="z-[125]"
           minWidth="11rem"
-          iconClassName="mr-2 text-text-secondary"
+          iconClassName="me-2 text-text-secondary"
           trigger={
             <Ariakit.MenuButton
               aria-label={localize('com_ui_more_options')}

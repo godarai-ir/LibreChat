@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useRecoilValue } from 'recoil';
 import { Alert, Button, TextareaAutosize } from '@librechat/client';
 import { useUpdateMessageContentMutation } from 'librechat-data-provider/react-query';
 import {
@@ -13,9 +12,8 @@ import { useMessagesConversation, useMessagesOperations } from '~/Providers';
 import { getPartText, isEditablePart, withPartText } from './editableParts';
 import { findRerunParent } from './rerunParent';
 import { useGetAddedConvo } from '~/hooks/Chat';
-import { useLocalize } from '~/hooks';
+import { useLocalize, useChatDirection } from '~/hooks';
 import { cn } from '~/utils';
-import store from '~/store';
 
 type EditableType = ContentTypes.TEXT | ContentTypes.THINK;
 
@@ -48,7 +46,7 @@ export default function EditContentParts({
   renderReadOnlyPart,
 }: EditContentPartsProps) {
   const localize = useLocalize();
-  const isRTL = useRecoilValue(store.chatDirection).toLowerCase() === 'rtl';
+  const isRTL = useChatDirection() === 'rtl';
   const { conversation } = useMessagesConversation();
   const { ask, getMessages, setMessages } = useMessagesOperations();
   const getAddedConvo = useGetAddedConvo();

@@ -23,6 +23,7 @@ import type { SortingState, Updater } from '@tanstack/react-table';
 import type { TableColumn } from '@librechat/client';
 import { useDeleteSharedLinkMutation, useSharedLinksQuery } from '~/data-provider';
 import { NotificationSeverity } from '~/common';
+import useCalendar from '~/hooks/useCalendar';
 import { useLocalize } from '~/hooks';
 import { formatDate } from '~/utils';
 import store from '~/store';
@@ -46,6 +47,7 @@ export default function SharedLinks() {
   const searchStore = useRecoilValue(store.search);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const isSmallScreen = useMediaQuery('(max-width: 768px)');
+  const { dateLocale } = useCalendar();
   const [deleteRow, setDeleteRow] = useState<SharedLinkItem | null>(null);
   const [queryParams, setQueryParams] = useState<SharedLinksListParams>(DEFAULT_PARAMS);
 
@@ -219,7 +221,7 @@ export default function SharedLinks() {
       {
         accessorKey: 'createdAt',
         header: localize('com_ui_date'),
-        cell: ({ row }) => formatDate(row.original.createdAt?.toString() ?? '', isSmallScreen),
+        cell: ({ row }) => formatDate(row.original.createdAt?.toString() ?? '', isSmallScreen, dateLocale),
         meta: {
           width: 25,
           desktopOnly: true,
@@ -275,7 +277,7 @@ export default function SharedLinks() {
         ),
       },
     ],
-    [isSmallScreen, localize],
+    [dateLocale, isSmallScreen, localize],
   );
 
   return (
@@ -333,7 +335,7 @@ export default function SharedLinks() {
                 className="flex w-full flex-col items-center gap-2"
               >
                 <div className="grid w-full items-center gap-2">
-                  <Label htmlFor="dialog-confirm-delete" className="text-left text-sm font-medium">
+                  <Label htmlFor="dialog-confirm-delete" className="text-start text-sm font-medium">
                     <Trans
                       i18nKey="com_ui_delete_confirm_strong"
                       values={{ title: deleteRow?.title }}

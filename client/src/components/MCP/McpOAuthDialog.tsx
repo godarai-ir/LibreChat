@@ -68,7 +68,7 @@ export default function McpOAuthDialog({
             {localize('com_nav_mcp_connect_server', { 0: serverName })}
           </OGDialogTitle>
         </div>
-        <OGDialogDescription className="text-text-secondary text-sm">
+        <OGDialogDescription className="text-sm">
           {localize('com_ui_mcp_oauth_description')}
         </OGDialogDescription>
 
@@ -77,7 +77,7 @@ export default function McpOAuthDialog({
            * open smoothly without a hardcoded height, matching MCPToolItem. */}
           <div
             className={cn(
-              'grid transition-[grid-template-rows] [transition-duration:var(--resize-dur)] [transition-timing-function:var(--resize-ease)] motion-reduce:transition-none',
+              'grid transition-all duration-(--resize-dur) ease-(--resize-ease) motion-reduce:transition-none',
               showQR ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
             )}
           >
@@ -114,7 +114,7 @@ export default function McpOAuthDialog({
               value={oauthUrl}
               aria-label={localize('com_ui_copy_link')}
               onFocus={(event) => event.currentTarget.select()}
-              className="text-text-secondary pr-10"
+              className="text-text-secondary pe-10"
               data-testid="mcp-oauth-url"
             />
             <CopyButton
@@ -126,7 +126,7 @@ export default function McpOAuthDialog({
                   copyUrl(setIsCopying);
                 }
               }}
-              className="absolute top-1/2 right-1 -translate-y-1/2"
+              className="absolute end-1 top-1/2 -translate-y-1/2"
             />
           </div>
 

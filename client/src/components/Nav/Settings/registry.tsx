@@ -29,6 +29,7 @@ import LangfuseConnection from '../SettingsTabs/Integrations/LangfuseConnection'
 import ClockFormatSelector from '../SettingsTabs/General/ClockFormatSelector';
 import ImportConversations from '../SettingsTabs/Data/ImportConversations';
 import WeekStartSelector from '../SettingsTabs/General/WeekStartSelector';
+import CalendarSelector from '../SettingsTabs/General/CalendarSelector';
 import { ArchiveAllChats } from '../SettingsTabs/Data/ArchiveAllChats';
 import { toggleControl, ThemeSetting, LangSetting } from './controls';
 import BackupCodesItem from '../SettingsTabs/Account/BackupCodesItem';
@@ -55,6 +56,7 @@ import ImageResize from '../SettingsTabs/Chat/ImageResize';
 import Passkeys from '../SettingsTabs/Account/Passkeys';
 import { showThinkingAtom } from '~/store/showThinking';
 import ProviderKeys from '../SettingsTabs/ProviderKeys';
+import { showLiaAtom } from '~/components/Lia/store';
 import { autoScrollAtom } from '~/store/autoScroll';
 import Avatar from '../SettingsTabs/Account/Avatar';
 import CodeEnvironments from './CodeEnvironments';
@@ -125,6 +127,14 @@ export const registry: SettingEntry[] = [
     Component: ClockFormatSelector,
   },
   {
+    id: 'calendar',
+    tab: GENERAL,
+    section: 'appearance',
+    labelKey: 'com_nav_calendar',
+    keywords: ['date', 'calendar', 'gregorian', 'jalali', 'persian', 'solar hijri', 'shamsi'],
+    Component: CalendarSelector,
+  },
+  {
     id: 'weekStart',
     tab: GENERAL,
     section: 'appearance',
@@ -153,6 +163,21 @@ export const registry: SettingEntry[] = [
       stateAtom: store.centerFormOnLanding,
       localizationKey: 'com_nav_center_chat_input',
       switchId: 'centerFormOnLanding',
+    }),
+  },
+  {
+    id: 'showLia',
+    tab: GENERAL,
+    section: 'layout',
+    labelKey: 'com_nav_show_lia',
+    keywords: ['mascot', 'lia', 'fun', 'animation', 'welcome'],
+    show: (ctx) => ctx.mascotAllowed,
+    Component: toggleControl({
+      stateAtom: showLiaAtom,
+      localizationKey: 'com_nav_show_lia',
+      switchId: 'showLia',
+      hoverCardText: 'com_nav_info_show_lia',
+      beta: true,
     }),
   },
   {

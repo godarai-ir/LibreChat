@@ -59,7 +59,7 @@ function SourceItem({ source, expanded = false }: SourceItemProps) {
   }
 
   return (
-    <span className="not-prose relative inline-block h-full w-full">
+    <span className="relative inline-block h-full w-full">
       <Ariakit.HovercardProvider showTimeout={150} hideTimeout={150}>
         <div className="flex h-full items-center">
           <Ariakit.HovercardAnchor
@@ -82,7 +82,7 @@ function SourceItem({ source, expanded = false }: SourceItemProps) {
               </a>
             }
           />
-          <Ariakit.HovercardDisclosure className="text-text-primary focus:ring-text-primary absolute right-2 rounded-full focus:ring-2 focus:outline-hidden">
+          <Ariakit.HovercardDisclosure className="text-text-primary focus:ring-text-primary absolute end-2 rounded-full focus:ring-2 focus:outline-hidden">
             <VisuallyHidden>
               {localize('com_citation_more_details', { label: domain })}
             </VisuallyHidden>
@@ -103,8 +103,8 @@ function SourceItem({ source, expanded = false }: SourceItemProps) {
             <div className="flex gap-3">
               <div className="min-w-0 flex-1">
                 <div className="mb-1.5 overflow-hidden text-sm">
-                  <FaviconImage domain={domain} className="float-left mt-0.5 mr-2" />
-                  <span className="text-text-secondary float-right ml-2 max-w-[40%] truncate text-xs">
+                  <FaviconImage domain={domain} className="float-start me-2 mt-0.5" />
+                  <span className="text-text-secondary float-end ms-2 max-w-[40%] truncate text-xs">
                     {domain}
                   </span>
                   <a
@@ -156,7 +156,7 @@ function ImageItem({ image }: { image: ImageResult }) {
             className="size-full object-cover"
           />
           {image.title && (
-            <div className="bg-surface-media-overlay/80 text-text-on-media absolute right-0 bottom-0 left-0 w-full border-none p-1 text-xs font-medium backdrop-blur-xs">
+            <div className="bg-surface-media-overlay/80 text-text-on-media absolute start-0 end-0 bottom-0 w-full border-none p-1 text-xs font-medium backdrop-blur-xs">
               <span className="truncate">{image.title}</span>
             </div>
           )}
@@ -302,14 +302,14 @@ const FileItem = React.memo(function FileItem({
           <span className="text-text-secondary truncate text-xs font-medium">
             {localize('com_sources_agent_file')}
           </span>
-          {!isLocalFile && <Download className="ml-auto size-3" aria-hidden="true" />}
+          {!isLocalFile && <Download className="ms-auto size-3" aria-hidden="true" />}
         </div>
         <div className="mt-1 min-w-0">
-          <span className="text-text-primary line-clamp-2 text-left text-sm font-medium break-words md:line-clamp-3">
+          <span className="text-text-primary line-clamp-2 text-start text-sm font-medium break-words md:line-clamp-3">
             {file.filename}
           </span>
           {file.pages && file.pages.length > 0 && (
-            <span className="text-text-secondary mt-1 line-clamp-1 text-left text-xs">
+            <span className="text-text-secondary mt-1 line-clamp-1 text-start text-xs">
               {localize('com_sources_pages')}:{' '}
               {sortPagesByRelevance(file.pages, file.pageRelevance).join(', ')}
             </span>
@@ -343,14 +343,14 @@ const FileItem = React.memo(function FileItem({
         <span className="text-text-secondary truncate text-xs font-medium">
           {localize('com_sources_agent_file')}
         </span>
-        {!isLocalFile && <Download className="ml-auto size-3" aria-hidden="true" />}
+        {!isLocalFile && <Download className="ms-auto size-3" aria-hidden="true" />}
       </div>
       <div className="mt-1 min-w-0">
-        <span className="text-text-primary line-clamp-2 text-left text-sm font-medium break-words md:line-clamp-3">
+        <span className="text-text-primary line-clamp-2 text-start text-sm font-medium break-words md:line-clamp-3">
           {file.filename}
         </span>
         {file.pages && file.pages.length > 0 && (
-          <span className="text-text-secondary mt-1 line-clamp-1 text-left text-xs">
+          <span className="text-text-secondary mt-1 line-clamp-1 text-start text-xs">
             {localize('com_sources_pages')}:{' '}
             {sortPagesByRelevance(file.pages, file.pageRelevance).join(', ')}
           </span>
@@ -380,7 +380,7 @@ export function StackedFavicons({
         <FaviconImage
           key={`icon-${i}`}
           domain={getCleanDomain(source.link)}
-          className={i > 0 ? 'ml-[-0.375rem]' : ''}
+          className={i > 0 ? 'ms-[-0.375rem]' : ''}
         />
       ))}
     </div>
@@ -425,7 +425,7 @@ const SourcesGroup = React.memo(function SourcesGroup({
             </div>
           </OGDialogTrigger>
         )}
-        <OGDialogContent className="bg-surface-dialog flex max-h-[80vh] max-w-full flex-col overflow-hidden rounded-lg p-0 md:max-w-[37.5rem]">
+        <OGDialogContent className="flex max-h-[80vh] max-w-full flex-col overflow-hidden rounded-lg p-0 md:max-w-[37.5rem]">
           <div className="border-border-light bg-surface-dialog sticky top-0 z-10 flex items-center justify-between border-b px-3 py-2">
             <OGDialogTitle className="text-base font-medium">
               {localize('com_sources_title')}
@@ -511,7 +511,7 @@ function FilesGroup({ files, messageId, conversationId, limit = 3 }: FilesGroupP
                 {remainingFiles.slice(0, 3).map((_, i) => (
                   <File
                     key={`file-icon-${i}`}
-                    className={`size-4 ${i > 0 ? 'ml-[-0.375rem]' : ''}`}
+                    className={`size-4 ${i > 0 ? 'ms-[-0.375rem]' : ''}`}
                   />
                 ))}
               </div>
@@ -521,7 +521,7 @@ function FilesGroup({ files, messageId, conversationId, limit = 3 }: FilesGroupP
             </div>
           </OGDialogTrigger>
         )}
-        <OGDialogContent className="bg-surface-dialog flex max-h-[80vh] max-w-full flex-col overflow-hidden rounded-lg p-0 md:max-w-[37.5rem]">
+        <OGDialogContent className="flex max-h-[80vh] max-w-full flex-col overflow-hidden rounded-lg p-0 md:max-w-[37.5rem]">
           <div className="border-border-light bg-surface-dialog sticky top-0 z-10 flex items-center justify-between border-b px-3 py-2">
             <OGDialogTitle className="text-base font-medium">
               {localize('com_sources_agent_files')}
@@ -758,7 +758,7 @@ export default function Sources(props: SourcesProps) {
         variant="outline"
         size="sm"
         onClick={() => window.location.reload()}
-        className="bg-surface-primary text-text-primary hover:bg-surface-hover rounded-md px-3 py-1 text-sm"
+        className="bg-surface-primary rounded-md py-1"
         aria-label={localize('com_sources_reload_page')}
       >
         {localize('com_ui_refresh')}
