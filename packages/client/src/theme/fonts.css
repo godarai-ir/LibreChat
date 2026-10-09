@@ -70,9 +70,15 @@
  * Vazirmatn covers the Arabic script that Inter lacks. The stock families list it after Inter,
  * so Latin keeps Inter while Persian, Arabic and Urdu text gets one designed face instead of
  * whatever the operating system falls back to. The `unicode-range` matches the Arabic subset
- * these files were cut to, so a page without Arabic-script text never fetches them. Each weight
- * mirrors Inter's mapping above (500 renders the semibold file, 600 the bold one) so mixed text
- * keeps one visual weight.
+ * these files were cut to, so a page without Arabic-script text never fetches them. Unlike Inter
+ * above, each weight renders its own file: Vazirmatn's strokes already read a step heavier than
+ * Inter's at the same weight, so shifting it up as well turned every `font-medium` label semibold
+ * and flattened the hierarchy between body, labels and headings.
+ *
+ * `size-adjust` evens out the two scripts' optical size. At one font size Vazirmatn's letter
+ * bodies stand about two thirds of Inter's x-height, so Persian reads a size smaller than the Latin
+ * beside it and its dots blur first at 12-13px. 106% lifts the bodies while the alef still tops out
+ * at Inter's cap height; line heights are set in rem and are unaffected.
  */
 @font-face {
   font-display: swap;
@@ -80,6 +86,7 @@
   font-style: normal;
   font-weight: 400;
   src: url('@librechat/client/fonts/vazirmatn-arabic-400-normal.woff2') format('woff2');
+  size-adjust: 106%;
   unicode-range:
     U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E,
     U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
@@ -90,7 +97,8 @@
   font-family: Vazirmatn;
   font-style: normal;
   font-weight: 500;
-  src: url('@librechat/client/fonts/vazirmatn-arabic-600-normal.woff2') format('woff2');
+  src: url('@librechat/client/fonts/vazirmatn-arabic-500-normal.woff2') format('woff2');
+  size-adjust: 106%;
   unicode-range:
     U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E,
     U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
@@ -101,7 +109,20 @@
   font-family: Vazirmatn;
   font-style: normal;
   font-weight: 600;
+  src: url('@librechat/client/fonts/vazirmatn-arabic-600-normal.woff2') format('woff2');
+  size-adjust: 106%;
+  unicode-range:
+    U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E,
+    U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+
+@font-face {
+  font-display: swap;
+  font-family: Vazirmatn;
+  font-style: normal;
+  font-weight: 700;
   src: url('@librechat/client/fonts/vazirmatn-arabic-700-normal.woff2') format('woff2');
+  size-adjust: 106%;
   unicode-range:
     U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E,
     U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;

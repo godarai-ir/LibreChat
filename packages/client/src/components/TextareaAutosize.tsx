@@ -25,6 +25,11 @@ const AUTOSIZE_VARIANTS: Record<'default' | 'framed' | 'flush' | 'embedded', str
   embedded: fieldEmbedded,
 };
 
+/** `dir="auto"` resolves an empty field to LTR, so in an RTL interface the placeholder and caret
+ *  start on the wrong side. While the placeholder shows, take the surrounding direction instead;
+ *  the first strong character typed hands control back to `auto`. */
+const AUTO_DIR_EMPTY = 'placeholder-shown:[direction:inherit]';
+
 type BaseTextareaAutosizeProps = Omit<TextareaAutosizeProps, 'aria-label' | 'aria-labelledby'> & {
   focusOutline?: FocusOutline;
   variant?: keyof typeof AUTOSIZE_VARIANTS;
@@ -54,6 +59,7 @@ export const TextareaAutosize: ForwardRefExoticComponent<
           cn(
             focusOutlineVariants({ focusOutline }),
             fieldInvalid,
+            (props.dir ?? 'auto') === 'auto' && AUTO_DIR_EMPTY,
             AUTOSIZE_VARIANTS[variant],
             className,
           ) || undefined

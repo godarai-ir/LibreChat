@@ -290,7 +290,10 @@ export function ErrorDetails({ label, children }: { label: string; children: Rea
       </button>
       <div id={panelId} style={panelStyle} aria-hidden={!open}>
         <div ref={panelRef} className="overflow-hidden">
-          <div className="text-text-secondary mt-1 text-xs break-words whitespace-pre-wrap">
+          <div
+            dir="auto"
+            className="text-text-secondary mt-1 text-xs break-words whitespace-pre-wrap"
+          >
             {children}
           </div>
         </div>
@@ -305,7 +308,9 @@ const INLINE_DETAIL_LENGTH = 240;
 /**
  * A headline plus the failure's own words, the way every provider-produced error reads: what is
  * known first, the reported text second. A single sentence stays in place, where a reader gets it
- * without acting; a body of text collapses under `label`.
+ * without acting; a body of text collapses under `label`. The detail is the provider's own text,
+ * usually English inside an RTL interface, so it takes `dir="auto"` (here and in `ErrorDetails`)
+ * to keep its quotes, codes and full stops in written order rather than reordered around RTL.
  */
 export function ErrorWithDetail({
   headline,
@@ -324,7 +329,9 @@ export function ErrorWithDetail({
     <ErrorBody>
       <div>{headline}</div>
       {detail.length <= INLINE_DETAIL_LENGTH && !/[\r\n]/.test(detail) ? (
-        <div className="text-text-secondary">{detail}</div>
+        <div dir="auto" className="text-text-secondary">
+          {detail}
+        </div>
       ) : (
         <ErrorDetails label={label}>{detail}</ErrorDetails>
       )}
@@ -371,9 +378,7 @@ export function formatTimestamp(value: string | number, locale?: string): string
   if (Number.isNaN(date.getTime())) {
     return String(value);
   }
-  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(
-    date,
-  );
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
 }
 
 /** `m:ss`, or `h:mm:ss` past an hour — the shape a countdown is read in. */

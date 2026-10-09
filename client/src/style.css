@@ -1827,6 +1827,19 @@ html {
   max-width: none;
 }
 
+/* Arabic-script prose stacks dots and marks above and below each line, so the Latin leading
+   (1.375 in `.markdown`, 1.6 here) crowds a Persian answer's adjacent lines into each other. */
+:lang(fa) .markdown {
+  line-height: calc(
+    1.75rem * var(--markdown-font-size, var(--font-size-base)) / var(--font-size-base)
+  );
+}
+
+:lang(fa) .message-content,
+:lang(fa) .message-editor-text {
+  line-height: 1.8;
+}
+
 .message-content pre code {
   font-size: calc(0.9 * var(--markdown-font-size, var(--font-size-base)));
 }
