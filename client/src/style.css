@@ -400,8 +400,10 @@ p > small {
   }
 }
 
-/* Show the message time when the row is hovered. Tailwind group-hover
-   loses to `[@media(hover:hover)]:opacity-0` (same specificity, :where()).
+/* Show the message time when the row is hovered. Hidden only where hover
+   exists and no pointer is coarse: `(hover: hover)` alone is true on a 2-in-1,
+   whose trackpad hovers while its touchscreen cannot, and the coarse check
+   alone matches pointerless and print contexts, where nothing reveals it.
 
    Keyboard focus reveals it too, but only `:focus-visible`: a pointer that
    clicks a tool card or an expand toggle inside the row leaves focus sitting
@@ -414,15 +416,17 @@ p > small {
    match `:focus-visible` on a plain mouse click. See `revealOnRowHoverClasses`
    in `components/Chat/Messages/styles.ts` for the full reasoning. */
 @media (hover: hover) {
-  .message-render .message-timestamp {
-    opacity: 0;
-  }
+  @media not all and (any-pointer: coarse) {
+    .message-render .message-timestamp {
+      opacity: 0;
+    }
 
-  .message-render:hover .message-timestamp,
-  .message-render:focus-visible .message-timestamp,
-  .message-render:has(:focus-visible:not(:is(input, textarea, [contenteditable])))
-    .message-timestamp {
-    opacity: 1;
+    .message-render:hover .message-timestamp,
+    .message-render:focus-visible .message-timestamp,
+    .message-render:has(:focus-visible:not(:is(input, textarea, [contenteditable])))
+      .message-timestamp {
+      opacity: 1;
+    }
   }
 }
 
@@ -1827,8 +1831,29 @@ html {
   max-width: none;
 }
 
+/* Arabic-script prose stacks dots and marks above and below each line, so the Latin leading
+   (1.375 in `.markdown`, 1.6 here) crowds a Persian answer's adjacent lines into each other. */
+:lang(fa) .markdown {
+  line-height: calc(
+    1.75rem * var(--markdown-font-size, var(--font-size-base)) / var(--font-size-base)
+  );
+}
+
+:lang(fa) .message-content,
+:lang(fa) .message-editor-text {
+  line-height: 1.8;
+}
+
 .message-content pre code {
   font-size: calc(0.9 * var(--markdown-font-size, var(--font-size-base)));
+}
+
+/* iOS zooms into a focused field under 16px and the installed PWA never zooms back out. */
+@media (any-pointer: coarse) {
+  .message-editor-text,
+  .composer-text {
+    font-size: max(16px, var(--markdown-font-size, var(--font-size-base)));
+  }
 }
 
 .message-content pre {
@@ -2046,6 +2071,14 @@ html[data-input-modality='keyboard']
 .popover-ui.popover-from-left[data-enter] {
   translate: 0 0;
 }
+/* A submenu placed with `mirrorPlacement` opens to the left of its parent under RTL, so it
+   grows from its right edge, the one beside the parent, and slides in leftward. */
+[dir='rtl'] .popover-ui.popover-from-left {
+  transform-origin: right;
+}
+[dir='rtl'] .popover-ui.popover-from-left:not([data-enter]) {
+  translate: 0.5rem 0;
+}
 
 .animate-popover-top,
 .animate-popover {
@@ -2113,6 +2146,10 @@ html[data-input-modality='keyboard']
     opacity 190ms cubic-bezier(0.32, 0.72, 0, 1),
     transform 260ms cubic-bezier(0.32, 0.72, 0, 1);
   will-change: transform, opacity;
+}
+/* Resizable anchored panels share the composer entrance and exit clock. */
+.animate-composer-popover-resize {
+  transition-property: opacity, transform, width, max-height;
 }
 .animate-composer-popover[data-enter] {
   opacity: 1;

@@ -73,7 +73,9 @@ export default function Content({ activeTab, query, ctx }: ContentProps) {
             {entries.map((e) => {
               const Cmp = e.Component;
               return (
-                <div key={e.id} className="px-4 py-3">
+                /* Rows spread a label and its control across the panel; the rule
+                   between rows carries the eye from one to the other. */
+                <div key={e.id} className="border-border-light border-b px-4 py-3 last:border-b-0">
                   <Cmp />
                 </div>
               );

@@ -1,5 +1,4 @@
-import React, { useEffect, memo } from 'react';
-import TagManager from 'react-gtm-module';
+import React, { memo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Constants, hasConfiguredFooter } from 'librechat-data-provider';
 import type { TStartupConfig } from 'librechat-data-provider';
@@ -19,7 +18,7 @@ type FooterProps = {
   configuredOnly?: boolean;
 };
 
-type FooterStartupConfig = Pick<Partial<TStartupConfig>, 'analyticsGtmId' | 'customFooter'> & {
+type FooterStartupConfig = Pick<Partial<TStartupConfig>, 'customFooter'> & {
   interface?: Pick<NonNullable<TStartupConfig['interface']>, 'privacyPolicy' | 'termsOfService'>;
 };
 
@@ -87,22 +86,17 @@ function Footer({ className, startupConfig, configuredOnly = false }: FooterProp
   const mainContent = configuredFooter ?? genericFooter;
   const mainContentParts = mainContent === '' ? [] : mainContent.split('|');
 
-  useEffect(() => {
-    if (config?.analyticsGtmId != null && typeof window.google_tag_manager === 'undefined') {
-      const tagManagerArgs = {
-        gtmId: config.analyticsGtmId,
-      };
-      TagManager.initialize(tagManagerArgs);
-    }
-  }, [config?.analyticsGtmId]);
-
   const mainContentRender = mainContentParts.map((text, index) => (
     <React.Fragment key={`main-content-part-${index}`}>
       <ReactMarkdown
         components={{
+          /** `dir="auto"` isolates each link: a Latin label such as "LibreChat v0.8.8" next to
+           *  Persian copy otherwise lets neutral characters at its edges (the version's digits,
+           *  a following dash) resolve against the wrong run and reorder the sentence. */
           a: ({ node: _n, href, children, ...otherProps }) => {
             return (
               <a
+                dir="auto"
                 className="text-text-muted underline"
                 href={href}
                 target="_blank"
@@ -155,7 +149,7 @@ function Footer({ className, startupConfig, configuredOnly = false }: FooterProp
             <React.Fragment key={`footer-element-${index}`}>
               {contentRender}
               {!isLastElement && (
-                <div key={`separator-${index}`} className="border-border-medium h-2 border-r" />
+                <div key={`separator-${index}`} className="border-border-medium h-2 border-e" />
               )}
             </React.Fragment>
           );

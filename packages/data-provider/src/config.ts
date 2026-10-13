@@ -63,9 +63,11 @@ import { STATEFUL_CODE_ENVIRONMENTS } from './stateful-code';
 import { specsConfigSchema, TSpecsConfig } from './models';
 import { fileConfigSchema } from './file-config';
 import {
+  PULL_REQUEST_PROVIDERS,
   PULL_REQUEST_BATCH_VERSION,
   PULL_REQUEST_BATCH_TIMEOUT_MAX_SECONDS,
 } from './types/pullRequest';
+import type { PullRequestProvider } from './types/pullRequest';
 import { isActionTool } from './types/tools';
 import { apiBaseUrl } from './api-endpoints';
 import { FileSources } from './types/files';
@@ -111,6 +113,17 @@ export const BASE_ONLY_CONFIG_SECTIONS = ['filters', 'mcpAppSandbox'] as const;
 /** Sections that may be stored in the tenant's base config document but must
  * not be overridden or tombstoned by role, group, or user config documents. */
 export const BASE_PRINCIPAL_CONFIG_SECTIONS = ['langfuse'] as const;
+/** Fields inside overridable sections that only the operator's YAML sets: a role, group, user
+ * or tenant config document can neither change nor remove them. The pull request provider and
+ * host decide where the deployment's token is sent, the OAuth app which credentials users grant
+ * and which environment secret is sent with them, and the shared cache's slot count where every
+ * replica looks for a shared answer. */
+export const BASE_ONLY_CONFIG_PATHS = [
+  'endpoints.agents.pullRequests.provider',
+  'endpoints.agents.pullRequests.host',
+  'endpoints.agents.pullRequests.oauth',
+  'endpoints.agents.pullRequests.sharedCacheSlots',
+] as const;
 
 export const defaultRetrievalModels = [
   'gpt-4o',
@@ -506,12 +519,29 @@ const skillSyncTenantIdSchema = z
 const pullRequestRepositorySchema = z
   .string()
   .trim()
-  .regex(/^[A-Za-z0-9_.-]+\/(?:[A-Za-z0-9_.-]+|\*)$/, {
-    message: 'must be owner/name or owner/*',
+  .regex(/^[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+){0,18}\/(?:[A-Za-z0-9_.-]+|\*)$/, {
+    message: 'must be owner/name or owner/*, or a nested group path such as group/sub/name',
   })
   .refine((value) => value.split('/').every((segment) => segment !== '.' && segment !== '..'), {
     message: 'must not contain dot segments',
   });
+
+/** A GitHub host name, optionally with a port: `github.com`, an Enterprise Server host such as
+ *  `github.example.com`, or a data residency tenant such as `acme.ghe.com`. Never a URL. */
+const pullRequestHostSchema = z
+  .string()
+  .trim()
+  .max(253)
+  .regex(/^(?=[a-z0-9])[a-z0-9.-]*[a-z0-9](?::[0-9]{1,5})?$/i, {
+    message: 'must be a host name like github.example.com, without a scheme or path',
+  })
+  .refine(
+    (value) => {
+      const port = value.split(':')[1];
+      return port == null || (Number(port) >= 1 && Number(port) <= 65535);
+    },
+    { message: 'must use a port from 1 to 65535' },
+  );
 
 const pullRequestTokenReferenceSchema = z
   .string()
@@ -1480,6 +1510,9 @@ export const DEFAULT_AVATAR_REFRESH_COVERAGE_LIMIT = 1000;
 export const DEFAULT_MAX_PROVIDER_ERROR_CHARS = 2000;
 export const DEFAULT_AGENT_MODEL_RESPONSE_BODY_TIMEOUT_MS = 900_000;
 export const DEFAULT_AGENT_MODEL_RESPONSE_HEADERS_TIMEOUT_MS = 300_000;
+/** Below the idle cutoff of common proxies (nginx 60 s, Cloudflare 100 s), so a
+ * stream that is silent while a tool runs is not closed underneath the client. */
+export const DEFAULT_STREAM_KEEPALIVE_INTERVAL_MS = 25_000;
 export const DEFAULT_CACHE_CLEAR_TIMEOUT_MS = 1000;
 
 export const HOST_FILE_EDIT_HARD_MAX_COUNT = 100;
@@ -1547,6 +1580,17 @@ export const agentsEndpointSchema = baseEndpointSchema
         .min(0)
         .max(86_400_000)
         .default(DEFAULT_AGENT_MODEL_RESPONSE_HEADERS_TIMEOUT_MS),
+      /** Interval between SSE comment frames on an otherwise silent chat stream, so
+       * proxies with an idle timeout keep it open; 0 disables the keepalive. */
+      streamKeepaliveIntervalMs: z
+        .number()
+        .int()
+        .min(0)
+        .max(3_600_000)
+        .refine((ms) => ms === 0 || ms >= 1_000, {
+          message: 'Use 0 to disable, or at least 1000 ms',
+        })
+        .default(DEFAULT_STREAM_KEEPALIVE_INTERVAL_MS),
       recursionLimit: z.number().optional(),
       disableBuilder: z.boolean().optional().default(false),
       /** Optional workspace guidance acquisition budget, separate from command execution. */
@@ -1865,10 +1909,48 @@ export const agentsEndpointSchema = baseEndpointSchema
       pullRequests: z
         .object({
           enabled: z.boolean().optional(),
+          /** Where pull requests live: `github` (the default), `gitlab` for merge requests on
+           *  gitlab.com or a self-managed GitLab, or `bitbucket` for Bitbucket Cloud. Read from the
+           *  YAML only, as `host` is, so an override cannot send the token to another service. */
+          provider: z.enum(PULL_REQUEST_PROVIDERS).optional(),
+          /** The host the token belongs to: by default `github.com`, `gitlab.com` or `bitbucket.org`
+           *  for the provider; a GitHub Enterprise Server or `*.ghe.com` host, or a self-managed
+           *  GitLab host. Bitbucket is Cloud only. Read from the YAML only, never an override. */
+          host: pullRequestHostSchema.optional(),
           /** Environment variable reference holding a read-only GitHub token, e.g.
            *  `${GITHUB_PULL_REQUEST_TOKEN}`. Never the token itself. Optional: without it the first
            *  of `GITHUB_PULL_REQUEST_TOKEN`, `GITHUB_TOKEN` and `GH_TOKEN` that is set is used. */
           token: pullRequestTokenReferenceSchema.optional(),
+          /** Lets each user connect their own account, so lookups use that user's token, rate
+           *  limit and repository access instead of the server's. Read from the YAML only, as
+           *  `provider` and `host` are. Register `<DOMAIN_SERVER>/api/pull-requests/oauth/callback`
+           *  as the callback URL. On GitHub, a GitHub App with read-only permissions is the
+           *  recommended client: its user tokens need no scope. A connection belongs to the app
+           *  it was made with: changing `clientId`, `provider` or `host` asks users to connect
+           *  again. A grant made with another `clientId`, provider or host is never used and
+           *  expires with `retentionDays`. A changed `scope` applies to new connections only.
+           *  Disconnecting removes every grant of the user. */
+          oauth: z
+            .object({
+              /** Environment variable references, never the values. */
+              clientId: pullRequestTokenReferenceSchema,
+              clientSecret: pullRequestTokenReferenceSchema,
+              /** Space separated scopes to request. Defaults: none on GitHub, `read_api` on
+               *  GitLab, and the consumer's own on Bitbucket. */
+              scope: z
+                .string()
+                .trim()
+                .max(256)
+                .regex(/^[A-Za-z0-9_:.\- ]*$/)
+                .optional(),
+              /** Minutes a user may take to approve the connection at the provider. Default 10. */
+              flowTimeoutMinutes: z.number().int().min(1).max(60).optional(),
+              /** Seconds a code exchange or token refresh may take. Default 10. */
+              requestTimeoutSeconds: z.number().int().min(1).max(60).optional(),
+              /** Days a connection is kept without being used; every use extends it. Default 180. */
+              retentionDays: z.number().int().min(1).max(3650).optional(),
+            })
+            .optional(),
           /** Repositories the token may be used for, as `owner/name` or `owner/*`. A worker reports
            *  its own repository, so without this list a user could point the server's token at any
            *  repository it can read. */
@@ -1913,6 +1995,20 @@ export const agentsEndpointSchema = baseEndpointSchema
           maxCandidatePages: z.number().int().min(1).max(10).optional().default(1),
           /** Candidates compared with that commit before the search gives up. Each is one request. */
           maxHeadComparisons: z.number().int().min(0).max(20).optional().default(3),
+          /** Share looked-up pull requests and GitHub rate limit cooldowns between replicas
+           *  through Redis, so each replica does not spend the token on the same answer. Takes
+           *  effect only when the deployment runs with Redis (`USE_REDIS`); each replica keeps its
+           *  own in-memory cache either way. Only found pull requests and rate limits are shared;
+           *  a failed lookup stays with the replica that saw it. */
+          sharedCache: z.boolean().optional().default(false),
+          /** Longest one shared cache read or write may take, in milliseconds, before a lookup
+           *  carries on without it, so a slow Redis cannot hold the header request. A command
+           *  still queued at that point, as during a disconnect, is dropped rather than sent later. */
+          sharedCacheTimeoutMs: z.number().int().min(10).max(5000).optional().default(250),
+          /** Redis keys the shared cache uses at most, for results and again for rate limits:
+           *  each goes in a slot picked from its key, replacing what was there. Read from the
+           *  YAML only, so every replica and principal addresses the same slot for a lookup. */
+          sharedCacheSlots: z.number().int().min(64).max(1_000_000).optional().default(65_536),
         })
         .optional(),
       /** Conversational background-task delivery policy. Automatic completion wakeups are
@@ -2049,6 +2145,10 @@ export const endpointSchema = baseEndpointSchema.merge(
       userIdQuery: z.boolean().optional(),
     }),
     iconURL: z.string().optional(),
+    /** Icon for the dark color scheme. A mark drawn for one background often disappears on the
+     *  other (a white logo on the light theme); when set, the client shows it in place of
+     *  `iconURL` while dark is in effect. Unset keeps `iconURL` in both schemes. */
+    iconURLDark: z.string().optional(),
     modelDisplayLabel: z.string().optional(),
     /**
      * Forces the endpoint to use a provider's native client / request format
@@ -2640,6 +2740,21 @@ export type TThemeDefinitionConfig = z.infer<typeof themeDefinitionSchema>;
 
 /** A bundled theme name or an inline theme definition applied to every user. */
 export const deploymentThemeSchema = z.union([z.string().trim().min(1), themeDefinitionSchema]);
+/** Single source for the quiet period between syntax highlights while a code block streams, and
+ *  its bounds; the schema default and the client's normalizer both read them. */
+export const DEFAULT_CODE_HIGHLIGHT_THROTTLE_MS = 300;
+export const MAX_CODE_HIGHLIGHT_THROTTLE_MS = 60_000;
+
+/** A configured highlight cadence the schema would accept, or the default. */
+export function normalizeCodeHighlightThrottleMs(value: unknown): number {
+  return typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= 0 &&
+    value <= MAX_CODE_HIGHLIGHT_THROTTLE_MS
+    ? value
+    : DEFAULT_CODE_HIGHLIGHT_THROTTLE_MS;
+}
+
 /** Single source for the agents panel selector's unsearched list cap; the
  * schema default and the client fallback both read it. */
 export const DEFAULT_AGENT_SELECTOR_LIMIT = 10;
@@ -2682,7 +2797,12 @@ export const interfaceSchema = z
     /** Set to false during a rolling upgrade, until every API replica supports title ownership and old title jobs drain. */
     runningChatRename: z.boolean().default(true),
     /** Milliseconds between syntax highlights while a code block streams. */
-    codeHighlightThrottleMs: z.number().int().min(0).max(60_000).default(300),
+    codeHighlightThrottleMs: z
+      .number()
+      .int()
+      .min(0)
+      .max(MAX_CODE_HIGHLIGHT_THROTTLE_MS)
+      .default(DEFAULT_CODE_HIGHLIGHT_THROTTLE_MS),
     /** Most agents the agents panel selector lists before a search term is
      * typed; typing lifts the cap so search reaches every agent. */
     agentSelectorLimit: z
@@ -2722,6 +2842,8 @@ export const interfaceSchema = z
     temporaryChatRetention: z.number().min(1).max(8760).optional(),
     generalChatRetention: z.number().min(1).max(8760).optional(),
     autoSubmitFromUrl: z.boolean().optional(),
+    /** Accept `?theme=dark|light|system` on an entry link as the user's colour mode, so another app can hand its mode over. */
+    colorModeFromUrl: z.boolean().optional(),
     retentionMode: z.nativeEnum(RetentionMode).default(RetentionMode.TEMPORARY),
     retainAgentFiles: z.boolean().optional(),
     runCode: z.boolean().optional(),
@@ -2931,7 +3053,7 @@ export const interfaceSchema = z
   .default({
     modelSelect: true,
     runningChatRename: true,
-    codeHighlightThrottleMs: 300,
+    codeHighlightThrottleMs: DEFAULT_CODE_HIGHLIGHT_THROTTLE_MS,
     agentSelectorLimit: DEFAULT_AGENT_SELECTOR_LIMIT,
     parameters: true,
     presets: true,
@@ -2952,6 +3074,7 @@ export const interfaceSchema = z
     },
     temporaryChat: true,
     autoSubmitFromUrl: true,
+    colorModeFromUrl: false,
     runCode: true,
     webSearch: true,
     contextUsage: true,
@@ -3176,6 +3299,8 @@ export type TStartupConfig = {
   /** `endpoints.agents.pullRequests.maxConcurrentLookups`, so the single-route fallback of an
    *  upgrade in progress keeps to the limit the operator configured. */
   pullRequestsMaxConcurrentLookups?: number;
+  /** The provider users can connect their own account to, from `pullRequests.oauth`. */
+  pullRequestsConnect?: PullRequestProvider;
   /** Manual context compaction, gated by the same `summarization.enabled`
    *  switch that governs the automatic detour. */
   compactionEnabled?: boolean;
@@ -3764,6 +3889,19 @@ export const langfuseTraceConfigSchema = z.object({
 
 export type LangfuseTraceConfig = z.infer<typeof langfuseTraceConfigSchema>;
 
+/**
+ * Format new stored user credentials (tool, web search and MCP custom user variable values)
+ * are written in. Both formats are always readable; `legacy` keeps writes readable by
+ * replicas on releases that predate `v3` during a rolling upgrade.
+ */
+export const credentialsConfigSchema = z
+  .object({
+    writeFormat: z.enum(['v3', 'legacy']).default('v3'),
+  })
+  .strict();
+
+export type TCredentialsConfig = z.infer<typeof credentialsConfigSchema>;
+
 export const langfuseConfigSchema = z.object({
   enabled: z.boolean().optional(),
   publicKey: z.string().optional(),
@@ -3894,6 +4032,7 @@ export const configSchema = z.object({
     .strict()
     .optional(),
   langfuse: langfuseConfigSchema.optional(),
+  credentials: credentialsConfigSchema.optional(),
   memory: memorySchema.optional(),
   summarization: summarizationConfigSchema.optional(),
   skillSync: skillSyncConfigSchema,
@@ -4631,6 +4770,10 @@ export enum CacheKeys {
    * Key for the per-model reasoning effort cache of OpenRouter endpoints.
    */
   REASONING_CAPABILITIES = 'REASONING_CAPABILITIES',
+  /**
+   * Key for pull request lookups and GitHub rate limit cooldowns shared across replicas.
+   */
+  PULL_REQUESTS = 'PULL_REQUESTS',
   /**
    * Key for the app config namespace.
    */

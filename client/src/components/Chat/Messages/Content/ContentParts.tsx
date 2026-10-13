@@ -42,6 +42,7 @@ import PendingSkillCall from './Parts/PendingSkillCall';
 import ActivityPhaseGroup from './ActivityPhaseGroup';
 import { hasPendingApprovalInPart } from '~/utils';
 import EditContentParts from './EditContentParts';
+import EmptyResponse from './Parts/EmptyResponse';
 import { EmptyText, AgentUpdate } from './Parts';
 import ApprovalProvider from './ApprovalContext';
 import Sources from '~/components/Web/Sources';
@@ -804,6 +805,23 @@ const ContentPartsBody = memo(function ContentPartsBody({
     },
     [authorHeader, postSteerAuthors, messageId],
   );
+
+  /** A settled top-level assistant turn with nothing in it, not a nested phase or
+   *  lane, which renders a slice of a message that has content elsewhere. */
+  const settledEmpty =
+    !effectiveIsSubmitting &&
+    !isCreatedByUser &&
+    edit !== true &&
+    !nestedActivityPhase &&
+    !withinActivityPhase &&
+    contentIndices == null &&
+    !hasRealContent &&
+    !hasPendingSkills &&
+    workspaceChanges.length === 0 &&
+    (attachments?.length ?? 0) === 0;
+  if (settledEmpty) {
+    return <EmptyResponse />;
+  }
 
   // Early return: no content to render AND no pending skill cards
   if (!content && !hasPendingSkills && workspaceChanges.length === 0) {

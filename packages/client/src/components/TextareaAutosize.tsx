@@ -8,22 +8,37 @@ import {
 import ReactTextareaAutosize from 'react-textarea-autosize';
 import type { TextareaAutosizeProps } from 'react-textarea-autosize';
 import type { FocusOutline } from './Focus';
-import { FIELD_OWN_FOCUS, fieldEmbedded, fieldFlush, fieldInvalid } from './Field';
+import {
+  fieldBase,
+  fieldFlush,
+  fieldInvalid,
+  fieldEmbedded,
+  FIELD_OWN_FOCUS,
+  fieldFillTransparent,
+} from './Field';
 import { focusOutlineVariants } from './Focus';
 import { cn } from '~/utils';
+import './Field.css';
 
 /** A rounded editor box of its own, such as a prompt or message editor. */
 const framed = `${FIELD_OWN_FOCUS} rounded-xl border border-border-medium bg-transparent text-text-primary placeholder:text-text-secondary focus-visible:ring-2 focus-visible:ring-focus-control`;
 
-/** The control is bare by default and the caller draws it. `framed` is the bordered, rounded
+/** The control is bare by default and the caller draws it. `field` is a form field like `Textarea`,
+ *  with its outline and focus ring, that grows with its text. `framed` is the bordered, rounded
  *  editor box, `flush` draws no border or ring because the surrounding frame owns the indicator,
  *  and `embedded` fills a list or popover row edge to edge. */
-const AUTOSIZE_VARIANTS: Record<'default' | 'framed' | 'flush' | 'embedded', string> = {
+const AUTOSIZE_VARIANTS: Record<'default' | 'field' | 'framed' | 'flush' | 'embedded', string> = {
   default: '',
+  field: `${fieldBase} ${fieldFillTransparent}`,
   framed,
   flush: `${FIELD_OWN_FOCUS} ${fieldFlush}`,
   embedded: fieldEmbedded,
 };
+
+/** `dir="auto"` resolves an empty field to LTR, so in an RTL interface the placeholder and caret
+ *  start on the wrong side. While the placeholder shows, take the surrounding direction instead;
+ *  the first strong character typed hands control back to `auto`. */
+const AUTO_DIR_EMPTY = 'placeholder-shown:[direction:inherit]';
 
 type BaseTextareaAutosizeProps = Omit<TextareaAutosizeProps, 'aria-label' | 'aria-labelledby'> & {
   focusOutline?: FocusOutline;
@@ -54,6 +69,7 @@ export const TextareaAutosize: ForwardRefExoticComponent<
           cn(
             focusOutlineVariants({ focusOutline }),
             fieldInvalid,
+            (props.dir ?? 'auto') === 'auto' && AUTO_DIR_EMPTY,
             AUTOSIZE_VARIANTS[variant],
             className,
           ) || undefined

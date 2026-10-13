@@ -81,10 +81,36 @@ describe('field variants', () => {
     );
   });
 
-  it('TextareaAutosize adds nothing by default', () => {
+  it('TextareaAutosize adds only the empty-field direction by default', () => {
     render(<TextareaAutosize aria-label="draft" className="resize-none" />);
     const field = screen.getByLabelText('draft');
-    expect(field.className).toBe(cn(fieldInvalid, 'resize-none'));
+    expect(field.className).toBe(
+      cn(fieldInvalid, 'placeholder-shown:[direction:inherit]', 'resize-none'),
+    );
+  });
+
+  it('TextareaAutosize keeps an explicit direction when empty', () => {
+    render(
+      <>
+        <TextareaAutosize aria-label="auto" />
+        <TextareaAutosize aria-label="ltr" dir="ltr" />
+      </>,
+    );
+    expect(screen.getByLabelText('auto')).toHaveAttribute('dir', 'auto');
+    expect(screen.getByLabelText('auto')).toHaveClass('placeholder-shown:[direction:inherit]');
+    expect(screen.getByLabelText('ltr')).toHaveAttribute('dir', 'ltr');
+    expect(screen.getByLabelText('ltr')).not.toHaveClass('placeholder-shown:[direction:inherit]');
+  });
+
+  it('TextareaAutosize field takes the control outline and focus ring of a form field', () => {
+    render(<TextareaAutosize aria-label="draft" variant="field" className="resize-none" />);
+    expect(screen.getByLabelText('draft')).toHaveClass(
+      'lc-field',
+      'border-border-control',
+      'focus-visible:ring-focus-control',
+      'bg-transparent',
+      'resize-none',
+    );
   });
 
   it('TextareaAutosize framed carries the bordered editor box exactly', () => {

@@ -61,7 +61,7 @@ function ExternalEventTrigger({
     body = (
       <Collapsible open={expanded} onOpenChange={setExpanded}>
         <CollapsibleTrigger asChild>
-          <Button type="button" variant="ghost" className={systemEventHeaderClasses}>
+          <Button type="button" variant="disclosure" className={systemEventHeaderClasses}>
             <SystemEventHeader
               icon={<ExternalEventIcon />}
               label={label}

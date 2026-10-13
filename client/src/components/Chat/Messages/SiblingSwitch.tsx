@@ -59,7 +59,7 @@ export default function SiblingSwitch({
         aria-atomic="true"
         role="status"
       >
-        {siblingIdx + 1} / {siblingCount}
+        {localize('com_ui_sibling_position', { 0: siblingIdx + 1, 1: siblingCount })}
       </span>
       <Button
         variant="message-action"

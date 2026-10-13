@@ -4,10 +4,12 @@ import { Alert, DelayedRender } from '@librechat/client';
 import { Constants, parseThinkingContent } from 'librechat-data-provider';
 import type { TMessage } from 'librechat-data-provider';
 import type { TMessageContentProps, TDisplayProps } from '~/common';
+import AttachmentRecoveryActions from '~/components/Messages/Content/Error/recovery';
 import useSmoothStreaming from '~/hooks/Messages/useSmoothStreaming';
 import Error from '~/components/Messages/Content/Error';
 import ToolCallLimitNotice from './ToolCallLimitNotice';
 import CollapsibleText from './Parts/CollapsibleText';
+import EmptyResponse from './Parts/EmptyResponse';
 import { useMessageContext } from '~/Providers';
 import EmptyText from './Parts/EmptyText';
 import MarkdownLite from './MarkdownLite';
@@ -85,6 +87,7 @@ export const ErrorMessage = ({
     <Container message={message}>
       <ErrorBox className={className}>
         <Error text={text} message={message} />
+        <AttachmentRecoveryActions text={text} messageId={message?.messageId} />
       </ErrorBox>
     </Container>
   );
@@ -190,6 +193,20 @@ const MessageContent = ({
 
   if (edit) {
     return <EditMessage text={text} isSubmitting={isSubmitting} {...props} />;
+  }
+
+  if (
+    !isSubmitting &&
+    !unfinished &&
+    !message.isCreatedByUser &&
+    thinkingContent.length === 0 &&
+    regularContent.trim().length === 0
+  ) {
+    return (
+      <Container message={message}>
+        <EmptyResponse />
+      </Container>
+    );
   }
 
   return (
