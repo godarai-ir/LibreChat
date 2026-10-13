@@ -45,6 +45,7 @@ const {
   loadToolApprovalHooks,
   maybeInjectQueryDevtoolsBootstrap,
   injectConfiguredFooterBootstrap,
+  injectColorModeHandoff,
   preAuthTenantMiddleware,
   requestContextMiddleware,
   registerShutdownTask,
@@ -302,6 +303,8 @@ const startServer = async () => {
     customFooter: process.env.CUSTOM_FOOTER,
   });
 
+  indexHTML = injectColorModeHandoff(indexHTML, appConfig.interfaceConfig?.colorModeFromUrl);
+
   const cspPolicy = createCspPolicy();
   const shellCache = shellCacheHeaders(cspPolicy != null);
 
@@ -421,6 +424,7 @@ const startServer = async () => {
   app.use('/api/search', routes.search);
   app.use('/api/messages', routes.messages);
   app.use('/api/convos', routes.convos);
+  app.use('/api/pull-requests', preAuthTenantMiddleware, routes.pullRequests);
   app.use('/api/traces', routes.traces);
   app.use('/api/presets', routes.presets);
   app.use('/api/projects', routes.projects);

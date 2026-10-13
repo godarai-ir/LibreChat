@@ -1,4 +1,4 @@
-import type { ThemeDefinition } from '../types';
+import type { IThemeRGB, ThemeDefinition } from '../types';
 import applyTheme, {
   applyResolvedTheme,
   clearAppliedTheme,
@@ -73,6 +73,12 @@ describe('applyTheme', () => {
     expect(document.documentElement.style.getPropertyValue('--surface-composer-hover')).toBe(
       '66 66 66',
     );
+  });
+
+  it('writes a renamed category icon role from legacy colors to its slot 4 name', () => {
+    applyTheme({ 'rgb-category-icon': '7 8 9' } as IThemeRGB);
+
+    expect(document.documentElement.style.getPropertyValue('--category-icon-4')).toBe('7 8 9');
   });
 
   it('keeps existing custom hover colors on composer controls', () => {
@@ -556,6 +562,14 @@ describe('applyTheme', () => {
 
     expect(root.style.getPropertyValue('--field-fill')).toBe('20 21 22');
     expect(root.style.getPropertyValue('--field-text')).toBe('1 2 3');
+  });
+
+  it('maps a legacy theme canvas onto the checkbox fill', () => {
+    const root = document.documentElement;
+
+    applyTheme({ 'rgb-surface-primary': '20 21 22' }, root);
+
+    expect(root.style.getPropertyValue('--checkbox-fill')).toBe('20 21 22');
   });
 
   it('keeps the switch knob of a legacy theme on the surface it repainted', () => {

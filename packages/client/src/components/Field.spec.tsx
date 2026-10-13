@@ -102,6 +102,17 @@ describe('field variants', () => {
     expect(screen.getByLabelText('ltr')).not.toHaveClass('placeholder-shown:[direction:inherit]');
   });
 
+  it('TextareaAutosize field takes the control outline and focus ring of a form field', () => {
+    render(<TextareaAutosize aria-label="draft" variant="field" className="resize-none" />);
+    expect(screen.getByLabelText('draft')).toHaveClass(
+      'lc-field',
+      'border-border-control',
+      'focus-visible:ring-focus-control',
+      'bg-transparent',
+      'resize-none',
+    );
+  });
+
   it('TextareaAutosize framed carries the bordered editor box exactly', () => {
     render(<TextareaAutosize aria-label="draft" variant="framed" className="min-h-20" />);
     const field = screen.getByLabelText('draft');
