@@ -256,3 +256,17 @@ Rows created before multi-tenancy have no `tenantId`, so they are invisible in h
 - It leaves the rows that every tenant shares on purpose (`SHARED_UNTENANTED_MODELS`: the registry, platform grants, audit log, skill-sync status, seeded roles, access roles, agent categories, base config and the deployment banner).
 - The tenant must already be in the registry.
 - Order: `npm run migrate:tenant-indexes`, then `node config/assign-tenant.js --tenant-id <id> --apply`, then rebuild the search index.
+
+## 11. Files (Phase 8, implemented)
+
+Host mode requires S3-compatible storage (`s3` or `cloudfront`, enforced at startup in Phase 1) because its object keys already carry the tenant: `t/<tenantId>/<base>/<userId>/<file>`, and reading or deleting a file checks that the tenant in the key equals the tenant of the file record (`storage/s3/crud.ts`).
+
+What was missing: `getS3Key` silently dropped the `t/<tenantId>` segment when no tenant was passed, so a caller that forgot it would write into the shared legacy layout (`<base>/<user>/<file>`), where only the user id separates one tenant's files from another's. In host mode `getS3Key` now throws instead. Every save, read-URL, delete and upload path goes through it, including CloudFront, so a missed call site fails loudly rather than mixing tenants.
+
+Audit of the write call sites (all pass `tenantId`, which is the user's tenant and, after the Phase 6 binding, the host tenant): browser uploads, image conversion, user avatars, agent avatars, code-interpreter outputs, skill import and the OpenID avatar. Reads and downloads use the storage key and region recorded on the file record at write time.
+
+Known limits:
+
+- **Platform-level skill sync.** The GitHub skill sync writes shared skills under a system user with no tenant; with S3 in host mode that write is now refused and logged. It needs a tenant-scoped configuration before it can be used.
+- **Signed URLs.** A pre-signed S3 URL works for anyone who holds it until it expires; that is how signed URLs work and is unchanged.
+- **Local and Firebase storage** are refused at startup in host mode rather than made tenant-aware.

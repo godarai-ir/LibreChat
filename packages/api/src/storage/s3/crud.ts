@@ -51,6 +51,7 @@ import {
   assertPathSegment,
   sanitizeContentDispositionFilename,
 } from '~/storage/validation';
+import { isHostTenancyEnabled } from '~/tenancy/config';
 import { getSafeErrorMetadata } from '~/utils/errors';
 import { initializeS3 } from '~/cdn/s3';
 import { deleteRagFile } from '~/files';
@@ -184,6 +185,12 @@ export function getS3Key(
   }
   if (options.tenantId) {
     pathParts.push('t', assertPathSegment('tenantId', options.tenantId, 'getS3Key'));
+  } else if (isHostTenancyEnabled()) {
+    /**
+     * Without a tenant the key would fall into the shared legacy layout (`<base>/<user>/<file>`),
+     * where nothing separates one tenant's files from another's. Refuse rather than mix them.
+     */
+    throw new Error('[getS3Key] a tenantId is required for every file in host multi-tenancy');
   }
   pathParts.push(safeBasePath, safeUserId, safeFileName);
   return pathParts.join('/');
