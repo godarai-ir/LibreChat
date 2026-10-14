@@ -270,3 +270,14 @@ Known limits:
 - **Platform-level skill sync.** The GitHub skill sync writes shared skills under a system user with no tenant; with S3 in host mode that write is now refused and logged. It needs a tenant-scoped configuration before it can be used.
 - **Signed URLs.** A pre-signed S3 URL works for anyone who holds it until it expires; that is how signed URLs work and is unchanged.
 - **Local and Firebase storage** are refused at startup in host mode rather than made tenant-aware.
+
+## 12. Search (Phase 9, implemented)
+
+All four search call sites (`conversation.ts`, `message.ts` `searchMessages`, `share.ts`, `routes/messages.js`) end in the same plugin method, `meiliSearch` in `models/plugins/mongoMeili.ts`, so the tenant is enforced there instead of at each call site:
+
+- Every indexed document carries its `tenantId`, and `tenantId` is a filterable attribute next to `user` (the index settings are updated at startup, also for an index that already exists).
+- `meiliSearch` reads the tenant scope of the request with the same `resolveTenantScope` the Mongoose plugin uses. In a tenant context it adds `tenantId = "<tenant>"` to the caller's filter: a string filter is wrapped as `(<filter>) AND tenantId = "<tenant>"`, so an `OR` inside it cannot widen past the tenant, and an array filter gets the clause appended. The value is escaped, and the caller's params are not mutated.
+- Outside a tenant context the filter is unchanged (single-tenant mode). In strict mode a missing context throws, like any other tenant-isolated query. A deliberate `runAsSystem` search is not confined.
+- The hydrate step already reads the hits back through the isolated `Model.find`, so even an unfiltered hit of another tenant would not be returned with its data.
+
+Documents indexed before multi-tenancy, or rows given a tenant by `config/assign-tenant.js` (which writes through the native collection and so triggers no indexing hook), have no `tenantId` in the index and are invisible to tenant searches until they are indexed again. Reset the sync flags and let the sync run: `node config/reset-meili-sync.js`.

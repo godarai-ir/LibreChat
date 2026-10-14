@@ -13,6 +13,7 @@ import type {
 import type { SearchResponse, SearchParams, Index, MeiliSearchErrorInfo } from 'meilisearch';
 import type { IConversation, IMessage } from '~/types';
 import { buildRetentionVisibilityFilter, legacyPermanentExpirationFilter } from '~/utils/retention';
+import { resolveTenantScope } from '~/tenant/policy';
 import logger from '~/config/meiliLogger';
 
 /** Internal per-query bypass for writes to non-searchable bookkeeping fields. A WeakSet keeps
@@ -283,6 +284,29 @@ const processBatch = async <T>(
     }
   }
 };
+
+/** Escapes a value for use inside a double-quoted Meilisearch filter expression. */
+const escapeFilterValue = (value: string): string =>
+  value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+
+/**
+ * Adds `tenantId = "<tenant>"` to a search filter, whatever shape the caller gave it. A string
+ * filter is wrapped so an `OR` inside it cannot widen past the tenant; an array filter is
+ * already ANDed at the top level.
+ */
+export function withTenantFilter(
+  filter: SearchParams['filter'],
+  tenantId: string,
+): NonNullable<SearchParams['filter']> {
+  const clause = `tenantId = "${escapeFilterValue(tenantId)}"`;
+  if (filter == null || filter === '' || (Array.isArray(filter) && filter.length === 0)) {
+    return clause;
+  }
+  if (typeof filter === 'string') {
+    return `(${filter}) AND ${clause}`;
+  }
+  return [...filter, clause];
+}
 
 /**
  * Factory function to create a MeiliMongooseModel class which extends a Mongoose model.
@@ -759,7 +783,16 @@ const createMeiliMongooseModel = ({
       params: SearchParams,
       populate: boolean,
     ): Promise<SearchResponse<MeiliIndexable, Record<string, unknown>>> {
-      const data = await index.search(q, params);
+      /**
+       * Every search is confined to the tenant of the request here, so no call site can forget it.
+       * Outside a tenant context the filter is unchanged; in strict mode a missing context throws.
+       */
+      const scope = resolveTenantScope('meiliSearch');
+      const searchParams =
+        scope.kind === 'scoped'
+          ? { ...params, filter: withTenantFilter(params.filter, scope.tenantId) }
+          : params;
+      const data = await index.search(q, searchParams);
 
       if (populate) {
         const query: Record<string, unknown> = {};
@@ -1085,9 +1118,11 @@ export default function mongoMeili(schema: Schema, options: MongoMeiliOptions): 
 
     try {
       await index.updateSettings({
-        filterableAttributes: ['user'],
+        filterableAttributes: ['user', 'tenantId'],
       });
-      logger.debug(`[mongoMeili] Updated index ${indexName} settings to make 'user' filterable`);
+      logger.debug(
+        `[mongoMeili] Updated index ${indexName} settings to make 'user' and 'tenantId' filterable`,
+      );
     } catch (settingsError) {
       logger.error(`[mongoMeili] Error updating index settings for ${indexName}:`, settingsError);
     }
@@ -1106,6 +1141,12 @@ export default function mongoMeili(schema: Schema, options: MongoMeiliOptions): 
   if (schema.obj.user && !attributesToIndex.includes('user')) {
     attributesToIndex.push('user');
     logger.debug(`[mongoMeili] Added 'user' field to ${indexName} index attributes`);
+  }
+
+  /** The tenant is indexed with every document so searches can be confined to it. */
+  if (schema.path('tenantId') && !attributesToIndex.includes('tenantId')) {
+    attributesToIndex.push('tenantId');
+    logger.debug(`[mongoMeili] Added 'tenantId' field to ${indexName} index attributes`);
   }
 
   schema.loadClass(

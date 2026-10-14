@@ -6,7 +6,10 @@ import type { SchemaWithMeiliMethods } from '~/models/plugins/mongoMeili';
 import mongoMeili, {
   MEILI_INDEX_SCHEMA_VERSION,
   buildExcludedIndexedQuery,
+  withTenantFilter,
 } from '~/models/plugins/mongoMeili';
+import { _resetStrictCache } from '~/models/plugins/tenantIsolation';
+import { tenantStorage, runAsSystem } from '~/config/tenantContext';
 import { createConversationModel } from '~/models/convo';
 import { createMessageModel } from '~/models/message';
 import meiliLogger from '~/config/meiliLogger';
@@ -187,6 +190,132 @@ describe('Meilisearch Mongoose plugin', () => {
     expect(result.hits[0]).toMatchObject({ messageId, privacyRevision: 'private' });
     expect(result.hits[0]).not.toHaveProperty('privateText');
     expect(result.hits[0]).not.toHaveProperty('_meiliIndex');
+  });
+
+  describe('tenant isolation of search', () => {
+    const searchIn = async (tenantId: string | undefined, params: Record<string, unknown>) => {
+      const Message = createMessageModel(mongoose) as unknown as SchemaWithMeiliMethods;
+      const run = () => Message.meiliSearch('hello', params as never, false);
+      return tenantId ? tenantStorage.run({ tenantId }, run) : run();
+    };
+    const lastSearchParams = () => mockSearch.mock.calls[mockSearch.mock.calls.length - 1][1];
+
+    afterEach(() => {
+      delete process.env.TENANT_ISOLATION_STRICT;
+      _resetStrictCache();
+    });
+
+    test('confines a search to the tenant of the request', async () => {
+      await searchIn('tenant-a', { filter: 'user = "u1"' });
+
+      expect(lastSearchParams().filter).toBe('(user = "u1") AND tenantId = "tenant-a"');
+    });
+
+    test('adds the tenant when the caller sent no filter, an empty one or a list', async () => {
+      await searchIn('tenant-a', {});
+      expect(lastSearchParams().filter).toBe('tenantId = "tenant-a"');
+
+      await searchIn('tenant-a', { filter: '' });
+      expect(lastSearchParams().filter).toBe('tenantId = "tenant-a"');
+
+      await searchIn('tenant-a', { filter: ['user = "u1"', 'a = 1 OR b = 2'] });
+      expect(lastSearchParams().filter).toEqual([
+        'user = "u1"',
+        'a = 1 OR b = 2',
+        'tenantId = "tenant-a"',
+      ]);
+    });
+
+    test('keeps the other search parameters', async () => {
+      await searchIn('tenant-a', { limit: 7, attributesToRetrieve: ['messageId'] });
+
+      expect(lastSearchParams()).toMatchObject({ limit: 7, attributesToRetrieve: ['messageId'] });
+    });
+
+    test('does not mutate the params the caller passed in', async () => {
+      const params = { filter: 'user = "u1"' };
+      await searchIn('tenant-a', params);
+
+      expect(params).toEqual({ filter: 'user = "u1"' });
+    });
+
+    test('leaves the filter alone outside a tenant context (single-tenant mode)', async () => {
+      await searchIn(undefined, { filter: 'user = "u1"' });
+
+      expect(lastSearchParams().filter).toBe('user = "u1"');
+    });
+
+    test('refuses a search without a tenant context in strict mode', async () => {
+      process.env.TENANT_ISOLATION_STRICT = 'true';
+      _resetStrictCache();
+      mockSearch.mockClear();
+
+      await expect(searchIn(undefined, { filter: 'user = "u1"' })).rejects.toThrow(/strict mode/);
+      expect(mockSearch).not.toHaveBeenCalled();
+    });
+
+    test('a deliberate system context is not confined to one tenant', async () => {
+      process.env.TENANT_ISOLATION_STRICT = 'true';
+      _resetStrictCache();
+      const Message = createMessageModel(mongoose) as unknown as SchemaWithMeiliMethods;
+
+      await runAsSystem(() => Message.meiliSearch('hello', { filter: 'user = "u1"' }, false));
+
+      expect(lastSearchParams().filter).toBe('user = "u1"');
+    });
+
+    test('a caller-supplied filter cannot widen past the tenant', async () => {
+      await searchIn('tenant-a', { filter: 'user = "u1" OR tenantId = "tenant-b"' });
+
+      expect(lastSearchParams().filter).toBe(
+        '(user = "u1" OR tenantId = "tenant-b") AND tenantId = "tenant-a"',
+      );
+    });
+
+    test('makes tenantId filterable on the index', async () => {
+      const indexed = mockIndex() as { updateSettings: jest.Mock };
+      createConversationModel(mongoose);
+      await waitForMock(indexed.updateSettings);
+
+      expect(indexed.updateSettings).toHaveBeenCalledWith({
+        filterableAttributes: ['user', 'tenantId'],
+      });
+    });
+
+    test('indexes the tenant with every document', async () => {
+      await tenantStorage.run({ tenantId: 'tenant-a' }, async () => {
+        await createConversationModel(mongoose).create({
+          conversationId: new mongoose.Types.ObjectId(),
+          user: new mongoose.Types.ObjectId(),
+          title: 'Tenant conversation',
+          endpoint: EModelEndpoint.openAI,
+        });
+      });
+      await waitForMock(mockAddDocuments);
+
+      expect(mockAddDocuments).toHaveBeenCalledWith(
+        [expect.objectContaining({ tenantId: 'tenant-a', title: 'Tenant conversation' })],
+        { primaryKey: 'conversationId' },
+      );
+    });
+  });
+
+  describe('withTenantFilter', () => {
+    test('quotes the tenant and escapes characters that could end the quote', () => {
+      expect(withTenantFilter(undefined, 'tenant-a')).toBe('tenantId = "tenant-a"');
+      expect(withTenantFilter(undefined, 'a"b')).toBe('tenantId = "a\\"b"');
+      expect(withTenantFilter(undefined, 'a\\b')).toBe('tenantId = "a\\\\b"');
+    });
+
+    test('wraps a string filter so an OR inside it cannot escape the tenant', () => {
+      expect(withTenantFilter('x = 1 OR y = 2', 't')).toBe('(x = 1 OR y = 2) AND tenantId = "t"');
+    });
+
+    test('appends to a list filter without touching the original', () => {
+      const original = ['x = 1'];
+      expect(withTenantFilter(original, 't')).toEqual(['x = 1', 'tenantId = "t"']);
+      expect(original).toEqual(['x = 1']);
+    });
   });
 
   test('saving conversation indexes w/ meilisearch', async () => {
