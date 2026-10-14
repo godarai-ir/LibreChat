@@ -101,6 +101,53 @@ describe('validateHostTenancyEnv', () => {
     ]);
   });
 
+  it('defaults the scheme to https and accepts only https or http-on-localhost', () => {
+    expect(resolveHostTenancyConfig(validEnv).scheme).toBe('https');
+    expect(problemsFor({ ...validEnv, TENANT_HOST_SCHEME: 'ftp' })).toEqual([
+      expect.stringContaining('TENANT_HOST_SCHEME'),
+    ]);
+    expect(problemsFor({ ...validEnv, TENANT_HOST_SCHEME: 'http' })).toEqual([
+      expect.stringContaining('.localhost'),
+    ]);
+    expect(
+      problemsFor({
+        ...validEnv,
+        TENANT_HOST_SCHEME: 'HTTP',
+        TENANT_HOST_BASE_DOMAIN: 'chat.localhost',
+      }),
+    ).toEqual([]);
+  });
+
+  it.each(['DOMAIN_CLIENT', 'DOMAIN_SERVER'])('refuses a fixed %s', (name) => {
+    const problems = problemsFor({ ...validEnv, [name]: 'https://one.example.com' });
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain(name);
+    expect(problems[0]).toContain('must be unset');
+  });
+
+  it('names both fixed origins in one problem and ignores blank values', () => {
+    const both = problemsFor({
+      ...validEnv,
+      DOMAIN_CLIENT: 'https://a.example.com',
+      DOMAIN_SERVER: 'https://a.example.com',
+    });
+    expect(both).toEqual([expect.stringContaining('DOMAIN_CLIENT and DOMAIN_SERVER')]);
+    expect(problemsFor({ ...validEnv, DOMAIN_CLIENT: '  ' })).toEqual([]);
+  });
+
+  it('refuses an admin panel origin, which every tenant would otherwise trust', () => {
+    expect(problemsFor({ ...validEnv, ADMIN_PANEL_URL: 'https://admin.example.com' })).toEqual([
+      expect.stringContaining('ADMIN_PANEL_URL'),
+    ]);
+  });
+
+  it('refuses passkey login, which is bound to a single relying-party host', () => {
+    expect(problemsFor({ ...validEnv, ALLOW_PASSKEY_LOGIN: 'true' })).toEqual([
+      expect.stringContaining('ALLOW_PASSKEY_LOGIN'),
+    ]);
+    expect(problemsFor({ ...validEnv, ALLOW_PASSKEY_LOGIN: 'false' })).toEqual([]);
+  });
+
   it('requires a base domain', () => {
     expect(problemsFor({ ...validEnv, TENANT_HOST_BASE_DOMAIN: undefined })).toEqual([
       expect.stringContaining('TENANT_HOST_BASE_DOMAIN is required'),

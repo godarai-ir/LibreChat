@@ -215,7 +215,10 @@ export function createEmailChangeDeps(runtime: EmailChangeRuntime): EmailChangeD
       const appConfig = await runtime.getAppConfig({ failClosed: true });
       return resolveEmailChangeSettings(appConfig?.emailChange);
     },
-    clientDomain: runtime.clientDomain,
+    /** Read on every access: a host-mode runtime resolves it from the current request's tenant. */
+    get clientDomain() {
+      return runtime.clientDomain;
+    },
     appName: runtime.appName,
   };
 }

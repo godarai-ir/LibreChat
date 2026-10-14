@@ -42,7 +42,7 @@ export interface TenantCliDeps {
   printError(line: string): void;
 }
 
-export const TENANT_CLI_USAGE = [
+export const TENANT_CLI_USAGE: string = [
   'Usage: node config/tenant.js <command> [options]',
   '',
   'Commands:',

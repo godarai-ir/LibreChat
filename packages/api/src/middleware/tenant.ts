@@ -16,6 +16,7 @@ type ContextUser = {
 export type ContextRequest = {
   headers: ServerRequest['headers'];
   tenantId?: string;
+  tenantOrigin?: string;
   user?: ContextUser;
   id?: string;
   requestId?: string;
@@ -70,6 +71,7 @@ export function buildTenantContext(
   return {
     ...buildRequestContext(req),
     tenantId: normalizeContextValue(tenantId),
+    origin: normalizeContextValue(req.tenantOrigin),
     userId: getUserId(req.user ?? null),
   };
 }

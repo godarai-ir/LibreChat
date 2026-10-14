@@ -7,6 +7,7 @@ const {
   applyAxiosProxyConfig,
   createMinimalRetentionRequest,
   getHttpsProxyAgent,
+  getServerOrigin,
 } = require('@librechat/api');
 const { FileContext, ContentTypes } = require('librechat-data-provider');
 
@@ -176,7 +177,7 @@ class FluxAPI extends Tool {
   }
 
   wrapInMarkdown(imageUrl) {
-    const serverDomain = process.env.DOMAIN_SERVER || 'http://localhost:3080';
+    const serverDomain = getServerOrigin() || 'http://localhost:3080';
     return `![generated image](${serverDomain}${imageUrl})`;
   }
 

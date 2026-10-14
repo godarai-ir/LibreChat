@@ -4,6 +4,7 @@ import { createHash, createHmac, randomBytes, randomUUID } from 'node:crypto';
 import type { PullRequestProvider } from 'librechat-data-provider';
 import type { PullRequestOAuthConfig } from './settings';
 import type { PullRequestFetch } from './shared';
+import { getServerOrigin } from '~/tenancy/origin';
 import { getOAuthCallbackUrl } from '~/oauth/url';
 import { getSafeErrorMetadata } from '~/utils';
 import { isRecord } from './shared';
@@ -990,7 +991,7 @@ export function createPullRequestOAuthFromEnv({
     fetchFn,
     secret,
     redirectUri: getOAuthCallbackUrl(
-      env.DOMAIN_SERVER || 'http://localhost:3080',
+      getServerOrigin(undefined, env) || 'http://localhost:3080',
       PULL_REQUEST_OAUTH_CALLBACK_PATH,
     ),
   });

@@ -24,6 +24,7 @@ jest.mock('@librechat/api', () => ({
   getAdminPanelUrl: (...args) => mockGetAdminPanelUrl(...args),
   isAdminPanelRedirect: (...args) => mockIsAdminPanelRedirect(...args),
   generateAdminExchangeCode: (...args) => mockGenerateAdminExchangeCode(...args),
+  getClientOrigin: (req) => req?.tenantOrigin ?? process.env.DOMAIN_CLIENT,
 }));
 
 jest.mock('~/server/services/PermissionService', () => ({
@@ -174,6 +175,31 @@ describe('createOAuthHandler', () => {
       res,
     });
     expect(res.redirect).toHaveBeenCalledWith('http://localhost:3080');
+  });
+
+  it('sends the user back to the tenant they signed in on in host mode', async () => {
+    mockIsAdminPanelRedirect.mockReturnValue(false);
+    process.env.DOMAIN_CLIENT = 'https://other-tenant.example.com';
+    const handler = createOAuthHandler();
+    const req = buildReq({ tenantOrigin: 'https://acme.chat.example.com' });
+    const res = buildRes();
+    const next = jest.fn();
+
+    await handler(req, res, next);
+
+    expect(res.redirect).toHaveBeenCalledWith('https://acme.chat.example.com');
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('keeps an explicit redirect even when the request has a tenant origin', async () => {
+    mockIsAdminPanelRedirect.mockReturnValue(false);
+    const handler = createOAuthHandler('https://explicit.example.com/done');
+    const req = buildReq({ tenantOrigin: 'https://acme.chat.example.com' });
+    const res = buildRes();
+
+    await handler(req, res, jest.fn());
+
+    expect(res.redirect).toHaveBeenCalledWith('https://explicit.example.com/done');
   });
 
   it('forwards the refresh token from req.authInfo for non-openid admin providers', async () => {

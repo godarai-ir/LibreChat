@@ -82,6 +82,20 @@ describe('OpenID OAuth callback helpers', () => {
     );
   });
 
+  it('redirects a failure to the tenant origin of the request in host mode', () => {
+    const res = createResponse();
+    (res as unknown as { req: unknown }).req = { tenantOrigin: 'https://acme.chat.example.com' };
+
+    redirectToAuthFailure(res, {
+      clientDomain: 'http://client.test',
+      authFailedError: 'auth_failed',
+    });
+
+    expect(res.redirect).toHaveBeenCalledWith(
+      'https://acme.chat.example.com/login?redirect=false&error=auth_failed',
+    );
+  });
+
   it('logs OpenID callback failures with structured OAuth context', () => {
     const req = createRequest({
       query: {

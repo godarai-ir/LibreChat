@@ -19,12 +19,19 @@ describe('parseTenantHost', () => {
     ['acme.chat.example.com', 'acme'],
     ['ACME.Chat.Example.COM', 'acme'],
     ['  acme.chat.example.com  ', 'acme'],
-    ['acme.chat.example.com:3080', 'acme'],
     ['a.chat.example.com', 'a'],
     ['my-company-2.chat.example.com', 'my-company-2'],
     [`${'a'.repeat(63)}.chat.example.com`, 'a'.repeat(63)],
   ])('maps %p to the slug %p', (host, slug) => {
     expect(parseTenantHost(host, BASE)).toEqual({ kind: 'slug', slug });
+  });
+
+  it('reports an explicit port separately from the slug', () => {
+    expect(parseTenantHost('acme.chat.example.com:3080', BASE)).toEqual({
+      kind: 'slug',
+      slug: 'acme',
+      port: '3080',
+    });
   });
 
   it.each([
@@ -143,6 +150,47 @@ describe('createHostTenantMiddleware', () => {
     expect(req.tenantId).toBe('tenant-acme');
     expect(req.tenantSlug).toBe('acme');
     expect(seen()).toEqual({ tenantId: 'tenant-acme', afterAwait: 'tenant-acme' });
+  });
+
+  it('sets the tenant origin from validated parts, not from headers', async () => {
+    const { registry } = makeRegistry({ acme: active('tenant-acme', 'acme') });
+    const mw = createHostTenantMiddleware({ config, registry });
+
+    const { req } = await call(
+      mw,
+      { host: 'ACME.chat.example.com', 'x-forwarded-host': 'evil.example.org' },
+      { tenantOrigin: 'https://evil.example.org' },
+    );
+
+    expect((req as { tenantOrigin?: string }).tenantOrigin).toBe('https://acme.chat.example.com');
+  });
+
+  it('keeps a non-default port and drops the default one', async () => {
+    const { registry } = makeRegistry({ acme: active('tenant-acme', 'acme') });
+    const mw = createHostTenantMiddleware({ config, registry });
+
+    const custom = await call(mw, { host: 'acme.chat.example.com:8443' });
+    const standard = await call(mw, { host: 'acme.chat.example.com:443' });
+
+    expect((custom.req as { tenantOrigin?: string }).tenantOrigin).toBe(
+      'https://acme.chat.example.com:8443',
+    );
+    expect((standard.req as { tenantOrigin?: string }).tenantOrigin).toBe(
+      'https://acme.chat.example.com',
+    );
+  });
+
+  it('clears a pre-set tenant origin when the host is not a tenant host', async () => {
+    const { registry } = makeRegistry({});
+    const mw = createHostTenantMiddleware({ config, registry });
+
+    const { req } = await call(
+      mw,
+      { host: 'example.org' },
+      { tenantOrigin: 'https://evil.example.org' },
+    );
+
+    expect((req as { tenantOrigin?: string }).tenantOrigin).toBeUndefined();
   });
 
   it('keeps the request id in the context', async () => {

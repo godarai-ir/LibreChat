@@ -51,7 +51,7 @@ const SLUG_PATTERN = new RegExp(`^${DNS_LABEL}$`);
 const ISSUER_SLUG_PLACEHOLDER = '{slug}';
 
 export class HostTenancyConfigError extends Error {
-  readonly code = HOST_TENANCY_ERROR_CODE;
+  readonly code: string = HOST_TENANCY_ERROR_CODE;
 
   constructor(readonly problems: readonly string[]) {
     super(`Invalid host multi-tenancy configuration:\n- ${problems.join('\n- ')}`);
@@ -63,6 +63,8 @@ export interface HostTenancyConfig {
   enabled: boolean;
   /** Tenant hosts are `<slug>.<baseDomain>`. Empty when disabled. */
   baseDomain: string;
+  /** Scheme of the public tenant URL. `http` is accepted only on a `.localhost` base domain. */
+  scheme: string;
   /** Issuer URL with a `{slug}` placeholder. A registry entry may override it per tenant. */
   issuerTemplate: string | null;
   reservedSlugs: ReadonlySet<string>;
@@ -153,7 +155,13 @@ const validateIssuerTemplate = (template: string, problems: string[]): void => {
 export function resolveHostTenancyConfig(env: Env = process.env): HostTenancyConfig {
   const enabled = parseMode(env.MULTI_TENANT_MODE) === 'host';
   if (!enabled) {
-    return { enabled, baseDomain: '', issuerTemplate: null, reservedSlugs: new Set() };
+    return {
+      enabled,
+      baseDomain: '',
+      scheme: 'https',
+      issuerTemplate: null,
+      reservedSlugs: new Set(),
+    };
   }
 
   const problems: string[] = [];
@@ -165,6 +173,7 @@ export function resolveHostTenancyConfig(env: Env = process.env): HostTenancyCon
   return {
     enabled,
     baseDomain: clean(env.TENANT_HOST_BASE_DOMAIN).toLowerCase(),
+    scheme: clean(env.TENANT_HOST_SCHEME).toLowerCase() || 'https',
     issuerTemplate: clean(env.TENANT_OIDC_ISSUER_TEMPLATE) || null,
     reservedSlugs,
   };
@@ -193,6 +202,13 @@ export function validateHostTenancyEnv(
       'TENANT_HOST_BASE_DOMAIN must be a bare lowercase host name: no scheme, port, wildcard or trailing dot',
     );
   }
+  if (config.scheme !== 'https' && config.scheme !== 'http') {
+    problems.push('TENANT_HOST_SCHEME must be "https" (or "http" on a .localhost base domain)');
+  } else if (config.scheme === 'http' && !/(^|\.)localhost$/.test(config.baseDomain)) {
+    problems.push(
+      'TENANT_HOST_SCHEME "http" is only allowed when the base domain ends in .localhost',
+    );
+  }
   if (config.issuerTemplate) {
     validateIssuerTemplate(config.issuerTemplate, problems);
   }
@@ -201,6 +217,24 @@ export function validateHostTenancyEnv(
   }
   if (!isTrue(env.USE_REDIS)) {
     problems.push('USE_REDIS must be "true" so sessions, streams and rate limits are shared');
+  }
+  const fixedOrigins = ['DOMAIN_CLIENT', 'DOMAIN_SERVER'].filter((name) => clean(env[name]) !== '');
+  if (fixedOrigins.length > 0) {
+    problems.push(
+      `${fixedOrigins.join(' and ')} must be unset: each request's origin comes from its Host, ` +
+        'and one fixed origin would put links to the wrong tenant in redirects and emails',
+    );
+  }
+  if (clean(env.ADMIN_PANEL_URL) !== '') {
+    problems.push(
+      'ADMIN_PANEL_URL must be unset: the admin panel has one SSO and is not supported in host mode, ' +
+        'and a trusted admin origin would be trusted by every tenant',
+    );
+  }
+  if (isTrue(env.ALLOW_PASSKEY_LOGIN)) {
+    problems.push(
+      'ALLOW_PASSKEY_LOGIN is not supported in host mode: a passkey is bound to one relying-party host',
+    );
   }
   for (const { provider, vars } of UNSUPPORTED_AUTH_ENV) {
     const configured = vars.filter((name) => clean(env[name]) !== '');

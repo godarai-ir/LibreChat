@@ -4,13 +4,14 @@ import type { HostTenancyConfig } from './config';
 import type { TenantRegistry } from './registry';
 import { buildTenantContext, runWithTenantContext } from '~/middleware/tenant';
 import { getSafeErrorMetadata } from '~/utils/errors';
+import { buildTenantOrigin } from './origin';
 
 const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 const PORT_PATTERN = /^\d{1,5}$/;
 const MAX_HOST_LENGTH = 255;
 const IDN_PREFIX = 'xn--';
 
-export type HostParse = { kind: 'slug'; slug: string } | { kind: 'not-tenant' };
+export type HostParse = { kind: 'slug'; slug: string; port?: string } | { kind: 'not-tenant' };
 
 /**
  * Extracts the tenant slug from a `Host` header. Only the exact shape `<slug>.<baseDomain>`
@@ -31,9 +32,11 @@ export function parseTenantHost(hostHeader: unknown, baseDomain: string): HostPa
     return notTenant;
   }
 
+  let port: string | undefined;
   const portSeparator = host.lastIndexOf(':');
   if (portSeparator !== -1) {
-    if (!PORT_PATTERN.test(host.slice(portSeparator + 1))) {
+    port = host.slice(portSeparator + 1);
+    if (!PORT_PATTERN.test(port)) {
       return notTenant;
     }
     host = host.slice(0, portSeparator);
@@ -49,7 +52,7 @@ export function parseTenantHost(hostHeader: unknown, baseDomain: string): HostPa
     return notTenant;
   }
 
-  return { kind: 'slug', slug };
+  return { kind: 'slug', slug, ...(port && { port }) };
 }
 
 export interface HostTenantMiddlewareOptions {
@@ -57,7 +60,14 @@ export interface HostTenantMiddlewareOptions {
   registry: TenantRegistry;
 }
 
-export type HostTenantRequest = Request & { tenantId?: string; tenantSlug?: string };
+export type HostTenantRequest = Request & {
+  tenantId?: string;
+  tenantSlug?: string;
+  /** Public origin of the tenant, for redirects, callbacks and links built during this request. */
+  tenantOrigin?: string;
+};
+
+const DEFAULT_PORTS: Readonly<Record<string, string>> = { https: '443', http: '80' };
 
 const deny = (res: Response, status: number, message: string, code?: string): void => {
   res.status(status).json({ message, ...(code && { code }) });
@@ -79,6 +89,7 @@ export function createHostTenantMiddleware({
     /** Never trust a value set before this middleware ran. */
     delete req.tenantId;
     delete req.tenantSlug;
+    delete req.tenantOrigin;
 
     const parsed = parseTenantHost(req.headers.host, config.baseDomain);
     if (parsed.kind !== 'slug' || config.reservedSlugs.has(parsed.slug)) {
@@ -120,6 +131,12 @@ export function createHostTenantMiddleware({
     const { tenantId, slug } = lookup.tenant;
     req.tenantId = tenantId;
     req.tenantSlug = slug;
+    req.tenantOrigin = buildTenantOrigin({
+      scheme: config.scheme,
+      slug,
+      baseDomain: config.baseDomain,
+      port: parsed.port === DEFAULT_PORTS[config.scheme] ? undefined : parsed.port,
+    });
     runWithTenantContext(buildTenantContext(req, tenantId), next);
   }
 

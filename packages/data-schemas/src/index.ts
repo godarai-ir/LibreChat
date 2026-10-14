@@ -99,6 +99,7 @@ export { jsonTruncateFormat, redactMessage } from './config/parsers';
 export {
   tenantStorage,
   getTenantId,
+  getTenantOrigin,
   getUserId,
   getRequestId,
   getRequestMethod,

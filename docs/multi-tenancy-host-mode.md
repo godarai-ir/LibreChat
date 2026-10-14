@@ -157,3 +157,11 @@ Data audit (M1-M3: coverage spec fails for any model without `tenantId` unless a
 - On success it sets `req.tenantId` / `req.tenantSlug` (any pre-set value is cleared first) and runs the rest of the request in the tenant's AsyncLocalStorage context. Concurrent requests for different tenants keep separate contexts (tested).
 - `preAuthTenantMiddleware` previously opened a new context without a tenant on `/oauth`, `/api/auth`, `/api/config`, `/api/share`, which would have erased the host tenant. It now leaves the context alone when `req.tenantId` is already set, so the header can never override the host.
 - Wiring is `createHostTenancyRuntime(...)` in `api/server/index.js` and `experimental.js`; it returns `null` when the mode is off.
+
+## 7. Per-request origin (Phase 4, implemented)
+
+- The host middleware sets `req.tenantOrigin` (`<TENANT_HOST_SCHEME>://<slug>.<base domain>[:port]`) from validated parts only, and the same value rides in the tenant's async context (`TenantContext.origin`, `getTenantOrigin()`), so code that runs inside a request without `req` still gets it.
+- `getClientOrigin(req?)` / `getServerOrigin(req?)` return the tenant origin and otherwise `DOMAIN_CLIENT` / `DOMAIN_SERVER` exactly as before. The async-context lookup happens only when `MULTI_TENANT_MODE=host`, so single-tenant deployments never touch it.
+- Converted: OAuth success redirect, OAuth/OpenID failure redirects (`redirectToAuthFailure`, error middleware), OpenID post-logout redirect, `/api/config` `serverDomain`, email-change links (lazy `clientDomain`), MCP OAuth redirect URI, pull-request OAuth redirect URI, Actions OAuth redirect URI, Flux image URLs.
+- New startup refusals in host mode: a set `DOMAIN_CLIENT`/`DOMAIN_SERVER` (one fixed origin would put links to the wrong tenant in redirects and emails), `ADMIN_PANEL_URL` (every tenant would trust it as a cross-site origin), `ALLOW_PASSKEY_LOGIN` (a passkey is bound to one relying-party host), and an unsupported `TENANT_HOST_SCHEME`.
+- Not converted on purpose: the social-login `failureRedirect` strings and `admin` routes (refused at startup in host mode), and OpenID logout, whose `OPENID_ISSUER` precondition belongs to the per-tenant OIDC work (Phase 5).

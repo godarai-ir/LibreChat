@@ -1,4 +1,5 @@
 import type { NextFunction, Response } from 'express';
+import type { TenantOriginRequest } from '~/tenancy/origin';
 import {
   buildOAuthFailureLog,
   isOAuthProtocolFailure,
@@ -65,7 +66,9 @@ export function redirectToAuthFailure(
   res: Response,
   { clientDomain, authFailedError }: AuthFailureRedirectOptions,
 ): void {
-  res.redirect(`${clientDomain}/login?redirect=false&error=${authFailedError}`);
+  /** In host mode the failure must land on the tenant the user came from, not a fixed origin. */
+  const origin = (res.req as TenantOriginRequest | undefined)?.tenantOrigin ?? clientDomain;
+  res.redirect(`${origin}/login?redirect=false&error=${authFailedError}`);
 }
 
 export function logOpenIDCallbackFailure({

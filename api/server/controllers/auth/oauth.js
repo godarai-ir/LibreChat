@@ -3,6 +3,7 @@ const { logger, DEFAULT_SESSION_EXPIRY } = require('@librechat/data-schemas');
 const {
   isEnabled,
   getAdminPanelUrl,
+  getClientOrigin,
   isAdminPanelRedirect,
   generateAdminExchangeCode,
 } = require('@librechat/api');
@@ -18,7 +19,11 @@ const domains = {
   server: process.env.DOMAIN_SERVER,
 };
 
-function createOAuthHandler(redirectUri = domains.client) {
+function createOAuthHandler(fixedRedirectUri) {
+  /** The default destination is the client app; an explicit URI (admin panel) is always honored. */
+  const usesDefaultRedirect = fixedRedirectUri == null;
+  const redirectUri = fixedRedirectUri ?? domains.client;
+
   /**
    * A handler to process OAuth authentication results.
    * @type {Function}
@@ -37,8 +42,12 @@ function createOAuthHandler(redirectUri = domains.client) {
         return;
       }
 
+      /** In host mode the default destination is the tenant the user signed in on. */
+      const clientOrigin = getClientOrigin(req) ?? domains.client;
+      const redirectTarget = usesDefaultRedirect ? clientOrigin : redirectUri;
+
       /** Check if this is an admin panel redirect (cross-origin or same-origin subpath) */
-      if (isAdminPanelRedirect(redirectUri, getAdminPanelUrl(), domains.client)) {
+      if (isAdminPanelRedirect(redirectTarget, getAdminPanelUrl(), clientOrigin)) {
         /** For admin panel, generate exchange code instead of setting cookies */
         const cache = getLogStores(CacheKeys.ADMIN_OAUTH_EXCHANGE);
         const sessionExpiry = Number(process.env.SESSION_EXPIRY) || DEFAULT_SESSION_EXPIRY;
@@ -55,7 +64,7 @@ function createOAuthHandler(redirectUri = domains.client) {
         }
         const expiresAt = Date.now() + sessionExpiry;
 
-        const callbackUrl = new URL(redirectUri);
+        const callbackUrl = new URL(redirectTarget);
         const exchangeCode = await generateAdminExchangeCode(
           cache,
           req.user,
@@ -96,7 +105,7 @@ function createOAuthHandler(redirectUri = domains.client) {
           req.session.openidLogoutIdToken = req.user.tokenset?.id_token;
         }
       }
-      res.redirect(redirectUri);
+      res.redirect(redirectTarget);
     } catch (err) {
       logger.error('Error in setting authentication tokens:', err);
       next(err);

@@ -24,6 +24,7 @@ const {
   resolveCodeEnvironmentTransitionVersion,
   loadConversationListLimits,
   resolvePullRequestCapabilities,
+  getServerOrigin,
 } = require('@librechat/api');
 const {
   DEFAULT_MCP_APP_CSP_LIMITS,
@@ -105,7 +106,7 @@ function buildPreLoginPayload() {
     samlLoginEnabled: !isOpenIdEnabled && isSamlEnabled,
     samlLabel: process.env.SAML_BUTTON_LABEL,
     samlImageUrl: process.env.SAML_IMAGE_URL,
-    serverDomain: process.env.DOMAIN_SERVER || 'http://localhost:3080',
+    serverDomain: getServerOrigin() || 'http://localhost:3080',
     emailLoginEnabled,
     registrationEnabled: !ldap?.enabled && isEnabled(process.env.ALLOW_REGISTRATION),
     socialLoginEnabled: isEnabled(process.env.ALLOW_SOCIAL_LOGIN),
