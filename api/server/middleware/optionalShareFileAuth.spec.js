@@ -84,6 +84,53 @@ describe('optionalShareFileAuth', () => {
     expect(req.user).toMatchObject({ id: 'viewer-1', role: 'USER' });
   });
 
+  describe('host multi-tenancy binding', () => {
+    const cookieRequest = (extra) => ({ headers: { cookie: 'refreshToken=good.jwt' }, ...extra });
+    const liveSession = (user) => {
+      mockVerify.mockReturnValue({ id: 'viewer-1' });
+      mockFindSession.mockResolvedValue({ _id: 'session-1' });
+      mockGetUserById.mockResolvedValue(user);
+    };
+
+    it('treats a cookie viewer from another tenant as anonymous', async () => {
+      liveSession({ _id: 'viewer-1', role: 'USER', tenantId: 'tenant-a' });
+      const req = cookieRequest({ tenantId: 'tenant-b' });
+
+      const next = await run(req);
+
+      expect(next).toHaveBeenCalledTimes(1);
+      expect(req.user).toBeUndefined();
+      expect(mockClearCloudFrontCookies).not.toHaveBeenCalled();
+    });
+
+    it('restores a cookie viewer of the host tenant', async () => {
+      liveSession({ _id: 'viewer-1', role: 'USER', tenantId: 'tenant-b' });
+      const req = cookieRequest({ tenantId: 'tenant-b' });
+
+      await run(req);
+
+      expect(req.user).toMatchObject({ id: 'viewer-1', tenantId: 'tenant-b' });
+    });
+
+    it('treats an account without a tenant as anonymous on a tenant host', async () => {
+      liveSession({ _id: 'viewer-1', role: 'USER' });
+      const req = cookieRequest({ tenantId: 'tenant-b' });
+
+      await run(req);
+
+      expect(req.user).toBeUndefined();
+    });
+
+    it('is unchanged without a host tenant', async () => {
+      liveSession({ _id: 'viewer-1', role: 'USER', tenantId: 'tenant-a' });
+      const req = cookieRequest({});
+
+      await run(req);
+
+      expect(req.user).toMatchObject({ id: 'viewer-1' });
+    });
+  });
+
   it('does not restore a cookie viewer when required enrollment is incomplete', async () => {
     mockVerify.mockReturnValue({ id: 'viewer-required' });
     mockFindSession.mockResolvedValue({ _id: 'session-required' });

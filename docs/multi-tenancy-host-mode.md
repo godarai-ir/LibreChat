@@ -186,3 +186,24 @@ Not done in this phase, on purpose:
 - **Gateway access token.** `{{LIBRECHAT_OPENID_ACCESS_TOKEN}}` comes from `user.federatedTokens`, set at login. Whether it is still available on later chat requests without token reuse has to be confirmed end to end.
 - **OBO token cache.** `OPENID_EXCHANGED_TOKENS` is keyed by `sub` alone (Entra OBO only). Two tenants could share a `sub`; it needs `scopedCacheKey` before OBO is used in host mode.
 - **End-to-end test.** Everything above is unit-tested with a mocked provider; a real login against the Godar provider has not been run.
+
+## 9. Host and user binding (Phase 6, implemented)
+
+The problem: several authentication paths load the user across tenants first (`runAsSystem`) and only then learn which tenant it is in. `jwtStrategy` does exactly that, so a bearer token minted for tenant A and presented on tenant B's host produced A's user running inside B's tenant context (a confused deputy: it could create data stamped for B under A's user id).
+
+`belongsToRequestTenant(req, user)` (`packages/api/src/tenancy/binding.ts`) is the single rule: outside host mode (no `req.tenantId`) it always passes; in host mode the user's `tenantId` must equal the host tenant, and a user with no tenant never matches (an account from before multi-tenancy fails closed). It is enforced at every place that identifies a user:
+
+| Place                                        | On mismatch                                                                                                                   |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `jwtStrategy` (all bearer routes)            | 401, same body as any bad token                                                                                               |
+| `requireJwtAuth` (backstop for any strategy) | 403 `TENANT_MISMATCH`, never reaches the tenant middleware                                                                    |
+| `optionalJwtAuth`                            | the user is treated as anonymous                                                                                              |
+| share-file cookie auth (`auth/share.ts`)     | anonymous                                                                                                                     |
+| image authorization (`/images/*`)            | owner of another tenant (or no owner) -> 404 alike, also when image links are not secured; viewer of another tenant -> denied |
+| shared links                                 | no system-wide fallback: another tenant's share answers 404 on this host                                                      |
+
+Other paths need no check because they run in the request's tenant context and the isolation plugin does the scoping: the local refresh endpoint (`getUserById` for a user of another tenant returns `null`), local login, and user creation at sign-in. These claims are covered by `user.tenant.spec.ts` against a real MongoDB: a new user is stamped with the tenant of the context, cannot choose another tenant, is invisible from other tenants (by email and by id), the same email can exist in two tenants, and creation without a tenant is refused in strict mode (this closes finding O5).
+
+The OpenID reuse-token refresh branches in `AuthController` also read users with `runAsSystem`, but they are unreachable in host mode because `OPENID_REUSE_TOKENS` is refused at startup.
+
+Operational note: users created before multi-tenancy have no `tenantId`, so they cannot sign in on a tenant host. Existing single-tenant data must be assigned a tenant (a migration, planned with the data-layer phase) before it is served in host mode.

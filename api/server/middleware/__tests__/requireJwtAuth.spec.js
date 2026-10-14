@@ -76,6 +76,8 @@ jest.mock('@librechat/api', () => {
   return {
     isEnabled: jest.fn(() => false),
     createRequiredTwoFactorGate: actualApi.createRequiredTwoFactorGate,
+    belongsToRequestTenant: actualApi.belongsToRequestTenant,
+    logTenantMismatch: jest.fn(),
     clearCloudFrontCookies: jest.fn(),
     generateTwoFactorSetupToken: jest.fn(() => 'setup-token'),
     isTwoFactorEnrollmentRequired: jest.fn(() => false),
@@ -190,6 +192,61 @@ describe('requireJwtAuth tenant context chaining', () => {
     } else {
       process.env.JWT_REFRESH_SECRET = originalJwtSecret;
     }
+  });
+
+  describe('host multi-tenancy binding', () => {
+    it('answers 403 for a user of another tenant and never reaches the tenant middleware', async () => {
+      const req = mockReq({ id: 'user-a', tenantId: 'tenant-a' }, { tenantId: 'tenant-b' });
+      const res = mockRes();
+      const next = jest.fn();
+
+      requireJwtAuth(req, res, next);
+      await flushPolicy();
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith({ message: 'Forbidden', code: 'TENANT_MISMATCH' });
+      expect(next).not.toHaveBeenCalled();
+      expect(req.user).toBeUndefined();
+    });
+
+    it('does not name the tenant the user belongs to', async () => {
+      const req = mockReq({ id: 'user-a', tenantId: 'tenant-secret' }, { tenantId: 'tenant-b' });
+      const res = mockRes();
+
+      requireJwtAuth(req, res, jest.fn());
+      await flushPolicy();
+
+      expect(JSON.stringify(res.json.mock.calls)).not.toContain('tenant-secret');
+    });
+
+    it('lets a user of the host tenant through, inside that tenant context', async () => {
+      const req = mockReq({ id: 'user-b', tenantId: 'tenant-b' }, { tenantId: 'tenant-b' });
+      const res = mockRes();
+      const seen = await new Promise((resolve) => {
+        requireJwtAuth(req, res, () => resolve(getTenantId()));
+      });
+
+      expect(seen).toBe('tenant-b');
+      expect(res.status).not.toHaveBeenCalled();
+    });
+
+    it('rejects an account without a tenant on a tenant host', async () => {
+      const req = mockReq({ id: 'legacy-user' }, { tenantId: 'tenant-b' });
+      const res = mockRes();
+      const next = jest.fn();
+
+      requireJwtAuth(req, res, next);
+      await flushPolicy();
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it('is a no-op without a host tenant, so single-tenant behavior is unchanged', async () => {
+      const seen = await runAuth({ id: 'user-a', tenantId: 'tenant-a' });
+
+      expect(seen).toBe('tenant-a');
+    });
   });
 
   it('forwards passport errors to next() without entering tenant middleware', async () => {

@@ -3,6 +3,8 @@ import { SystemRoles } from 'librechat-data-provider';
 import type { NextFunction, Request, Response } from 'express';
 import type { StoredTwoFactorAccount, TokenIssuance } from './twoFactor';
 import type { CloudFrontCookieScope } from '~/cdn/cloudfront-cookies';
+import type { TenantBoundRequest } from '~/tenancy/binding';
+import { belongsToRequestTenant, logTenantMismatch } from '~/tenancy/binding';
 import { isTokenRetired, isTwoFactorEnrollmentRequired } from './twoFactor';
 import { clearEnrollmentViewer } from './gates';
 import { isEnabled } from '~/utils';
@@ -119,6 +121,12 @@ export function createOptionalShareFileAuth(deps: ShareFileAuthDependencies) {
         deps.getUserById(verified.userId, '-password -__v -totpSecret -backupCodes'),
       );
       if (!user) {
+        next();
+        return;
+      }
+      /** The read above spans tenants; in host mode a user of another tenant is anonymous here. */
+      if (!belongsToRequestTenant(req as TenantBoundRequest, user)) {
+        logTenantMismatch('shareFileAuth', req as TenantBoundRequest, user);
         next();
         return;
       }

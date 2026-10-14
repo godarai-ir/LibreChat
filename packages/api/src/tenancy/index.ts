@@ -1,3 +1,4 @@
+export * from './binding';
 export * from './cli';
 export * from './config';
 export * from './host';
