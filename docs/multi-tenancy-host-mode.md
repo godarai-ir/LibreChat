@@ -335,3 +335,16 @@ Known limit: links that schedules and triggers produce in the background carry n
 `PUT` body: `{ "slug": "acme", "oidc": { "clientId": "godarchat", "clientSecret": "...", "scopes": ["openid"] } }`. The reply carries `ready` and, if sign-in cannot work yet, a `reason`. Unknown fields are rejected. A `deleting` tenant is not brought back by `PUT`.
 
 Limits: another replica keeps its cached view of a tenant for the registry TTL (seconds), so a suspension reaches every replica within that time. Failed-token attempts are not rate limited, which is acceptable on a private port.
+
+## 16. Local smoke test
+
+Run against a throwaway Mongo, Redis, MinIO and Meilisearch plus a mock multi-issuer OIDC provider (`http://<slug>.localhost:4100`), with two tenants (`tenant1`, `tenant2`) at `http://<slug>.chat.localhost:3090`. It found two bugs that unit tests had not:
+
+- The session cookie was marked `Secure` over plain http in host mode (`DOMAIN_SERVER` is refused there, so the localhost heuristic never applied), so the OpenID state was lost. `TENANT_HOST_SCHEME=http` now disables it.
+- The startup permission-migration checks ran without a tenant context and failed in strict mode. They now run in a system context.
+
+Verified over HTTP: provisioning API; unknown, bare and malformed hosts refused; `X-Tenant-Id` and `X-Forwarded-Host` ignored; sign-in per tenant through its own issuer and callback; a token or cookie from one tenant refused on the other; users stored with their tenant id; conversation lists and reads isolated; an upload stored under `t/<tenantId>/`; suspension affecting only that tenant; and a `tid` that differs from the registry refused with no user created.
+
+Not exercised over HTTP: Meilisearch queries, email links, agent runs, MCP, schedules and triggers.
+
+Local note: Node on Windows does not resolve `*.localhost`; a preload that maps it to 127.0.0.1 was needed. The Godar local provider advertises an `https://<slug>.localhost` issuer through its Caddy proxy (internal CA), not `http://<slug>.localhost:4000`.

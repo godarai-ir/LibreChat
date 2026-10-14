@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { logger } = require('@librechat/data-schemas');
+const { logger, runAsSystem } = require('@librechat/data-schemas');
 const {
   logAgentMigrationWarning,
   logPromptMigrationWarning,
@@ -10,9 +10,14 @@ const { findRoleByIdentifier } = require('~/models');
 
 /**
  * Check if permissions migrations are needed for shared resources
- * This runs at the end to ensure all systems are initialized
+ * This runs at the end to ensure all systems are initialized. It counts every tenant's
+ * resources, so it runs in a system context: strict tenant isolation refuses it otherwise.
  */
-async function checkMigrations() {
+function checkMigrations() {
+  return runAsSystem(checkMigrationsUnscoped);
+}
+
+async function checkMigrationsUnscoped() {
   try {
     const agentMigrationResult = await checkAgentPermissionsMigration({
       mongoose,
