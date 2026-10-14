@@ -49,6 +49,9 @@ const {
   preAuthTenantMiddleware,
   assertHostTenancyEnv,
   assertHostTenancyAppConfig,
+  createHostTenancyRuntime,
+  resolveHostTenancyConfig,
+  decryptV3,
   requestContextMiddleware,
   registerShutdownTask,
   getRemainingShutdownMs,
@@ -72,6 +75,7 @@ const {
   sweepOrphanedPreviews,
   getRoleByName,
   seedDatabase,
+  getTenantBySlug,
 } = require('~/models');
 const initializeOAuthReconnectManager = require('./services/initializeOAuthReconnectManager');
 const { capabilityContextMiddleware } = require('./middleware/roles/capabilities');
@@ -344,6 +348,15 @@ const startServer = async () => {
 
   /* Middleware */
   app.use(requestContextMiddleware);
+  /* Host multi-tenancy: first, so every route, stream and asset runs in the host's tenant. */
+  const hostTenancy = createHostTenancyRuntime({
+    config: resolveHostTenancyConfig(),
+    findBySlug: getTenantBySlug,
+    decryptSecret: decryptV3,
+  });
+  if (hostTenancy) {
+    app.use(hostTenancy.middleware);
+  }
   app.use('/api/agents/chat', agentStartupIngressMiddleware);
   app.use(metricsMiddleware);
   app.use(noIndex);

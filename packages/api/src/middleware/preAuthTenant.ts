@@ -36,6 +36,16 @@ const MAX_TENANT_ID_LENGTH = 128;
 const VALID_TENANT_ID = /^[-a-zA-Z0-9_.]+$/;
 
 export function preAuthTenantMiddleware(req: Request, res: Response, next: NextFunction): void {
+  /**
+   * Host-based multi-tenancy already resolved the tenant from the `Host` header and is running
+   * this request inside that tenant's context. Opening a new context here would replace it with
+   * one that has no tenant, and a client-supplied header must never override the host.
+   */
+  if ((req as Request & { tenantId?: string }).tenantId) {
+    next();
+    return;
+  }
+
   const raw = req.headers['x-tenant-id'];
   const requestContext = buildRequestContext(req);
 

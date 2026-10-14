@@ -42,6 +42,9 @@ const {
   preAuthTenantMiddleware,
   assertHostTenancyEnv,
   assertHostTenancyAppConfig,
+  createHostTenancyRuntime,
+  resolveHostTenancyConfig,
+  decryptV3,
   requestContextMiddleware,
   configureServerTimeouts,
   setupGracefulShutdown,
@@ -78,6 +81,7 @@ const {
   getRoleByName,
   updateAccessPermissions,
   seedDatabase,
+  getTenantBySlug,
   sweepOrphanedPreviews,
 } = require('~/models');
 const { checkMigrations } = require('./services/start/migration');
@@ -580,6 +584,15 @@ if (cluster.isMaster) {
 
     /** Middleware */
     app.use(requestContextMiddleware);
+    /* Host multi-tenancy: first, so every route, stream and asset runs in the host's tenant. */
+    const hostTenancy = createHostTenancyRuntime({
+      config: resolveHostTenancyConfig(),
+      findBySlug: getTenantBySlug,
+      decryptSecret: decryptV3,
+    });
+    if (hostTenancy) {
+      app.use(hostTenancy.middleware);
+    }
     app.use(noIndex);
     app.use(express.json({ limit: '3mb' }));
     app.use(express.urlencoded({ extended: true, limit: '3mb' }));
