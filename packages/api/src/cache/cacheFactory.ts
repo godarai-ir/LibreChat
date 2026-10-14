@@ -15,6 +15,8 @@ import { Time, CacheKeys } from 'librechat-data-provider';
 import { RedisStore as ConnectRedis } from 'connect-redis';
 import type { SendCommandFn } from 'rate-limit-redis';
 import { keyvRedisClient, ioredisClient, handleKeyvRedisError } from './redisClients';
+import { scopeKeyvByTenant, scopeLimiterStoreByTenant } from './tenantScope';
+import { isHostTenancyEnabled } from '~/tenancy/config';
 import { createClusterSafeSendCommand } from './limiterSendCommand';
 import { batchDeleteKeys, scanKeys } from './redisUtils';
 import {
@@ -90,7 +92,7 @@ async function clearRedisNamespace(namespace: string): Promise<void> {
  *   caller's value wins for a shared namespace and TTL.
  * @returns Cache instance.
  */
-export const standardCache = (
+const createStandardCache = (
   namespace: string,
   ttl?: number,
   fallbackStore?: object,
@@ -144,6 +146,22 @@ export const standardCache = (
   const cache = new Keyv({ namespace, ttl, serialize: JSON.stringify, deserialize: JSON.parse });
   inMemoryCacheMap.set(namespace, cache);
   return cache;
+};
+
+/**
+ * A shared cache for a namespace. In host multi-tenancy every key is scoped to the tenant of the
+ * request, so one tenant can never read, overwrite or delete another tenant's entry (models,
+ * endpoint and startup config, roles, flows, violation scores, ...). Without host mode the cache
+ * is returned exactly as before.
+ */
+export const standardCache = (
+  namespace: string,
+  ttl?: number,
+  fallbackStore?: object,
+  options: { throwOnErrors?: boolean } = {},
+): Keyv => {
+  const cache = createStandardCache(namespace, ttl, fallbackStore, options);
+  return isHostTenancyEnabled() ? scopeKeyvByTenant(cache) : cache;
 };
 
 /** Convenience accessor for the TOKEN_CONFIG cache namespace. */
@@ -230,7 +248,9 @@ export const limiterCache = (prefix: string): RedisStore | undefined => {
         throw err;
       }
     };
-    return new RedisStore({ sendCommand, prefix: limiterPrefix });
+    const store = new RedisStore({ sendCommand, prefix: limiterPrefix });
+    /** Counters are per tenant in host mode, so one tenant cannot use up another tenant's budget. */
+    return isHostTenancyEnabled() ? scopeLimiterStoreByTenant(store) : store;
   } catch (err) {
     logger.error(`Failed to create Redis rate limiter for prefix ${prefix}:`, err);
     return undefined;

@@ -184,7 +184,7 @@ Not done in this phase, on purpose:
 
 - **`OPENID_REUSE_TOKENS` / `openidJwt`.** Reusing the provider's bearer token as the app token needs a per-tenant issuer, audience and JWKS in `openIdJwtStrategy`. It is refused at startup until then.
 - **Gateway access token.** `{{LIBRECHAT_OPENID_ACCESS_TOKEN}}` comes from `user.federatedTokens`, set at login. Whether it is still available on later chat requests without token reuse has to be confirmed end to end.
-- **OBO token cache.** `OPENID_EXCHANGED_TOKENS` is keyed by `sub` alone (Entra OBO only). Two tenants could share a `sub`; it needs `scopedCacheKey` before OBO is used in host mode.
+- **OBO token cache.** `OPENID_EXCHANGED_TOKENS` was keyed by `sub` alone, so two tenants could share an entry. It is a `standardCache` namespace, so Phase 10 scopes it to the tenant.
 - **End-to-end test.** Everything above is unit-tested with a mocked provider; a real login against the Godar provider has not been run.
 
 ## 9. Host and user binding (Phase 6, implemented)
@@ -281,3 +281,22 @@ All four search call sites (`conversation.ts`, `message.ts` `searchMessages`, `s
 - The hydrate step already reads the hits back through the isolated `Model.find`, so even an unfiltered hit of another tenant would not be returned with its data.
 
 Documents indexed before multi-tenancy, or rows given a tenant by `config/assign-tenant.js` (which writes through the native collection and so triggers no indexing hook), have no `tenantId` in the index and are invisible to tenant searches until they are indexed again. Reset the sync flags and let the sync run: `node config/reset-meili-sync.js`.
+
+## 13. Caches and rate limits (Phase 10, implemented)
+
+Every cache goes through `standardCache` and every rate limiter through `limiterCache` (`packages/api/src/cache/cacheFactory.ts`), so tenant scoping is applied there once instead of in ~35 namespaces and ~30 limiters.
+
+- **Caches.** In host mode `standardCache` patches the Keyv instance so every key method (`get`, `getRaw`, `has`, `set`, `delete`, `getMany`, `getManyRaw`, `hasMany`, `setMany`, `deleteMany`) stores under `<key>:<tenantId>` (`scopeKeyvByTenant`). One tenant cannot read, overwrite or delete another tenant's entry: models, endpoint/startup/app config, roles, token config, flows, abort keys, violation scores, and the rest. A key that a caller already scoped with `scopedCacheKey` is not scoped twice. Without a tenant context, or in a deliberate system context, the key is unchanged. `clear()` still clears the whole namespace for every tenant. Without host mode nothing is patched.
+- **Rate limits.** `limiterCache` wraps the store (`scopeLimiterStoreByTenant`): `increment`, `decrement`, `resetKey` and `get` use `<ip>:<tenantId>`, so a tenant's traffic, or one noisy address, cannot use up another tenant's budget. Host mode requires Redis, so the Redis store is always the one in use.
+- **Sessions.** The OpenID session store is keyed by a random session id and its cookie has no `Domain`, so a session never reaches another tenant's host.
+
+Reviewed and left as they are, with the reason:
+
+| Store                            | Why it is safe                                                                                 |
+| -------------------------------- | ---------------------------------------------------------------------------------------------- |
+| MCP catalog and registry caches  | already use `scopedCacheKey`, or are keyed by user id or by a hash of the server configuration |
+| Tool catalog `tools:global`      | the built-in tool list, the same for every tenant                                              |
+| Concurrency limiter              | keyed by user id                                                                               |
+| Stream/job stores                | keyed by a random stream id with an owner check                                                |
+| `BAN` (Mongo-backed)             | keyed by user id or IP; an abusive address stays blocked on every tenant, which is intended    |
+| `ENCODED_DOMAINS` (Mongo-backed) | a deterministic encoding of a public domain                                                    |
