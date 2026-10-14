@@ -1025,8 +1025,11 @@ function discoverTenantClient({ issuer, clientId, clientSecret }) {
   if (isEnabled(process.env.OPENID_GENERATE_NONCE)) {
     clientMetadata.token_endpoint_auth_method = 'client_secret_post';
   }
-  return client.discovery(new URL(issuer), clientId, clientMetadata, undefined, {
+  const issuerUrl = new URL(issuer);
+  return client.discovery(issuerUrl, clientId, clientMetadata, undefined, {
     [client.customFetch]: customFetch,
+    /* The registry only lets an http issuer through on a .localhost host in development mode. */
+    ...(issuerUrl.protocol === 'http:' && { execute: [client.allowInsecureRequests] }),
   });
 }
 

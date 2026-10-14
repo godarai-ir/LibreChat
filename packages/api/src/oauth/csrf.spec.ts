@@ -98,6 +98,26 @@ describe('shouldUseSecureCookie', () => {
     expect(shouldUseSecureCookie()).toBe(true);
   });
 
+  it('should return false in host mode with the http development scheme, even in production', () => {
+    process.env.NODE_ENV = 'production';
+    delete process.env.DOMAIN_SERVER;
+    process.env.MULTI_TENANT_MODE = 'host';
+    process.env.TENANT_HOST_SCHEME = 'http';
+    expect(shouldUseSecureCookie()).toBe(false);
+  });
+
+  it('should stay secure in host mode with https, and without host mode', () => {
+    process.env.NODE_ENV = 'production';
+    delete process.env.DOMAIN_SERVER;
+    process.env.MULTI_TENANT_MODE = 'host';
+    process.env.TENANT_HOST_SCHEME = 'https';
+    expect(shouldUseSecureCookie()).toBe(true);
+
+    delete process.env.MULTI_TENANT_MODE;
+    process.env.TENANT_HOST_SCHEME = 'http';
+    expect(shouldUseSecureCookie()).toBe(true);
+  });
+
   it('should return false in development regardless of domain', () => {
     process.env.NODE_ENV = 'development';
     process.env.DOMAIN_SERVER = 'https://myapp.example.com';

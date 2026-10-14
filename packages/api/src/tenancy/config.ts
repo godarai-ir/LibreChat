@@ -126,7 +126,11 @@ const parseReservedSlugs = (raw: string | undefined, problems: string[]): Set<st
   return reserved;
 };
 
-const validateIssuerTemplate = (template: string, problems: string[]): void => {
+const validateIssuerTemplate = (
+  template: string,
+  allowLocalHttp: boolean,
+  problems: string[],
+): void => {
   const occurrences = template.split(ISSUER_SLUG_PLACEHOLDER).length - 1;
   if (occurrences !== 1) {
     problems.push(
@@ -141,8 +145,15 @@ const validateIssuerTemplate = (template: string, problems: string[]): void => {
     problems.push('TENANT_OIDC_ISSUER_TEMPLATE is not a valid URL');
     return;
   }
-  if (url.protocol !== 'https:') {
-    problems.push('TENANT_OIDC_ISSUER_TEMPLATE must use https');
+  if (url.protocol === 'http:' && allowLocalHttp) {
+    /* Development only: `TENANT_HOST_SCHEME=http` already requires a .localhost base domain. */
+    if (!/(^|\.)localhost$/.test(url.hostname)) {
+      problems.push('TENANT_OIDC_ISSUER_TEMPLATE may use http only on a .localhost host');
+    }
+  } else if (url.protocol !== 'https:') {
+    problems.push(
+      'TENANT_OIDC_ISSUER_TEMPLATE must use https (http is accepted on .localhost when TENANT_HOST_SCHEME=http)',
+    );
   }
   if (url.search || url.hash || url.username || url.password) {
     problems.push('TENANT_OIDC_ISSUER_TEMPLATE must not contain a query, fragment or credentials');
@@ -215,7 +226,7 @@ export function validateHostTenancyEnv(
     );
   }
   if (config.issuerTemplate) {
-    validateIssuerTemplate(config.issuerTemplate, problems);
+    validateIssuerTemplate(config.issuerTemplate, config.scheme === 'http', problems);
   }
   if (isTrue(env.TRUST_TENANT_HEADER)) {
     problems.push('TRUST_TENANT_HEADER must not be enabled: the tenant comes from the Host header');

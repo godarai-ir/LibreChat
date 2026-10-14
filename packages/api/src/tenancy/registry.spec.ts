@@ -13,7 +13,10 @@ const stored = (overrides: Partial<StoredTenant> = {}): StoredTenant => ({
   ...overrides,
 });
 
-const setup = (rows: Record<string, StoredTenant> = { acme: stored() }) => {
+const setup = (
+  rows: Record<string, StoredTenant> = { acme: stored() },
+  extra: { allowLocalHttpIssuer?: boolean } = {},
+) => {
   let clock = 1_000;
   const findBySlug = jest.fn(async (slug: string) => rows[slug] ?? null);
   const decryptSecret = jest.fn((value: string) => `plain(${value})`);
@@ -25,6 +28,7 @@ const setup = (rows: Record<string, StoredTenant> = { acme: stored() }) => {
     maxEntries: 2,
     maxNegativeEntries: 2,
     now: () => clock,
+    ...extra,
   });
   return {
     registry,
@@ -150,6 +154,41 @@ describe('resolve', () => {
       kind: 'misconfigured',
       reason: 'ISSUER_MISSING',
     });
+  });
+});
+
+describe('http issuer in development', () => {
+  const localhostTenant = (issuer: string) =>
+    stored({ oidc: { clientId: 'c', clientSecret: 'v3:x', issuer } });
+
+  it('accepts an http .localhost issuer only when development mode allows it', async () => {
+    const issuer = 'http://acme.localhost:4000';
+    const allowed = setup({ acme: localhostTenant(issuer) }, { allowLocalHttpIssuer: true });
+    const refused = setup({ acme: localhostTenant(issuer) });
+
+    expect(await allowed.registry.resolve('acme')).toMatchObject({ kind: 'active' });
+    expect(await refused.registry.resolve('acme')).toMatchObject({
+      kind: 'misconfigured',
+      reason: 'ISSUER_MISSING',
+    });
+  });
+
+  it('never accepts an http issuer on a public host, even in development mode', async () => {
+    const { registry } = setup(
+      { acme: localhostTenant('http://acme.example.com') },
+      { allowLocalHttpIssuer: true },
+    );
+
+    expect(await registry.resolve('acme')).toMatchObject({ kind: 'misconfigured' });
+  });
+
+  it('does not treat a host that merely ends in "localhost" as local', async () => {
+    const { registry } = setup(
+      { acme: localhostTenant('http://evillocalhost') },
+      { allowLocalHttpIssuer: true },
+    );
+
+    expect(await registry.resolve('acme')).toMatchObject({ kind: 'misconfigured' });
   });
 });
 

@@ -45,6 +45,13 @@ Upgrading an existing single-tenant database, in this order:
 3. `npm run reset-meili-sync`, so the search index is rebuilt with the `tenantId` filter.
 4. Start the API with the host-mode variables above.
 
+A control plane can register tenants through the internal provisioning API instead of the script:
+set `TENANT_PROVISIONING_TOKEN` and call `PUT /tenants/<tenantId>` on `TENANT_PROVISIONING_PORT`
+(default 3081, private; never expose it through an ingress). See section 15 of
+[docs/multi-tenancy-host-mode.md](docs/multi-tenancy-host-mode.md). For local development,
+`TENANT_HOST_SCHEME=http` with a `.localhost` base domain also accepts
+`TENANT_OIDC_ISSUER_TEMPLATE=http://{slug}.localhost:<port>`.
+
 Not supported in host mode: reusing the OpenID tokens (`OPENID_REUSE_TOKENS`) and the shared
 GitHub skill sync with S3 storage. Back up the database before step 2.
 

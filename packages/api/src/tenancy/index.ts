@@ -4,6 +4,8 @@ export * from './cli';
 export * from './config';
 export * from './host';
 export * from './origin';
+export * from './provisioning';
 export * from './registry';
 export * from './runtime';
 export * from './startup';
+export * from './validation';

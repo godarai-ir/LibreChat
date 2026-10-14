@@ -14,7 +14,8 @@ export const OAUTH_SESSION_COOKIE_PATH = '/api';
 /**
  * Determines if secure cookies should be used.
  * SESSION_COOKIE_SECURE=true/false explicitly overrides the environment heuristic.
- * Returns `true` in production unless DOMAIN_SERVER uses a localhost-style hostname.
+ * Returns `true` in production unless DOMAIN_SERVER uses a localhost-style hostname, or host
+ * multi-tenancy runs with `TENANT_HOST_SCHEME=http` (local development).
  * This allows cookies to work on localhost during local development
  * even when `NODE_ENV=production` (common in Docker Compose setups).
  */
@@ -46,7 +47,13 @@ export function shouldUseSecureCookie(): boolean {
     hostname === '::1' ||
     hostname.endsWith('.localhost');
 
-  return isProduction && !isLocalhost;
+  /* Host mode refuses DOMAIN_SERVER, so the hostname check above never applies; the scheme of the
+   * tenant URLs says it instead. `TENANT_HOST_SCHEME=http` is only valid on a .localhost base. */
+  const isLocalHttpHostMode =
+    process.env.MULTI_TENANT_MODE?.trim().toLowerCase() === 'host' &&
+    process.env.TENANT_HOST_SCHEME?.trim().toLowerCase() === 'http';
+
+  return isProduction && !isLocalhost && !isLocalHttpHostMode;
 }
 
 export const REFRESH_TOKEN_COOKIE = 'refreshToken';

@@ -30,7 +30,7 @@ export function createHostTenancyRuntime({
 
   const registry = createTenantRegistry(
     { findBySlug, decryptSecret },
-    { issuerTemplate: config.issuerTemplate },
+    { issuerTemplate: config.issuerTemplate, allowLocalHttpIssuer: config.scheme === 'http' },
   );
 
   return { registry, middleware: createHostTenantMiddleware({ config, registry }) };

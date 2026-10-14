@@ -218,6 +218,36 @@ describe('validateHostTenancyEnv', () => {
     expect(problems.join('\n')).toContain(expected);
   });
 
+  describe('http issuer in development', () => {
+    const localEnv = {
+      ...validEnv,
+      TENANT_HOST_SCHEME: 'http',
+      TENANT_HOST_BASE_DOMAIN: 'chat.localhost',
+    };
+
+    it('accepts an http issuer template on .localhost when the scheme is http', () => {
+      expect(
+        problemsFor({ ...localEnv, TENANT_OIDC_ISSUER_TEMPLATE: 'http://{slug}.localhost:4000' }),
+      ).toEqual([]);
+    });
+
+    it('still refuses an http issuer template on a public host', () => {
+      const problems = problemsFor({
+        ...localEnv,
+        TENANT_OIDC_ISSUER_TEMPLATE: 'http://{slug}.example.com',
+      });
+      expect(problems.join(' ')).toContain('.localhost');
+    });
+
+    it('refuses an http issuer template while the scheme is https', () => {
+      const problems = problemsFor({
+        ...validEnv,
+        TENANT_OIDC_ISSUER_TEMPLATE: 'http://{slug}.localhost:4000',
+      });
+      expect(problems.join(' ')).toContain('https');
+    });
+  });
+
   it('allows a path on the issuer template', () => {
     expect(
       problemsFor({ ...validEnv, TENANT_OIDC_ISSUER_TEMPLATE: 'https://{slug}.example.com/realm' }),

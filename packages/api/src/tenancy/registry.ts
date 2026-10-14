@@ -57,6 +57,8 @@ export interface TenantRegistryDeps {
 export interface TenantRegistryOptions {
   /** Issuer URL with `{slug}`; used when a row has no `oidc.issuer`. */
   issuerTemplate: string | null;
+  /** Accepts an `http://*.localhost` issuer. For local development only. */
+  allowLocalHttpIssuer?: boolean;
   /** How long a found tenant is served from memory. Bounds how stale a suspension can be. */
   ttlMs?: number;
   /** How long an unknown or misconfigured slug is remembered. Kept short so a new tenant appears quickly. */
@@ -88,9 +90,14 @@ function issuerFromTemplate(template: string | null, slug: string): string | nul
   return template.replace(ISSUER_SLUG_PLACEHOLDER, slug);
 }
 
-function isHttpsUrl(value: string): boolean {
+/** https always; http only for a `.localhost` host, and only when development mode allows it. */
+function isAllowedIssuer(value: string, allowLocalHttp: boolean): boolean {
   try {
-    return new URL(value).protocol === 'https:';
+    const url = new URL(value);
+    if (url.protocol === 'https:') {
+      return true;
+    }
+    return allowLocalHttp && url.protocol === 'http:' && /(^|\.)localhost$/.test(url.hostname);
   } catch {
     return false;
   }
@@ -154,7 +161,7 @@ export function createTenantRegistry(
     }
 
     const issuer = stored.oidc.issuer ?? issuerFromTemplate(options.issuerTemplate, slug);
-    if (!issuer || !isHttpsUrl(issuer)) {
+    if (!issuer || !isAllowedIssuer(issuer, options.allowLocalHttpIssuer === true)) {
       logger.error('[tenancy] Tenant has no usable OIDC issuer', { tenantId: stored.tenantId });
       return { kind: 'misconfigured', tenantId: stored.tenantId, slug, reason: 'ISSUER_MISSING' };
     }
