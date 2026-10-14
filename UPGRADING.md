@@ -1,5 +1,53 @@
 # Upgrading LibreChat
 
+## Host-based multi-tenancy (`MULTI_TENANT_MODE=host`)
+
+One LibreChat instance can serve many tenants by `Host`: `https://<slug>.<TENANT_HOST_BASE_DOMAIN>`
+is tenant `<slug>`. Each tenant has its own OIDC issuer, client credentials and data. The full
+design, audit and residual risks are in [docs/multi-tenancy-host-mode.md](docs/multi-tenancy-host-mode.md).
+Single-tenant deployments are unaffected unless they set `MULTI_TENANT_MODE=host`.
+
+The API refuses to start in host mode when a safe configuration is not in place.
+
+Required:
+
+| Variable                      | Value                                                       |
+| ----------------------------- | ----------------------------------------------------------- |
+| `MULTI_TENANT_MODE`           | `host`                                                      |
+| `TENANT_HOST_BASE_DOMAIN`     | for example `chat.example.com`                              |
+| `TENANT_ISOLATION_STRICT`     | `true`                                                      |
+| `TENANT_OIDC_ISSUER_TEMPLATE` | issuer per tenant, for example `https://{slug}.example.com` |
+| `OPENID_SESSION_SECRET`       | session secret for the OpenID login flow                    |
+| `USE_REDIS`                   | `true`                                                      |
+| `fileStrategy`                | `s3` or `cloudfront` in `librechat.yaml`                    |
+
+Optional: `TENANT_HOST_SCHEME` (`https`; `http` only on `.localhost`), `TENANT_RESERVED_SLUGS`,
+`TENANT_OIDC_REQUIRE_TID` (require the `tid` claim to equal the tenant id).
+
+Refused at startup: `TRUST_TENANT_HEADER`, a global `OPENID_ISSUER`, `OPENID_CLIENT_ID` or
+`OPENID_CLIENT_SECRET`, `OPENID_REUSE_TOKENS`, `DOMAIN_CLIENT`, `DOMAIN_SERVER`, `ADMIN_PANEL_URL`,
+`ALLOW_PASSKEY_LOGIN`, and the SAML, LDAP and social-login providers.
+
+Operate it with two scripts (run from the repository root):
+
+```sh
+# Commands: create, list, rotate-secret, set-status, rename. The secret comes from TENANT_OIDC_CLIENT_SECRET or stdin.
+node config/tenant.js create --tenant-id <uuid> --slug <slug> --client-id <id>
+
+# Give rows created before host mode to one tenant. Without --apply it only counts.
+node config/assign-tenant.js --tenant-id <uuid>
+```
+
+Upgrading an existing single-tenant database, in this order:
+
+1. `npm run migrate:tenant-indexes` (add `:dry-run` first).
+2. `node config/assign-tenant.js --tenant-id <uuid>` to review the counts, then again with `--apply`, for the tenant that owns the existing data.
+3. `npm run reset-meili-sync`, so the search index is rebuilt with the `tenantId` filter.
+4. Start the API with the host-mode variables above.
+
+Not supported in host mode: reusing the OpenID tokens (`OPENID_REUSE_TOKENS`) and the shared
+GitHub skill sync with S3 storage. Back up the database before step 2.
+
 ## Native-only web search after v0.8.8-rc2
 
 Since v0.8.8-rc3 (#15875), `WEB_SEARCH.USE` authorizes both LibreChat's
@@ -31,7 +79,22 @@ interface:
 endpoints:
   agents:
     # Preserve your existing list; remove only web_search.
-    capabilities: [deferred_tools, execute_code, file_search, artifacts, subagents, actions, context, skills, memory, ask_user_question, tools, chain, ocr]
+    capabilities:
+      [
+        deferred_tools,
+        execute_code,
+        file_search,
+        artifacts,
+        subagents,
+        actions,
+        context,
+        skills,
+        memory,
+        ask_user_question,
+        tools,
+        chain,
+        ocr,
+      ]
 ```
 
 An explicit YAML grant is reapplied on restart. After recovery, remove the field
