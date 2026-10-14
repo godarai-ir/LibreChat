@@ -111,9 +111,16 @@ export {
 export type { TenantContext } from './config/tenantContext';
 export {
   MCPServerNameMigrationError,
+  SHARED_UNTENANTED_MODELS,
+  assignTenantToUntenantedRows,
   createMCPAuthorityLookupIndexes,
   dropSupersededTenantIndexes,
   migrateTenantIndexes,
   dropSupersededPromptGroupIndexes,
   backfillMCPServerNormalizedNames,
+} from './migrations';
+export type {
+  AssignTenantOptions,
+  AssignTenantResult,
+  AssignTenantModelResult,
 } from './migrations';

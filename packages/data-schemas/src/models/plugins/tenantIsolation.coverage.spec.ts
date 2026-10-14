@@ -30,6 +30,18 @@ const MANUAL_TENANT_SCOPING = new Set<string>([
   'Tenant',
 ]);
 
+/**
+ * Models with no `tenantId` field at all, each with the reason that is safe. The check above
+ * only looks at models that already have the field, so a new model that forgot it would pass
+ * silently; this list makes that a failing test until someone reviews it.
+ */
+const NO_TENANT_FIELD: Readonly<Record<string, string>> = {
+  OpenIDRefreshFlight:
+    'single-flight state of the OpenID token-reuse refresh, which host mode refuses at startup',
+  SkillSyncCredential:
+    'deployment-wide GitHub credential; written only with a platform-level capability, which a tenant user cannot hold',
+};
+
 function isPluginApplied(schema: mongoose.Schema): boolean {
   return (schema as unknown as { [key: symbol]: boolean })[TENANT_ISOLATION_APPLIED] === true;
 }
@@ -53,6 +65,22 @@ describe('tenant-isolation plugin coverage', () => {
     }
 
     expect(missing).toEqual([]);
+  });
+
+  it('lets only reviewed models exist without a tenantId field', () => {
+    const unreviewed = Object.entries(mongoose.models)
+      .filter(([name, model]) => !model.schema.path('tenantId') && !(name in NO_TENANT_FIELD))
+      .map(([name]) => name);
+
+    expect(unreviewed).toEqual([]);
+  });
+
+  it('keeps the no-tenant list accurate (the model exists and has no tenantId)', () => {
+    for (const name of Object.keys(NO_TENANT_FIELD)) {
+      const model = mongoose.models[name];
+      expect(model).toBeDefined();
+      expect(Boolean(model.schema.path('tenantId'))).toBe(false);
+    }
   });
 
   it('keeps the manual-scoping allowlist accurate (tenantId field, no plugin)', () => {

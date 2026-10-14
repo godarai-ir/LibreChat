@@ -207,3 +207,52 @@ Other paths need no check because they run in the request's tenant context and t
 The OpenID reuse-token refresh branches in `AuthController` also read users with `runAsSystem`, but they are unreachable in host mode because `OPENID_REUSE_TOKENS` is refused at startup.
 
 Operational note: users created before multi-tenancy have no `tenantId`, so they cannot sign in on a tenant host. Existing single-tenant data must be assigned a tenant (a migration, planned with the data-layer phase) before it is served in host mode.
+
+## 10. Data-layer audit (Phase 7, implemented)
+
+### Models
+
+`tenantIsolation.coverage.spec.ts` now fails for any model that has no `tenantId` field and is not on a reviewed list with a reason. Today that list is two models:
+
+| Model                 | Why it is safe without a tenant                                                                                                                                                                       |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `OpenIDRefreshFlight` | single-flight state of the OpenID token-reuse refresh; host mode refuses `OPENID_REUSE_TOKENS`                                                                                                        |
+| `SkillSyncCredential` | deployment-wide GitHub credential; written only with a platform-level capability (`platformOnly`), which no tenant user holds, and a platform user (no `tenantId`) is rejected by the Phase 6 binding |
+
+Models with a `tenantId` field but no isolation plugin stay on the existing manual-scoping list (`SystemGrant`, `SkillSyncStatus`, `AuditLog`, `RefreshTokenBridge`) plus the new `Tenant` registry.
+
+### `runAsSystem` (about 30 files)
+
+Most are the intended shape: a scanning loop reads across tenants, and the work for one user runs with that user's tenant.
+
+| Area                                                                        | What it does                                                                                  | Verdict                                                |
+| --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Startup (`index.js`, `experimental.js`, `seedDatabase`, role/grant seeding) | seeds global defaults                                                                         | fine: no request, no tenant data                       |
+| `schedules/*`                                                               | the engine scans all schedules; each owner's work runs through `runInTenantContext(owner)`    | fine                                                   |
+| `agents/triggers/*`                                                         | deliveries are claimed globally; `runAsPrincipal` runs each in `envelope.principal.tenantId`  | fine                                                   |
+| `agents/queuedTurns.ts`                                                     | queued turns store `tenantId`; resume checks `sameTenant(conversation, principal)`            | fine                                                   |
+| `files/sweep.ts`, `code/lifecycle.ts`, `skills/sync`                        | background maintenance                                                                        | fine; see Phase 11 for per-tenant iteration            |
+| `jwtStrategy`, share-file auth, image authorization, shared links           | user or resource is loaded across tenants first                                               | **fixed in Phase 6** (host binding, no share fallback) |
+| `AuthController` refresh                                                    | all three lookups sit in the OpenID token-reuse branch                                        | unreachable in host mode                               |
+| `role.ts`, `accessRole.ts`                                                  | read the seeded global roles as a fallback to tenant roles                                    | by design: roles are configuration, tenant rows win    |
+| `import.ts` cleanup                                                         | removes the rows of a failed import by user and conversation ids with the tenant in the scope | fine                                                   |
+
+### Native collection access
+
+| Where                                                       | Use                                                      | Verdict                                                                                                                                            |
+| ----------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `agents/checkpointer.ts`, `checkpoints/*`                   | LangGraph checkpoint collections                         | keyed by thread id and `lc_owner` (the user), no `tenantId`; unguessable ids and per-user ownership. Offboarding a tenant must delete by owner ids |
+| `shared-links/service.ts`                                   | unset a legacy flag by `_id` of a share resolved earlier | fine                                                                                                                                               |
+| `code/lifecycle.ts`, `codeEnvironment.ts`                   | tombstones and reconciliation keyed by owner slot        | fine                                                                                                                                               |
+| `prompt.ts`, `db/utils.ts`, `app/checks.ts`, `keyvMongo.ts` | index maintenance, collection creation, cache store      | fine                                                                                                                                               |
+
+Aggregations all go through `Model.aggregate`, whose pipelines the isolation plugin inspects (`tenant/probe.ts`, including `$lookup`, `$merge` and `$out`).
+
+### Moving existing data into a tenant
+
+Rows created before multi-tenancy have no `tenantId`, so they are invisible in host mode and their users cannot sign in (Phase 6). `node config/assign-tenant.js --tenant-id <id>` is a dry run that prints, per collection, how many rows have no tenant; adding `--apply` gives them to that tenant.
+
+- It only writes rows that have no tenant, never moves a row between tenants, and is safe to run again.
+- It leaves the rows that every tenant shares on purpose (`SHARED_UNTENANTED_MODELS`: the registry, platform grants, audit log, skill-sync status, seeded roles, access roles, agent categories, base config and the deployment banner).
+- The tenant must already be in the registry.
+- Order: `npm run migrate:tenant-indexes`, then `node config/assign-tenant.js --tenant-id <id> --apply`, then rebuild the search index.
