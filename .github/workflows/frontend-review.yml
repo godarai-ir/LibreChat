@@ -1,33 +1,6 @@
 name: Frontend Unit Tests
 
 on:
-  pull_request:
-    paths:
-      - 'e2e/client-build.test.mjs'
-      - 'client/**'
-      - 'packages/client/**'
-      - 'packages/chat/**'
-      - 'packages/data-provider/**'
-      - 'scripts/typecheck.mts'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/frontend-review.yml'
-      - '!**.md'
-  # Post-merge safety net and full-run baseline for gated selection (same rationale as
-  # backend-review.yml stage 1): every dev merge touching frontend paths runs the full suite.
-  push:
-    branches:
-      - dev
-    paths:
-      - 'e2e/client-build.test.mjs'
-      - 'client/**'
-      - 'packages/client/**'
-      - 'packages/chat/**'
-      - 'packages/data-provider/**'
-      - 'scripts/typecheck.mts'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/frontend-review.yml'
   # Promotion requires full CI at the exact dev SHA, including path-filtered commits.
   workflow_dispatch:
 

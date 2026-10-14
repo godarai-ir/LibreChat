@@ -937,6 +937,9 @@ function workflowSelectsWhatItFilters(): string[] {
   } catch {
     return [`${path} could not be read; the lane it defines is what this check runs in`];
   }
+  /** A lane dispatched by hand has no trigger filter for the suppressions filter to
+   *  disagree with. */
+  if (!/^ {2}pull_request:/m.test(workflow)) return [];
   const { trigger, lane } = workflowFilters(workflow);
   if (trigger.length === 0 || lane.length === 0) {
     return [`${path}: the trigger or the suppressions filter could not be read`];

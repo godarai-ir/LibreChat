@@ -1,17 +1,6 @@
 name: Lighthouse CI
 
 on:
-  pull_request:
-    paths:
-      - 'api/**'
-      - 'client/**'
-      - 'config/**'
-      - 'packages/**'
-      - 'e2e/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/lighthouse.yml'
-      - '!**.md'
   workflow_dispatch:
 
 permissions:

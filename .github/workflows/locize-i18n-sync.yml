@@ -1,12 +1,6 @@
 name: Sync Locize Translations & Create Translation PR
 
 on:
-  push:
-    branches: [dev]
-    paths:
-      - 'client/src/locales/en/**'
-  repository_dispatch:
-    types: [locize/versionPublished]
   workflow_dispatch:
 
 concurrency:
