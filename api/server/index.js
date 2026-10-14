@@ -47,6 +47,8 @@ const {
   injectConfiguredFooterBootstrap,
   injectColorModeHandoff,
   preAuthTenantMiddleware,
+  assertHostTenancyEnv,
+  assertHostTenancyAppConfig,
   requestContextMiddleware,
   registerShutdownTask,
   getRemainingShutdownMs,
@@ -194,6 +196,8 @@ const startServer = async () => {
   if (typeof Bun !== 'undefined') {
     axios.defaults.headers.common['Accept-Encoding'] = 'gzip';
   }
+  /* Fails startup when MULTI_TENANT_MODE=host cannot isolate tenants; no-op otherwise. */
+  assertHostTenancyEnv();
   await connectDb();
 
   logger.info('Connected to MongoDB');
@@ -232,6 +236,7 @@ const startServer = async () => {
     logger.error('[sweepOrphanedPreviews] Background sweep failed:', err);
   });
   const appConfig = await getAppConfig({ baseOnly: true });
+  assertHostTenancyAppConfig(appConfig);
   await configureSubagentTaskRouting(appConfig?.endpoints?.agents?.subagentActivity);
   registerBackgroundTaskShutdown({
     interruptGraceMs: appConfig?.endpoints?.agents?.backgroundTasks?.shutdownInterruptGraceMs,

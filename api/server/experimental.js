@@ -40,6 +40,8 @@ const {
   injectConfiguredFooterBootstrap,
   injectColorModeHandoff,
   preAuthTenantMiddleware,
+  assertHostTenancyEnv,
+  assertHostTenancyAppConfig,
   requestContextMiddleware,
   configureServerTimeouts,
   setupGracefulShutdown,
@@ -446,6 +448,8 @@ if (cluster.isMaster) {
     }
 
     /** Connect to MongoDB */
+    /* Fails startup when MULTI_TENANT_MODE=host cannot isolate tenants; no-op otherwise. */
+    assertHostTenancyEnv();
     await connectDb();
     logger.info(`Worker ${process.pid}: Connected to MongoDB`);
     startCodeEnvironmentLifecycleReconciler({ mongoose });
@@ -493,6 +497,7 @@ if (cluster.isMaster) {
 
     /** Initialize app configuration */
     const appConfig = await getAppConfig();
+    assertHostTenancyAppConfig(appConfig);
     initializeFileStorage(appConfig);
     initializeGitHubSkillSync(appConfig);
     // Register configured tool-approval policy hooks (mirrors the standard startup path).

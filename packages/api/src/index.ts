@@ -64,6 +64,8 @@ export * from './crypto';
 export * from './flow/manager';
 /* Middleware */
 export * from './middleware';
+/* Host-based multi-tenancy */
+export * from './tenancy';
 /* Security */
 export * from './security';
 /* Content protection */
