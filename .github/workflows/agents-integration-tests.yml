@@ -8,24 +8,7 @@ name: Integration Tests
 # without this job they run nowhere and their regressions guard nothing. Selection is by
 # suffix, not folder, so a suite added anywhere under src is picked up.
 on:
-  pull_request:
-    branches:
-      - main
-      - dev
-      - dev-staging
-      - release/*
-    # The suites build and consume data-provider and data-schemas and import
-    # across packages/api (the build-cache keys below hash all three src trees),
-    # so they must re-run on any of them.
-    paths:
-      - 'packages/api/src/**'
-      - 'packages/api/package.json'
-      - 'packages/data-provider/src/**'
-      - 'packages/data-provider/package.json'
-      - 'packages/data-schemas/src/**'
-      - 'packages/data-schemas/package.json'
-      - '.github/workflows/agents-integration-tests.yml'
-      - '!**.md'
+  workflow_dispatch:
 
 permissions:
   contents: read

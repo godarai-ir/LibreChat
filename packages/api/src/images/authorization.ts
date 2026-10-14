@@ -17,6 +17,7 @@ import {
   isTwoFactorEnrollmentRequired,
   TOKEN_RETIREMENT_FIELDS,
 } from '~/auth/twoFactor';
+import { belongsToRequestTenant } from '~/tenancy/binding';
 
 const MAX_URL_LENGTH = 2048;
 const OBJECT_ID_PATTERN = /^[0-9a-f]{24}$/i;
@@ -113,6 +114,8 @@ export interface ImageAuthorizationOptions {
 }
 
 type ImageRequest = Request & {
+  /** Set by the host middleware in host multi-tenancy. */
+  tenantId?: string;
   session?: Request['session'] & {
     openidTokens?: { refreshToken?: string };
   };
@@ -461,6 +464,15 @@ export function createImageAuthorizationMiddleware(
       const owner = await runAsSystem(() =>
         deps.getUserById(imagePath.ownerId, IMAGE_USER_PROJECTION),
       );
+      /**
+       * Host multi-tenancy: an image is served only on its owner's tenant host. A missing owner
+       * and another tenant's owner answer alike, so the response says nothing about who exists,
+       * and the check holds even when image links are not otherwise secured.
+       */
+      if (req.tenantId && !belongsToRequestTenant(req, owner)) {
+        res.status(404).send('Not Found');
+        return;
+      }
       if (!owner) {
         if (options.secureImageLinks === false) {
           next();
@@ -495,7 +507,12 @@ export function createImageAuthorizationMiddleware(
           userId === imagePath.ownerId
             ? owner
             : await runAsSystem(() => deps.getUserById(userId, IMAGE_USER_PROJECTION));
-        if (!viewer || isTokenRetired(auth, viewer) || isTwoFactorEnrollmentRequired(viewer)) {
+        if (
+          !viewer ||
+          !belongsToRequestTenant(req, viewer) ||
+          isTokenRetired(auth, viewer) ||
+          isTwoFactorEnrollmentRequired(viewer)
+        ) {
           auth = { status: 'invalid' };
           viewer = null;
         }

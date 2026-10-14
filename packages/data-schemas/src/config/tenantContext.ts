@@ -2,6 +2,11 @@ import { AsyncLocalStorage } from 'async_hooks';
 
 export interface TenantContext {
   tenantId?: string;
+  /**
+   * Public origin of the tenant (`https://<slug>.<base domain>`) in host multi-tenancy, so code
+   * that runs inside a request but has no `req` can still build correct links and callbacks.
+   */
+  origin?: string;
   userId?: string;
   requestId?: string;
   requestMethod?: string;
@@ -22,6 +27,11 @@ export const tenantStorage: AsyncLocalStorage<TenantContext> =
 /** Returns the current tenant ID from async context, or undefined if none is set */
 export function getTenantId(): string | undefined {
   return tenantStorage.getStore()?.tenantId;
+}
+
+/** Returns the tenant's public origin from async context, or undefined outside host mode */
+export function getTenantOrigin(): string | undefined {
+  return tenantStorage.getStore()?.origin;
 }
 
 /** Returns the current user ID from async context, or undefined if none is set */

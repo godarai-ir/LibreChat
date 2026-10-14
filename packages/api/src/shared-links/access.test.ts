@@ -441,6 +441,58 @@ describe('canAccessSharedLink', () => {
     });
   });
 
+  describe('host multi-tenancy', () => {
+    test('does not resolve another tenant share: no system-wide fallback, it answers 404', async () => {
+      // The same share and viewer as the cross-tenant fallback test above, but the request
+      // carries a host tenant. Without the host there the fallback resolves the share and
+      // the ACL answers 403; on a tenant host the share is simply not found.
+      const link = await tenantStorage.run({ tenantId: 'tenant-a' }, () => createTestLink());
+      const viewer = new Types.ObjectId();
+      mockGetUserPrincipals.mockResolvedValue([
+        { principalType: PrincipalType.USER, principalId: viewer },
+      ]);
+
+      const req = createReq({
+        params: { shareId: link.shareId },
+        user: { id: viewer.toString(), _id: viewer, role: 'USER' },
+        tenantId: 'tenant-b',
+      } as never);
+      const res = createRes();
+      const next = jest.fn();
+      await tenantStorage.run({ tenantId: 'tenant-b' }, () =>
+        canAccessSharedLink(req, res, next as unknown as NextFunction),
+      );
+
+      expect(next).not.toHaveBeenCalled();
+      expect(res._status).toBe(404);
+    });
+
+    test('resolves a share of the host tenant', async () => {
+      const link = await tenantStorage.run({ tenantId: 'tenant-b' }, () => createTestLink());
+      const viewer = new Types.ObjectId();
+      await tenantStorage.run({ tenantId: 'tenant-b' }, () =>
+        grantTenantUserViewer(link._id, viewer),
+      );
+      mockGetUserPrincipals.mockResolvedValue([
+        { principalType: PrincipalType.USER, principalId: viewer },
+      ]);
+
+      const req = createReq({
+        params: { shareId: link.shareId },
+        user: { id: viewer.toString(), _id: viewer, role: 'USER', tenantId: 'tenant-b' },
+        tenantId: 'tenant-b',
+      } as never);
+      const res = createRes();
+      const next = jest.fn();
+      await tenantStorage.run({ tenantId: 'tenant-b' }, () =>
+        canAccessSharedLink(req, res, next as unknown as NextFunction),
+      );
+
+      expect(next).toHaveBeenCalled();
+      expect((req as unknown as Record<string, unknown>).shareTenantId).toBe('tenant-b');
+    });
+  });
+
   describe('legacy link auto-migration', () => {
     async function createLegacyLink(isPublic: boolean) {
       const link = await createTestLink();

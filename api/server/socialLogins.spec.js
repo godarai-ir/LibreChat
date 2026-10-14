@@ -8,6 +8,7 @@ const mockOpenIdJwtLogin = jest.fn(() => 'openid-jwt-strategy');
 const mockSetupOpenId = jest.fn();
 const mockSetupSaml = jest.fn();
 const mockIsEnabled = jest.fn();
+const mockIsHostTenancyEnabled = jest.fn(() => false);
 const mockShouldUseSecureCookie = jest.fn(() => true);
 const mockRegisterOpenIdWithRetry = jest.fn(
   async ({ setupOpenId, registerJwtStrategy, reuseTokens }) => {
@@ -49,6 +50,7 @@ jest.mock('librechat-data-provider', () => ({
 jest.mock('@librechat/api', () => ({
   math: (...args) => mockMath(...args),
   isEnabled: (...args) => mockIsEnabled(...args),
+  isHostTenancyEnabled: (...args) => mockIsHostTenancyEnabled(...args),
   shouldUseSecureCookie: (...args) => mockShouldUseSecureCookie(...args),
   registerOpenIdWithRetry: (...args) => mockRegisterOpenIdWithRetry(...args),
 }));
@@ -216,5 +218,58 @@ describe('configureSocialLogins OAuth state options', () => {
       secureCookie: false,
       maxAgeMs: undefined,
     });
+  });
+});
+
+describe('configureSocialLogins in host multi-tenancy', () => {
+  const ORIGINAL_ENV = process.env;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env = { OPENID_SESSION_SECRET: 'openid-session-secret' };
+    mockIsHostTenancyEnabled.mockReturnValue(true);
+    mockIsEnabled.mockImplementation((value) => value === 'true');
+  });
+
+  afterAll(() => {
+    process.env = ORIGINAL_ENV;
+    mockIsHostTenancyEnabled.mockReturnValue(false);
+  });
+
+  it('sets up the sign-in session without discovering a global provider', async () => {
+    const app = { use: jest.fn() };
+
+    await configureSocialLogins(app);
+
+    expect(mockSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        secret: 'openid-session-secret',
+        store: 'openid-session-store',
+        saveUninitialized: false,
+      }),
+    );
+    expect(app.use).toHaveBeenCalledWith(mockSessionMiddleware);
+    expect(app.use).toHaveBeenCalledWith(mockPassportSessionMiddleware);
+    expect(mockSetupOpenId).not.toHaveBeenCalled();
+    expect(mockRegisterOpenIdWithRetry).not.toHaveBeenCalled();
+  });
+
+  it('keeps the session cookie host-only so one tenant never receives another tenant session', async () => {
+    await configureSocialLogins({ use: jest.fn() });
+
+    const options = mockSession.mock.calls[0][0];
+    expect(options.cookie).not.toHaveProperty('domain');
+    expect(options.cookie).toEqual({ maxAge: 900000, secure: true });
+  });
+
+  it('does not register the single-tenant OpenID strategy even if global settings are present', async () => {
+    process.env.OPENID_CLIENT_ID = 'client-id';
+    process.env.OPENID_CLIENT_SECRET = 'client-secret';
+    process.env.OPENID_ISSUER = 'https://issuer.example.com';
+    process.env.OPENID_SCOPE = 'openid';
+
+    await configureSocialLogins({ use: jest.fn() });
+
+    expect(mockRegisterOpenIdWithRetry).not.toHaveBeenCalled();
   });
 });

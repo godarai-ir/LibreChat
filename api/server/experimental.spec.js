@@ -123,11 +123,37 @@ describe('Experimental server configuration', () => {
   });
 
   it('matches the standard server pre-authentication tenant routes', () => {
-    expect(source).toContain("app.use('/oauth', preAuthTenantMiddleware, routes.oauth);");
-    expect(source).toContain("app.use('/api/auth', preAuthTenantMiddleware, routes.auth);");
+    expect(source).toContain(
+      "app.use('/oauth', preAuthTenantMiddleware, openIdForOAuth, routes.oauth);",
+    );
+    expect(source).toContain(
+      "app.use('/api/auth', preAuthTenantMiddleware, openIdForAuthApi, routes.auth);",
+    );
     expect(source).toContain(
       "app.use('/api/config', preAuthTenantMiddleware, optionalJwtAuth, routes.config);",
     );
     expect(source).toContain("app.use('/api/share', preAuthTenantMiddleware, routes.share);");
+  });
+
+  it('mounts host multi-tenancy the same way as the standard server', () => {
+    const standard = fs.readFileSync(path.join(__dirname, 'index.js'), 'utf8');
+    for (const fragment of [
+      'createHostTenancyRuntime({',
+      'app.use(hostTenancy.middleware);',
+      'createTenantOpenIdMiddleware(openIdDeps, { blocking: false })',
+      'createTenantOpenIdMiddleware(openIdDeps, { blocking: true })',
+      'assertHostTenancyEnv();',
+      'assertHostTenancyAppConfig(appConfig);',
+    ]) {
+      expect(standard).toContain(fragment);
+      expect(source).toContain(fragment);
+    }
+    /** The tenant must be known before anything else handles the request. */
+    expect(source.indexOf('app.use(requestContextMiddleware);')).toBeLessThan(
+      source.indexOf('app.use(hostTenancy.middleware);'),
+    );
+    expect(source.indexOf('app.use(hostTenancy.middleware);')).toBeLessThan(
+      source.indexOf('app.use(noIndex);'),
+    );
   });
 });

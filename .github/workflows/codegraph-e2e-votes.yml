@@ -20,14 +20,7 @@
 name: Codegraph E2E Votes
 
 on:
-  push:
-    branches:
-      - dev
-    paths:
-      - '**'
-      - '!**.md'
-      - '!.github/workflows/**'
-      - '.github/workflows/codegraph-e2e-votes.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read

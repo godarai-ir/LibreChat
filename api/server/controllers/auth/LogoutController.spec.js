@@ -13,6 +13,7 @@ jest.mock('@librechat/api', () => ({
   isEnabled: (...args) => mockIsEnabled(...args),
   math: (_value, fallback) => fallback,
   clearCloudFrontCookies: (...args) => mockClearCloudFrontCookies(...args),
+  getClientOrigin: (req) => req?.tenantOrigin ?? process.env.DOMAIN_CLIENT,
 }));
 jest.mock('@librechat/data-schemas', () => ({
   logger: mockLogger,
@@ -211,6 +212,48 @@ describe('LogoutController', () => {
       expect(url.searchParams.get('post_logout_redirect_uri')).toBe(
         'https://app.example.com/login',
       );
+    });
+  });
+
+  describe('post_logout_redirect_uri in host mode', () => {
+    it('returns to the tenant the user signed in on, ignoring the fixed env settings', async () => {
+      process.env.OPENID_POST_LOGOUT_REDIRECT_URI = 'https://other-tenant.example.com/logged-out';
+      const req = buildReq({ tenantOrigin: 'https://acme.chat.example.com' });
+      const res = buildRes();
+
+      await logoutController(req, res);
+
+      const body = res.send.mock.calls[0][0];
+      const url = new URL(body.redirect);
+      expect(url.searchParams.get('post_logout_redirect_uri')).toBe(
+        'https://acme.chat.example.com/login',
+      );
+    });
+  });
+
+  describe('end-session redirect in host mode', () => {
+    it('still builds the redirect when no global OPENID_ISSUER is set', async () => {
+      delete process.env.OPENID_ISSUER;
+      const req = buildReq({ tenantOrigin: 'https://acme.chat.example.com' });
+      const res = buildRes();
+
+      await logoutController(req, res);
+
+      const body = res.send.mock.calls[0][0];
+      expect(body.redirect).toBeDefined();
+      expect(new URL(body.redirect).searchParams.get('post_logout_redirect_uri')).toBe(
+        'https://acme.chat.example.com/login',
+      );
+    });
+
+    it('does not redirect without an issuer outside host mode', async () => {
+      delete process.env.OPENID_ISSUER;
+      const req = buildReq();
+      const res = buildRes();
+
+      await logoutController(req, res);
+
+      expect(res.send.mock.calls[0][0].redirect).toBeUndefined();
     });
   });
 

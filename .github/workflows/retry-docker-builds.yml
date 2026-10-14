@@ -1,16 +1,7 @@
 name: Retry Failed Docker Builds
 
 on:
-  workflow_run:
-    workflows:
-      - Docker Build Smoke Tests
-      - Docker Compose Build Latest Main Image Tag (Manual Dispatch)
-      - Docker Dev Branch Images Build
-      - Docker Dev Images Build
-      - Docker Dev Staging Images Build
-      - Docker Images Build on Tag
-    types:
-      - completed
+  workflow_dispatch:
 
 permissions:
   actions: write

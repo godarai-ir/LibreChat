@@ -6,6 +6,8 @@ const {
   continueAfterOptionalAuth,
   tenantContextMiddleware,
   isTwoFactorEnrollmentRequired,
+  logTenantMismatch,
+  belongsToRequestTenant,
 } = require('@librechat/api');
 
 const hasPassportStrategy = (strategy) =>
@@ -24,6 +26,10 @@ const optionalJwtAuth = (req, res, next) => {
   const callback = (err, user) => {
     if (err) {
       return next(err);
+    }
+    if (user && !belongsToRequestTenant(req, user)) {
+      logTenantMismatch('optionalJwtAuth', req, user);
+      return next();
     }
     if (user) {
       return continueAfterOptionalAuth(

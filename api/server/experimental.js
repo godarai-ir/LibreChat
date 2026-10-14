@@ -40,6 +40,12 @@ const {
   injectConfiguredFooterBootstrap,
   injectColorModeHandoff,
   preAuthTenantMiddleware,
+  assertHostTenancyEnv,
+  assertHostTenancyAppConfig,
+  createHostTenancyRuntime,
+  createTenantOpenIdMiddleware,
+  resolveHostTenancyConfig,
+  decryptV3,
   requestContextMiddleware,
   configureServerTimeouts,
   setupGracefulShutdown,
@@ -70,12 +76,15 @@ const {
   initializeScheduleErasureSweep,
 } = require('./services/Schedules');
 const { configureSubagentTaskRouting } = require('./services/Endpoints/agents/subagentThreadStore');
-const { jwtLogin, ldapLogin, passportLogin } = require('~/strategies');
+const { jwtLogin, ldapLogin, passportLogin, ensureTenantOpenId } = require('~/strategies');
+const { ErrorTypes } = require('librechat-data-provider');
+const { redirectOAuthFailure } = require('~/server/middleware/oauthNavigation');
 const { updateInterfacePermissions: updateInterfacePerms } = require('@librechat/api');
 const {
   getRoleByName,
   updateAccessPermissions,
   seedDatabase,
+  getTenantBySlug,
   sweepOrphanedPreviews,
 } = require('~/models');
 const { checkMigrations } = require('./services/start/migration');
@@ -446,12 +455,15 @@ if (cluster.isMaster) {
     }
 
     /** Connect to MongoDB */
+    /* Fails startup when MULTI_TENANT_MODE=host cannot isolate tenants; no-op otherwise. */
+    assertHostTenancyEnv();
     await connectDb();
     logger.info(`Worker ${process.pid}: Connected to MongoDB`);
     startCodeEnvironmentLifecycleReconciler({ mongoose });
 
     /** Background index sync (non-blocking) */
-    indexSync().catch((err) => {
+    /* A system context: the sync reads every tenant's rows, which strict isolation refuses otherwise. */
+    runAsSystem(() => indexSync()).catch((err) => {
       logger.error(`[Worker ${process.pid}][indexSync] Background sync failed:`, err);
     });
 
@@ -493,6 +505,7 @@ if (cluster.isMaster) {
 
     /** Initialize app configuration */
     const appConfig = await getAppConfig();
+    assertHostTenancyAppConfig(appConfig);
     initializeFileStorage(appConfig);
     initializeGitHubSkillSync(appConfig);
     // Register configured tool-approval policy hooks (mirrors the standard startup path).
@@ -575,6 +588,29 @@ if (cluster.isMaster) {
 
     /** Middleware */
     app.use(requestContextMiddleware);
+    /* Host multi-tenancy: first, so every route, stream and asset runs in the host's tenant. */
+    const hostTenancy = createHostTenancyRuntime({
+      config: resolveHostTenancyConfig(),
+      findBySlug: getTenantBySlug,
+      decryptSecret: decryptV3,
+    });
+    /* Per-tenant OpenID: prepare the tenant's client before the sign-in routes; elsewhere in the background. */
+    const passThrough = (_req, _res, next) => next();
+    let openIdForOAuth = passThrough;
+    let openIdForAuthApi = passThrough;
+    if (hostTenancy) {
+      const openIdDeps = { registry: hostTenancy.registry, ensure: ensureTenantOpenId };
+      app.use(hostTenancy.middleware);
+      app.use(createTenantOpenIdMiddleware(openIdDeps, { blocking: false }));
+      openIdForOAuth = createTenantOpenIdMiddleware(
+        {
+          ...openIdDeps,
+          onFailure: (_req, res) => redirectOAuthFailure(res, ErrorTypes.AUTH_FAILED),
+        },
+        { blocking: true },
+      );
+      openIdForAuthApi = createTenantOpenIdMiddleware(openIdDeps, { blocking: true });
+    }
     app.use(noIndex);
     app.use(express.json({ limit: '3mb' }));
     app.use(express.urlencoded({ extended: true, limit: '3mb' }));
@@ -630,8 +666,8 @@ if (cluster.isMaster) {
     app.use(capabilityContextMiddleware);
 
     /** Routes */
-    app.use('/oauth', preAuthTenantMiddleware, routes.oauth);
-    app.use('/api/auth', preAuthTenantMiddleware, routes.auth);
+    app.use('/oauth', preAuthTenantMiddleware, openIdForOAuth, routes.oauth);
+    app.use('/api/auth', preAuthTenantMiddleware, openIdForAuthApi, routes.auth);
     app.use('/api/insights', routes.insights);
     app.use('/api/admin', routes.adminAuth);
     app.use('/api/admin/skills', routes.adminSkills);
