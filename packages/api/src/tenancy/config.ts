@@ -92,6 +92,17 @@ const parseMode = (raw: string | undefined): 'off' | 'host' => {
   ]);
 };
 
+/**
+ * The slugs that may never become tenants: the defaults plus `TENANT_RESERVED_SLUGS`. Usable
+ * without host mode, so tooling that writes the registry applies the same rule as the server.
+ */
+export function reservedSlugsFromEnv(env: Env = process.env): ReadonlySet<string> {
+  const problems: string[] = [];
+  const reserved = parseReservedSlugs(env.TENANT_RESERVED_SLUGS, problems);
+  enforceHostTenancy(problems);
+  return reserved;
+}
+
 const parseReservedSlugs = (raw: string | undefined, problems: string[]): Set<string> => {
   const reserved = new Set(DEFAULT_RESERVED_SLUGS);
   for (const entry of clean(raw).split(',')) {

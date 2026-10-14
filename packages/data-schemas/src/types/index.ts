@@ -42,6 +42,7 @@ export * from './schedule';
 export * from './accessRole';
 export * from './aclEntry';
 export * from './systemGrant';
+export * from './tenant';
 export * from './auditLog';
 export * from './group';
 /* Config */
