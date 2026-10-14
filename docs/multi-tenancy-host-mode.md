@@ -165,3 +165,24 @@ Data audit (M1-M3: coverage spec fails for any model without `tenantId` unless a
 - Converted: OAuth success redirect, OAuth/OpenID failure redirects (`redirectToAuthFailure`, error middleware), OpenID post-logout redirect, `/api/config` `serverDomain`, email-change links (lazy `clientDomain`), MCP OAuth redirect URI, pull-request OAuth redirect URI, Actions OAuth redirect URI, Flux image URLs.
 - New startup refusals in host mode: a set `DOMAIN_CLIENT`/`DOMAIN_SERVER` (one fixed origin would put links to the wrong tenant in redirects and emails), `ADMIN_PANEL_URL` (every tenant would trust it as a cross-site origin), `ALLOW_PASSKEY_LOGIN` (a passkey is bound to one relying-party host), and an unsupported `TENANT_HOST_SCHEME`.
 - Not converted on purpose: the social-login `failureRedirect` strings and `admin` routes (refused at startup in host mode), and OpenID logout, whose `OPENID_ISSUER` precondition belongs to the per-tenant OIDC work (Phase 5).
+
+## 8. Per-tenant OpenID Connect (Phase 5, implemented)
+
+How a login works on `https://acme.chat.example.com`:
+
+1. The host middleware resolves the tenant and starts a background `ensure` for its OpenID client. The sign-in routes (`/oauth`, `/api/auth`) wait for it; every other route does not, so an identity-provider outage cannot take down pages or assets.
+2. `createTenantOpenIdClients` (`packages/api/src/auth/openid/tenant.ts`) keeps one discovered `Configuration` per tenant: single-flight discovery, a refresh interval, a short failure memory so a down provider is not hit on every request, and the last good configuration is served for a while when a refresh fails. A rotated client secret or a changed issuer changes the settings fingerprint and replaces the client at once; the old client is never served for new settings.
+3. `ensureTenantOpenId` (`api/strategies/openidStrategy.js`) registers one passport strategy per tenant, named `openid:<tenantId>`, from the registry's issuer, client id, secret and scopes. `/oauth/openid` and its callback pick the strategy by `req.tenantId`.
+4. `getOpenIdConfig()` stays synchronous and signature-compatible, so its 17 consumers (logout, session refresh, recovery, OBO, Graph, ...) are untouched: in host mode it returns the client of the tenant in the current async context.
+5. The authorization request and the code exchange use the tenant origin of the request (`redirect_uri = <tenantOrigin>/oauth/openid/callback`). The library keeps the state, nonce and PKCE verifier in `req.session[<issuer host>]`, so each tenant has its own key, in a session whose cookie has no `Domain`.
+6. The library validates `iss` and the ID token against the tenant's own configuration. On top of that, `checkTenantClaims` requires the userinfo `tid` to equal the registry `tenantId` (relax with `TENANT_OIDC_REQUIRE_TID=false` for a provider without `tid`) and the `tenant` claim, when present, to equal the slug. A mismatch is `auth_failed` before any user is looked up.
+7. Users are looked up and created inside the tenant context, so a new user is stamped with the tenant's `tenantId` by the isolation plugin.
+
+Host-mode startup now also requires `OPENID_SESSION_SECRET` and refuses a global `OPENID_ISSUER`, `OPENID_CLIENT_ID`, `OPENID_CLIENT_SECRET` (the registry is the only source) and `OPENID_REUSE_TOKENS`.
+
+Not done in this phase, on purpose:
+
+- **`OPENID_REUSE_TOKENS` / `openidJwt`.** Reusing the provider's bearer token as the app token needs a per-tenant issuer, audience and JWKS in `openIdJwtStrategy`. It is refused at startup until then.
+- **Gateway access token.** `{{LIBRECHAT_OPENID_ACCESS_TOKEN}}` comes from `user.federatedTokens`, set at login. Whether it is still available on later chat requests without token reuse has to be confirmed end to end.
+- **OBO token cache.** `OPENID_EXCHANGED_TOKENS` is keyed by `sub` alone (Entra OBO only). Two tenants could share a `sub`; it needs `scopedCacheKey` before OBO is used in host mode.
+- **End-to-end test.** Everything above is unit-tested with a mocked provider; a real login against the Godar provider has not been run.

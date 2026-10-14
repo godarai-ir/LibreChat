@@ -28,7 +28,7 @@ type PassportMiddleware = (
 
 type PassportLike = {
   authenticate: (
-    strategy: 'openid',
+    strategy: string,
     options: {
       failureMessage: true;
       session: false;
@@ -60,6 +60,8 @@ export type LogOpenIDCallbackFailureOptions = {
 export type OpenIDCallbackAuthenticatorOptions = AuthFailureRedirectOptions & {
   logger: OAuthCallbackLogger;
   passport: PassportLike;
+  /** Passport strategy to run. A function picks it per request (one strategy per tenant). */
+  strategyName?: string | ((req: OpenIDCallbackRequest) => string);
 };
 
 export function redirectToAuthFailure(
@@ -97,6 +99,7 @@ export function createOpenIDCallbackAuthenticator({
   logger,
   clientDomain,
   authFailedError,
+  strategyName = 'openid',
 }: OpenIDCallbackAuthenticatorOptions): (
   req: OpenIDCallbackRequest,
   res: Response,
@@ -104,7 +107,7 @@ export function createOpenIDCallbackAuthenticator({
 ) => unknown {
   return (req: OpenIDCallbackRequest, res: Response, next: NextFunction): unknown => {
     return passport.authenticate(
-      'openid',
+      typeof strategyName === 'function' ? strategyName(req) : strategyName,
       {
         failureMessage: true,
         session: false,

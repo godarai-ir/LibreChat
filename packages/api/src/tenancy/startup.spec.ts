@@ -6,6 +6,7 @@ const validEnv = {
   TENANT_HOST_BASE_DOMAIN: 'chat.example.com',
   TENANT_ISOLATION_STRICT: 'true',
   USE_REDIS: 'true',
+  OPENID_SESSION_SECRET: 'session-secret',
 };
 
 describe('assertHostTenancyEnv', () => {

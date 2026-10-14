@@ -2,6 +2,7 @@ import {
   enforceHostTenancy,
   DEFAULT_RESERVED_SLUGS,
   HostTenancyConfigError,
+  isHostTenancyEnabled,
   resolveHostTenancyConfig,
   validateHostTenancyEnv,
   validateHostTenancyAppConfig,
@@ -13,10 +14,19 @@ const validEnv = {
   TENANT_OIDC_ISSUER_TEMPLATE: 'https://{slug}.example.com',
   TENANT_ISOLATION_STRICT: 'true',
   USE_REDIS: 'true',
+  OPENID_SESSION_SECRET: 'session-secret',
 };
 
 const problemsFor = (env: Record<string, string | undefined>): string[] =>
   validateHostTenancyEnv(resolveHostTenancyConfig(env), env);
+
+describe('isHostTenancyEnabled', () => {
+  it('is true only for host mode and never throws on a bad value', () => {
+    expect(isHostTenancyEnabled({ MULTI_TENANT_MODE: ' Host ' })).toBe(true);
+    expect(isHostTenancyEnabled({ MULTI_TENANT_MODE: 'hots' })).toBe(false);
+    expect(isHostTenancyEnabled({})).toBe(false);
+  });
+});
 
 describe('resolveHostTenancyConfig', () => {
   it.each([undefined, '', '  ', 'off', 'OFF'])('is disabled for %p', (mode) => {
@@ -133,6 +143,30 @@ describe('validateHostTenancyEnv', () => {
     });
     expect(both).toEqual([expect.stringContaining('DOMAIN_CLIENT and DOMAIN_SERVER')]);
     expect(problemsFor({ ...validEnv, DOMAIN_CLIENT: '  ' })).toEqual([]);
+  });
+
+  it('requires the session secret that signs every tenant sign-in', () => {
+    expect(problemsFor({ ...validEnv, OPENID_SESSION_SECRET: undefined })).toEqual([
+      expect.stringContaining('OPENID_SESSION_SECRET'),
+    ]);
+    expect(problemsFor({ ...validEnv, OPENID_SESSION_SECRET: '  ' })).toHaveLength(1);
+  });
+
+  it.each(['OPENID_ISSUER', 'OPENID_CLIENT_ID', 'OPENID_CLIENT_SECRET'])(
+    'refuses a global %s, which would shadow the tenant registry',
+    (name) => {
+      const problems = problemsFor({ ...validEnv, [name]: 'x' });
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toContain(name);
+      expect(problems[0]).toContain('tenant registry');
+    },
+  );
+
+  it('refuses OpenID token reuse until it is tenant-aware', () => {
+    expect(problemsFor({ ...validEnv, OPENID_REUSE_TOKENS: 'true' })).toEqual([
+      expect.stringContaining('OPENID_REUSE_TOKENS'),
+    ]);
+    expect(problemsFor({ ...validEnv, OPENID_REUSE_TOKENS: 'false' })).toEqual([]);
   });
 
   it('refuses an admin panel origin, which every tenant would otherwise trust', () => {

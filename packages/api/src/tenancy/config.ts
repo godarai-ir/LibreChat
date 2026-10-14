@@ -77,6 +77,11 @@ export interface HostTenancyAppConfig {
 
 type Env = Readonly<Record<string, string | undefined>>;
 
+/** True when `MULTI_TENANT_MODE=host`. Never throws; startup validation reports a bad value. */
+export function isHostTenancyEnabled(env: Env = process.env): boolean {
+  return env.MULTI_TENANT_MODE?.trim().toLowerCase() === 'host';
+}
+
 const isTrue = (value: string | undefined): boolean => value?.trim().toLowerCase() === 'true';
 
 const clean = (value: string | undefined): string => value?.trim() ?? '';
@@ -223,6 +228,24 @@ export function validateHostTenancyEnv(
     problems.push(
       `${fixedOrigins.join(' and ')} must be unset: each request's origin comes from its Host, ` +
         'and one fixed origin would put links to the wrong tenant in redirects and emails',
+    );
+  }
+  if (clean(env.OPENID_SESSION_SECRET) === '') {
+    problems.push(
+      'OPENID_SESSION_SECRET is required: it signs the sign-in session of every tenant',
+    );
+  }
+  const globalOpenId = ['OPENID_ISSUER', 'OPENID_CLIENT_ID', 'OPENID_CLIENT_SECRET'].filter(
+    (name) => clean(env[name]) !== '',
+  );
+  if (globalOpenId.length > 0) {
+    problems.push(
+      `${globalOpenId.join(', ')} must be unset: each tenant's issuer and client come from the tenant registry`,
+    );
+  }
+  if (isTrue(env.OPENID_REUSE_TOKENS)) {
+    problems.push(
+      'OPENID_REUSE_TOKENS is not supported in host mode yet: bearer tokens would need a per-tenant issuer and JWKS',
     );
   }
   if (clean(env.ADMIN_PANEL_URL) !== '') {

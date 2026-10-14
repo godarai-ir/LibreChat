@@ -24,6 +24,7 @@ const {
   resolveCodeEnvironmentTransitionVersion,
   loadConversationListLimits,
   resolvePullRequestCapabilities,
+  isHostTenancyEnabled,
   getServerOrigin,
 } = require('@librechat/api');
 const {
@@ -73,10 +74,11 @@ function isBirthday() {
  */
 function buildPreLoginPayload() {
   const isOpenIdEnabled =
-    !!process.env.OPENID_CLIENT_ID &&
-    (isEnabled(process.env.OPENID_USE_PKCE) || !!process.env.OPENID_CLIENT_SECRET?.trim()) &&
-    !!process.env.OPENID_ISSUER &&
-    !!process.env.OPENID_SESSION_SECRET;
+    isHostTenancyEnabled() ||
+    (!!process.env.OPENID_CLIENT_ID &&
+      (isEnabled(process.env.OPENID_USE_PKCE) || !!process.env.OPENID_CLIENT_SECRET?.trim()) &&
+      !!process.env.OPENID_ISSUER &&
+      !!process.env.OPENID_SESSION_SECRET);
 
   const isSamlEnabled =
     !!process.env.SAML_ENTRY_POINT &&

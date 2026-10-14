@@ -231,6 +231,32 @@ describe('LogoutController', () => {
     });
   });
 
+  describe('end-session redirect in host mode', () => {
+    it('still builds the redirect when no global OPENID_ISSUER is set', async () => {
+      delete process.env.OPENID_ISSUER;
+      const req = buildReq({ tenantOrigin: 'https://acme.chat.example.com' });
+      const res = buildRes();
+
+      await logoutController(req, res);
+
+      const body = res.send.mock.calls[0][0];
+      expect(body.redirect).toBeDefined();
+      expect(new URL(body.redirect).searchParams.get('post_logout_redirect_uri')).toBe(
+        'https://acme.chat.example.com/login',
+      );
+    });
+
+    it('does not redirect without an issuer outside host mode', async () => {
+      delete process.env.OPENID_ISSUER;
+      const req = buildReq();
+      const res = buildRes();
+
+      await logoutController(req, res);
+
+      expect(res.send.mock.calls[0][0].redirect).toBeUndefined();
+    });
+  });
+
   describe('OpenID config not available', () => {
     it('warns and returns no redirect when getOpenIdConfig throws', async () => {
       mockGetOpenIdConfig.mockImplementation(() => {

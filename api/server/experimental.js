@@ -43,6 +43,7 @@ const {
   assertHostTenancyEnv,
   assertHostTenancyAppConfig,
   createHostTenancyRuntime,
+  createTenantOpenIdMiddleware,
   resolveHostTenancyConfig,
   decryptV3,
   requestContextMiddleware,
@@ -75,7 +76,9 @@ const {
   initializeScheduleErasureSweep,
 } = require('./services/Schedules');
 const { configureSubagentTaskRouting } = require('./services/Endpoints/agents/subagentThreadStore');
-const { jwtLogin, ldapLogin, passportLogin } = require('~/strategies');
+const { jwtLogin, ldapLogin, passportLogin, ensureTenantOpenId } = require('~/strategies');
+const { ErrorTypes } = require('librechat-data-provider');
+const { redirectOAuthFailure } = require('~/server/middleware/oauthNavigation');
 const { updateInterfacePermissions: updateInterfacePerms } = require('@librechat/api');
 const {
   getRoleByName,
@@ -590,8 +593,22 @@ if (cluster.isMaster) {
       findBySlug: getTenantBySlug,
       decryptSecret: decryptV3,
     });
+    /* Per-tenant OpenID: prepare the tenant's client before the sign-in routes; elsewhere in the background. */
+    const passThrough = (_req, _res, next) => next();
+    let openIdForOAuth = passThrough;
+    let openIdForAuthApi = passThrough;
     if (hostTenancy) {
+      const openIdDeps = { registry: hostTenancy.registry, ensure: ensureTenantOpenId };
       app.use(hostTenancy.middleware);
+      app.use(createTenantOpenIdMiddleware(openIdDeps, { blocking: false }));
+      openIdForOAuth = createTenantOpenIdMiddleware(
+        {
+          ...openIdDeps,
+          onFailure: (_req, res) => redirectOAuthFailure(res, ErrorTypes.AUTH_FAILED),
+        },
+        { blocking: true },
+      );
+      openIdForAuthApi = createTenantOpenIdMiddleware(openIdDeps, { blocking: true });
     }
     app.use(noIndex);
     app.use(express.json({ limit: '3mb' }));
@@ -648,8 +665,8 @@ if (cluster.isMaster) {
     app.use(capabilityContextMiddleware);
 
     /** Routes */
-    app.use('/oauth', preAuthTenantMiddleware, routes.oauth);
-    app.use('/api/auth', preAuthTenantMiddleware, routes.auth);
+    app.use('/oauth', preAuthTenantMiddleware, openIdForOAuth, routes.oauth);
+    app.use('/api/auth', preAuthTenantMiddleware, openIdForAuthApi, routes.auth);
     app.use('/api/insights', routes.insights);
     app.use('/api/admin', routes.adminAuth);
     app.use('/api/admin/skills', routes.adminSkills);
