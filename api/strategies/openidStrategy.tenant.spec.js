@@ -25,6 +25,7 @@ jest.mock('openid-client', () => ({
   discovery: jest.fn(),
   fetchUserInfo: jest.fn().mockResolvedValue({}),
   customFetch: Symbol('customFetch'),
+  allowInsecureRequests: jest.fn(),
 }));
 
 jest.mock('openid-client/passport', () => {
@@ -108,6 +109,16 @@ describe('per-tenant OpenID (host multi-tenancy)', () => {
 
     expect(client.discovery).toHaveBeenCalledTimes(1);
     expect(passport.use).toHaveBeenCalledTimes(1);
+  });
+
+  it('allows insecure requests only for an http issuer', async () => {
+    await ensureTenantOpenId(tenant('acme'));
+    await ensureTenantOpenId(tenant('local', { issuer: 'http://local.localhost:4000' }));
+
+    const httpsOptions = client.discovery.mock.calls[0][4];
+    const httpOptions = client.discovery.mock.calls[1][4];
+    expect(httpsOptions.execute).toBeUndefined();
+    expect(httpOptions.execute).toEqual([client.allowInsecureRequests]);
   });
 
   it('rebuilds the client and strategy when the client secret is rotated', async () => {
