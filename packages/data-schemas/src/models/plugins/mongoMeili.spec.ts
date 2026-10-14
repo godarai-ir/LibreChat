@@ -300,6 +300,29 @@ describe('Meilisearch Mongoose plugin', () => {
     });
   });
 
+  describe('the background index sync under strict tenant isolation', () => {
+    afterEach(() => {
+      delete process.env.TENANT_ISOLATION_STRICT;
+      _resetStrictCache();
+    });
+
+    test('is refused without a tenant context', async () => {
+      process.env.TENANT_ISOLATION_STRICT = 'true';
+      _resetStrictCache();
+      const Conversation = createConversationModel(mongoose) as unknown as SchemaWithMeiliMethods;
+
+      await expect(Conversation.syncWithMeili()).rejects.toThrow(/strict mode/);
+    });
+
+    test('runs in a deliberate system context, which is how the server must start it', async () => {
+      process.env.TENANT_ISOLATION_STRICT = 'true';
+      _resetStrictCache();
+      const Conversation = createConversationModel(mongoose) as unknown as SchemaWithMeiliMethods;
+
+      await expect(runAsSystem(() => Conversation.syncWithMeili())).resolves.toBeUndefined();
+    });
+  });
+
   describe('withTenantFilter', () => {
     test('quotes the tenant and escapes characters that could end the quote', () => {
       expect(withTenantFilter(undefined, 'tenant-a')).toBe('tenantId = "tenant-a"');

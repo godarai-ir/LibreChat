@@ -300,3 +300,20 @@ Reviewed and left as they are, with the reason:
 | Stream/job stores                | keyed by a random stream id with an owner check                                                |
 | `BAN` (Mongo-backed)             | keyed by user id or IP; an abusive address stays blocked on every tenant, which is intended    |
 | `ENCODED_DOMAINS` (Mongo-backed) | a deterministic encoding of a public domain                                                    |
+
+## 14. Background jobs (Phase 11, implemented)
+
+Strict isolation refuses a query without a tenant context, so every job that runs outside a request must pick its context on purpose.
+
+| Job                                        | Context it runs in                                                                    |
+| ------------------------------------------ | ------------------------------------------------------------------------------------- |
+| Search index sync (`indexSync`)            | **Fixed:** started in `runAsSystem`. It read every tenant's rows and failed in strict mode. |
+| Seed, startup checks, code lifecycle       | `runAsSystem` (already)                                                               |
+| Expired-file sweep                         | one request per file, with `user.tenantId` set to the file's tenant                   |
+| Schedules                                  | `runInTenantContext` of the schedule's owner                                          |
+| Agent triggers                             | `runAsPrincipal` of the trigger's owner                                               |
+| Queued turns                               | the tenant stored with the turn                                                       |
+| MCP, stream and flow timers                | keyed by user or random id; no tenant data is read without a context                  |
+| GitHub skill sync                          | platform-level, one shared source. Refused with S3 storage in host mode (see §11).    |
+
+Known limit: links that schedules and triggers produce in the background carry no tenant origin, because there is no request to take it from.

@@ -462,7 +462,8 @@ if (cluster.isMaster) {
     startCodeEnvironmentLifecycleReconciler({ mongoose });
 
     /** Background index sync (non-blocking) */
-    indexSync().catch((err) => {
+    /* A system context: the sync reads every tenant's rows, which strict isolation refuses otherwise. */
+    runAsSystem(() => indexSync()).catch((err) => {
       logger.error(`[Worker ${process.pid}][indexSync] Background sync failed:`, err);
     });
 

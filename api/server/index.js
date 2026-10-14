@@ -209,7 +209,8 @@ const startServer = async () => {
 
   logger.info('Connected to MongoDB');
   startCodeEnvironmentLifecycleReconciler({ mongoose });
-  indexSync().catch((err) => {
+  /* A system context: the sync reads every tenant's rows, which strict isolation refuses otherwise. */
+  runAsSystem(() => indexSync()).catch((err) => {
     logger.error('[indexSync] Background sync failed:', err);
   });
 
