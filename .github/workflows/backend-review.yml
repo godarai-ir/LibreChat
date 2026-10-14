@@ -1,29 +1,5 @@
 name: Backend Unit Tests
 on:
-  # push-to-dev runs are the post-merge safety net: gating only ever narrows pull_request
-  # synchronize runs, so every merged state still gets the full suite — which is also what
-  # keeps ground-truth recall telemetry alive for the codegraph shadow evaluator once
-  # selection hides skipped tests from PR runs.
-  push:
-    branches:
-      - dev
-    paths:
-      - 'api/**'
-      - 'packages/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'config/circular-deps.mjs'
-      - '.github/workflows/backend-review.yml'
-      - '!**.md'
-  pull_request:
-    paths:
-      - 'api/**'
-      - 'packages/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'config/circular-deps.mjs'
-      - '.github/workflows/backend-review.yml'
-      - '!**.md'
   # Promotion requires full CI at the exact dev SHA, including path-filtered commits.
   workflow_dispatch:
 

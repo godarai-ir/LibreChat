@@ -95,6 +95,7 @@ afterEach(() => {
   delete process.env.OPENID_CLIENT_SECRET;
   delete process.env.OPENID_ISSUER;
   delete process.env.OPENID_SESSION_SECRET;
+  delete process.env.MULTI_TENANT_MODE;
   delete process.env.GITHUB_CLIENT_ID;
   delete process.env.GITHUB_CLIENT_SECRET;
   delete process.env.DISCORD_CLIENT_ID;
@@ -317,6 +318,35 @@ describe('GET /api/config', () => {
       expect(response.body.appTitle).toBe('Test App');
       expect(response.body).toHaveProperty('emailLoginEnabled');
       expect(response.body).toHaveProperty('serverDomain');
+    });
+
+    it('advertises OpenID sign-in on a tenant host without any global OpenID settings', async () => {
+      mockGetAppConfig.mockResolvedValue(baseAppConfig);
+      process.env.MULTI_TENANT_MODE = 'host';
+
+      const response = await request(createApp(null)).get('/api/config');
+
+      expect(response.body.openidLoginEnabled).toBe(true);
+    });
+
+    it('does not advertise OpenID without its settings when not in host mode', async () => {
+      mockGetAppConfig.mockResolvedValue(baseAppConfig);
+
+      const response = await request(createApp(null)).get('/api/config');
+
+      expect(response.body.openidLoginEnabled).toBe(false);
+    });
+
+    it('falls back to DOMAIN_SERVER for serverDomain when no tenant origin is active', async () => {
+      mockGetAppConfig.mockResolvedValue(baseAppConfig);
+      process.env.MULTI_TENANT_MODE = 'host';
+      process.env.DOMAIN_SERVER = 'https://fixed.example.com';
+      const app = createApp(null);
+
+      const response = await request(app).get('/api/config');
+
+      /** This harness runs outside any tenant context, so the environment value is reported. */
+      expect(response.body.serverDomain).toBe('https://fixed.example.com');
     });
 
     it('should expose the effective two-factor enforcement policy', async () => {

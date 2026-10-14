@@ -77,7 +77,12 @@ export function createSharedLinkAccessMiddleware(deps: SharedLinkAccessDeps) {
     // below, which runs under the share's own tenant, so this only broadens the
     // lookup, never the authorization.
     let rawShare = viewerTenantId ? await findShare() : await runAsSystem(findShare);
-    if (!rawShare && viewerTenantId) {
+    /**
+     * Host multi-tenancy keeps shares inside their tenant: a link is opened on its owner's host,
+     * so there is no system-wide fallback and another tenant's share answers 404.
+     */
+    const isHostBound = Boolean((req as Request & { tenantId?: string }).tenantId);
+    if (!rawShare && viewerTenantId && !isHostBound) {
       rawShare = await runAsSystem(findShare);
     }
 

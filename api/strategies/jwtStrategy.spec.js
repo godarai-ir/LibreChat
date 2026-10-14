@@ -23,6 +23,8 @@ jest.mock('@librechat/api', () => ({
   AGENT_TRIGGER_SCOPE: 'agent_trigger',
   isTokenRetired: jest.requireActual('@librechat/api').isTokenRetired,
   continueAfterBearerRetirement: jest.requireActual('@librechat/api').continueAfterBearerRetirement,
+  belongsToRequestTenant: jest.requireActual('@librechat/api').belongsToRequestTenant,
+  logTenantMismatch: jest.fn(),
 }));
 
 jest.mock('~/models', () => ({
@@ -99,6 +101,74 @@ describe('jwtStrategy', () => {
     const { user } = await invokeVerify({ id: 'user-2' });
 
     expect(user.idOnTheSource).toBe('entra-oid-123');
+  });
+
+  describe('host multi-tenancy binding', () => {
+    const userOf = (tenantId) => ({
+      _id: { toString: () => 'user-a' },
+      role: SystemRoles.USER,
+      ...(tenantId !== undefined && { tenantId }),
+    });
+
+    it('rejects a token minted for another tenant, even though the lookup spans tenants', async () => {
+      getUserById.mockResolvedValue(userOf('tenant-a'));
+
+      const { user, info } = await invokeVerify(
+        { id: 'user-a' },
+        request({ tenantId: 'tenant-b' }),
+      );
+
+      expect(user).toBe(false);
+      expect(info).toEqual({ message: 'Unauthorized' });
+      expect(updateUser).not.toHaveBeenCalled();
+    });
+
+    it('does not say which tenant the user belongs to', async () => {
+      getUserById.mockResolvedValue(userOf('tenant-secret'));
+
+      const { info } = await invokeVerify({ id: 'user-a' }, request({ tenantId: 'tenant-b' }));
+
+      expect(JSON.stringify(info)).not.toContain('tenant-secret');
+    });
+
+    it('accepts a user of the host tenant', async () => {
+      getUserById.mockResolvedValue(userOf('tenant-b'));
+
+      const { user } = await invokeVerify({ id: 'user-a' }, request({ tenantId: 'tenant-b' }));
+
+      expect(user).toMatchObject({ id: 'user-a' });
+    });
+
+    it('rejects an account that predates multi-tenancy instead of letting it in', async () => {
+      getUserById.mockResolvedValue(userOf(undefined));
+
+      const { user } = await invokeVerify({ id: 'user-a' }, request({ tenantId: 'tenant-b' }));
+
+      expect(user).toBe(false);
+    });
+
+    it('is a no-op without a host tenant, so single-tenant behavior is unchanged', async () => {
+      getUserById.mockResolvedValue(userOf('tenant-a'));
+
+      const { user } = await invokeVerify({ id: 'user-a' });
+
+      expect(user).toMatchObject({ id: 'user-a' });
+    });
+
+    it('rejects before it reports anything about the account state', async () => {
+      getUserById.mockResolvedValue({
+        ...userOf('tenant-a'),
+        agentTriggerDeletionStartedAt: new Date(),
+      });
+
+      const { user, info } = await invokeVerify(
+        { id: 'user-a' },
+        request({ tenantId: 'tenant-b' }),
+      );
+
+      expect(user).toBe(false);
+      expect(info.code).toBeUndefined();
+    });
   });
 
   it('returns false when no user is found', async () => {

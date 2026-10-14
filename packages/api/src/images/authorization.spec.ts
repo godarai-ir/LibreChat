@@ -46,10 +46,15 @@ function createDeps(): ImageAuthorizationDeps {
   } as unknown as ImageAuthorizationDeps;
 }
 
-function createRequest(path: string, cookie?: string): Request {
+function createRequest(
+  path: string,
+  cookie?: string,
+  extra: Record<string, unknown> = {},
+): Request {
   return {
     originalUrl: path,
     headers: cookie ? { cookie } : {},
+    ...extra,
   } as unknown as Request;
 }
 
@@ -101,6 +106,124 @@ describe('createImageAuthorizationMiddleware', () => {
 
     expect(next).toHaveBeenCalledTimes(1);
     expect(deps.findSession).toHaveBeenCalledWith({ userId: VIEWER_ID, refreshToken: token });
+  });
+
+  describe('host multi-tenancy binding', () => {
+    it('serves an image only on its owner tenant host', async () => {
+      const token = signUser(OWNER_ID);
+      (deps.getUserById as jest.Mock).mockResolvedValue({ role: 'USER', tenantId: 'tenant-a' });
+      const middleware = createImageAuthorizationMiddleware({}, deps);
+
+      await middleware(
+        createRequest(`/images/${OWNER_ID}/photo.png`, `refreshToken=${token}`, {
+          tenantId: 'tenant-b',
+        }),
+        response,
+        next,
+      );
+
+      expect(response.status).toHaveBeenCalledWith(404);
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it('serves the owner on the owner tenant host', async () => {
+      const token = signUser(OWNER_ID);
+      (deps.getUserById as jest.Mock).mockResolvedValue({ role: 'USER', tenantId: 'tenant-a' });
+      const middleware = createImageAuthorizationMiddleware({}, deps);
+
+      await middleware(
+        createRequest(`/images/${OWNER_ID}/photo.png`, `refreshToken=${token}`, {
+          tenantId: 'tenant-a',
+        }),
+        response,
+        next,
+      );
+
+      expect(next).toHaveBeenCalledTimes(1);
+      expect(response.status).not.toHaveBeenCalled();
+    });
+
+    it('answers a missing owner and another tenant owner identically', async () => {
+      const middleware = createImageAuthorizationMiddleware({}, deps);
+      const otherTenant = createResponse();
+      const missing = createResponse();
+
+      (deps.getUserById as jest.Mock).mockResolvedValueOnce({ role: 'USER', tenantId: 'tenant-a' });
+      await middleware(
+        createRequest(`/images/${OWNER_ID}/photo.png`, undefined, { tenantId: 'tenant-b' }),
+        otherTenant,
+        next,
+      );
+      (deps.getUserById as jest.Mock).mockResolvedValueOnce(null);
+      await middleware(
+        createRequest(`/images/${OWNER_ID}/photo.png`, undefined, { tenantId: 'tenant-b' }),
+        missing,
+        next,
+      );
+
+      expect(otherTenant.status).toHaveBeenCalledWith(404);
+      expect(missing.status).toHaveBeenCalledWith(404);
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it('refuses another tenant image even when image links are not secured', async () => {
+      const middleware = createImageAuthorizationMiddleware(
+        { secureImageLinks: false },
+        {
+          ...deps,
+          getImageConfig: jest
+            .fn()
+            .mockResolvedValue({ secureImageLinks: false, assistantEndpoints: [] }),
+        },
+      );
+      (deps.getUserById as jest.Mock).mockResolvedValue({ role: 'USER', tenantId: 'tenant-a' });
+
+      await middleware(
+        createRequest(`/images/${OWNER_ID}/photo.png`, undefined, { tenantId: 'tenant-b' }),
+        response,
+        next,
+      );
+
+      expect(response.status).toHaveBeenCalledWith(404);
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Defense in depth: the owner check above and the existing same-tenant rule for avatars
+     * already cover this case, so this pins the outcome rather than a single line.
+     */
+    it('denies a viewer from another tenant', async () => {
+      const token = signUser(VIEWER_ID);
+      (deps.getUserById as jest.Mock)
+        .mockResolvedValueOnce({ role: 'USER', tenantId: 'tenant-b' }) // owner, on the host tenant
+        .mockResolvedValueOnce({ role: 'USER', tenantId: 'tenant-a' }); // viewer, another tenant
+      const middleware = createImageAuthorizationMiddleware({}, deps);
+
+      await middleware(
+        createRequest(`/images/${OWNER_ID}/photo.png`, `refreshToken=${token}`, {
+          tenantId: 'tenant-b',
+        }),
+        response,
+        next,
+      );
+
+      expect(next).not.toHaveBeenCalled();
+      expect(response.status).toHaveBeenCalledWith(403);
+    });
+
+    it('is a no-op without a host tenant', async () => {
+      const token = signUser(OWNER_ID);
+      (deps.getUserById as jest.Mock).mockResolvedValue({ role: 'USER', tenantId: 'tenant-a' });
+      const middleware = createImageAuthorizationMiddleware({}, deps);
+
+      await middleware(
+        createRequest(`/images/${OWNER_ID}/photo.png`, `refreshToken=${token}`),
+        response,
+        next,
+      );
+
+      expect(next).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('required enrollment and credential retirement', () => {

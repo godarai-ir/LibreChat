@@ -87,6 +87,62 @@ describe('S3 CRUD', () => {
       expect(key).toBe('images/user123/file.png');
     });
 
+    describe('in host multi-tenancy', () => {
+      const original = process.env.MULTI_TENANT_MODE;
+      beforeEach(() => {
+        process.env.MULTI_TENANT_MODE = 'host';
+      });
+      afterEach(() => {
+        if (original === undefined) {
+          delete process.env.MULTI_TENANT_MODE;
+        } else {
+          process.env.MULTI_TENANT_MODE = original;
+        }
+      });
+
+      it('puts the tenant in every key', async () => {
+        const { getS3Key } = await import('../crud');
+        expect(getS3Key('images', 'user123', 'file.png', 'tenantA')).toBe(
+          't/tenantA/images/user123/file.png',
+        );
+        expect(
+          getS3Key({
+            basePath: 'avatars',
+            userId: 'user123',
+            fileName: 'a.png',
+            tenantId: 'tenantA',
+          }),
+        ).toBe('t/tenantA/avatars/user123/a.png');
+      });
+
+      it.each([undefined, null, ''])(
+        'refuses a key without a tenant instead of using the shared legacy layout (%p)',
+        async (tenantId) => {
+          const { getS3Key } = await import('../crud');
+          expect(() => getS3Key('images', 'user123', 'file.png', tenantId)).toThrow(
+            /tenantId is required/,
+          );
+          expect(() =>
+            getS3Key({ basePath: 'images', userId: 'u', fileName: 'f.png', tenantId }),
+          ).toThrow(/tenantId is required/);
+        },
+      );
+
+      it('refuses an unsafe tenant id', async () => {
+        const { getS3Key } = await import('../crud');
+        expect(() => getS3Key('images', 'user123', 'file.png', '../other')).toThrow();
+        expect(() => getS3Key('images', 'user123', 'file.png', 'a/b')).toThrow();
+      });
+
+      it('lets the tenant-less save and read paths fail before anything is sent', async () => {
+        const { saveBufferToS3 } = await import('../crud');
+        await expect(
+          saveBufferToS3({ userId: 'user123', buffer: Buffer.from('x'), fileName: 'f.png' }),
+        ).rejects.toThrow(/tenantId is required/);
+        expect(s3Mock.commandCalls(PutObjectCommand)).toHaveLength(0);
+      });
+    });
+
     it('keeps the legacy positional overload outside inline cookie namespaces', async () => {
       const { getS3Key } = await import('../crud');
       expect(getS3Key('images', 'user123', 'file.png', 'tenantA')).toBe(

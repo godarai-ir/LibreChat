@@ -12,6 +12,8 @@ const {
   maybeRefreshCloudFrontAuthCookiesMiddleware,
   recordRumProxyRequest,
   getValidOpenIdReuseUserId,
+  logTenantMismatch,
+  belongsToRequestTenant,
   generateTwoFactorSetupToken,
   isTwoFactorEnrollmentRequired,
 } = require('@librechat/api');
@@ -196,6 +198,10 @@ const requireJwtAuth = (req, res, next) => {
         }
         logAuthenticationFailure({ strategy, info, status: 401, err });
         return res.status(401).json({ message: 'Unauthorized' });
+      }
+      if (!belongsToRequestTenant(req, user)) {
+        logTenantMismatch('requireJwtAuth', req, user);
+        return res.status(403).json({ message: 'Forbidden', code: 'TENANT_MISMATCH' });
       }
       req.user = user;
       req.authStrategy = strategy;

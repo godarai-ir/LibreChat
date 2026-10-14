@@ -8,6 +8,7 @@ const {
   checkEmailConfig,
   createEmailChangeService,
   createEmailChangeDeps,
+  getClientOrigin,
   resolveEmailChangeSettings,
   GenerationJobManager,
   getAppConfigOptionsFromUser,
@@ -65,7 +66,9 @@ const emailChangeService = createEmailChangeService(
       comparePassword(user, password, { compare: bcrypt.compare }),
     sendEmail,
     getAppConfig,
-    clientDomain: process.env.DOMAIN_CLIENT ?? 'http://localhost:3080',
+    get clientDomain() {
+      return getClientOrigin() ?? 'http://localhost:3080';
+    },
     appName: process.env.APP_TITLE || 'LibreChat',
   }),
 );

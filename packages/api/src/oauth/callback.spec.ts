@@ -43,9 +43,10 @@ function createAuthenticator(
     res: Response,
     next: NextFunction,
   ) => void,
+  extraOptions: Partial<OpenIDCallbackAuthenticatorOptions> = {},
 ) {
   const passport = {
-    authenticate: jest.fn((_strategy: 'openid', _options, callback: CallbackFn) => {
+    authenticate: jest.fn((_strategy: string, _options, callback: CallbackFn) => {
       return (req: TestRequest, res: Response, next: NextFunction) => {
         callbackHandler(callback, req, res, next);
       };
@@ -56,6 +57,7 @@ function createAuthenticator(
     logger,
     clientDomain: 'http://client.test',
     authFailedError: 'auth_failed',
+    ...extraOptions,
   };
 
   return {
@@ -80,6 +82,46 @@ describe('OpenID OAuth callback helpers', () => {
     expect(res.redirect).toHaveBeenCalledWith(
       'http://client.test/login?redirect=false&error=auth_failed',
     );
+  });
+
+  it('redirects a failure to the tenant origin of the request in host mode', () => {
+    const res = createResponse();
+    (res as unknown as { req: unknown }).req = { tenantOrigin: 'https://acme.chat.example.com' };
+
+    redirectToAuthFailure(res, {
+      clientDomain: 'http://client.test',
+      authFailedError: 'auth_failed',
+    });
+
+    expect(res.redirect).toHaveBeenCalledWith(
+      'https://acme.chat.example.com/login?redirect=false&error=auth_failed',
+    );
+  });
+
+  it('runs the openid strategy by default', () => {
+    const { middleware, passport } = createAuthenticator(() => undefined);
+
+    middleware(createRequest(), createResponse(), createNext());
+
+    expect(passport.authenticate).toHaveBeenCalledWith(
+      'openid',
+      expect.anything(),
+      expect.any(Function),
+    );
+  });
+
+  it('runs the strategy chosen for the request, one per tenant in host mode', () => {
+    const { middleware, passport } = createAuthenticator(() => undefined, {
+      strategyName: (req) => `openid:${(req as { tenantId?: string }).tenantId}`,
+    });
+
+    middleware(createRequest({ tenantId: 'tenant-acme' } as never), createResponse(), createNext());
+    middleware(createRequest({ tenantId: 'tenant-beta' } as never), createResponse(), createNext());
+
+    expect(passport.authenticate.mock.calls.map((call) => call[0])).toEqual([
+      'openid:tenant-acme',
+      'openid:tenant-beta',
+    ]);
   });
 
   it('logs OpenID callback failures with structured OAuth context', () => {

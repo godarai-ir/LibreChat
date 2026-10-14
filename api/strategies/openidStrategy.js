@@ -3,7 +3,7 @@ const { get } = require('lodash');
 const passport = require('passport');
 const client = require('openid-client');
 const jwtDecode = require('jsonwebtoken/decode');
-const { hashToken, logger, tenantStorage } = require('@librechat/data-schemas');
+const { hashToken, logger, tenantStorage, getTenantId } = require('@librechat/data-schemas');
 const { Strategy: OpenIDStrategy } = require('openid-client/passport');
 const { CacheKeys, ErrorTypes, SystemRoles } = require('librechat-data-provider');
 const {
@@ -24,6 +24,10 @@ const {
   resolveAppConfigForUser,
   getOpenIdProxyDispatcher,
   getOpenIdRoleSyncOptions,
+  getServerOrigin,
+  checkTenantClaims,
+  createTenantOpenIdClients,
+  tenantOpenIdStrategyName,
   getOpenIdRolesForOpenIdSync,
   getLibreChatRolesForOpenIdSync,
   DEFAULT_OAUTH_TOKEN_TTL_SECONDS,
@@ -111,6 +115,16 @@ This violates RFC 7235 and may cause issues with strict OAuth clients. Removing 
 /** @typedef {Configuration | null}  */
 let openidConfig = null;
 
+/**
+ * Host multi-tenancy: one discovered client per tenant instead of the single global one. Created
+ * on first use so single-tenant deployments never touch it.
+ * @type {ReturnType<typeof createTenantOpenIdClients> | null}
+ */
+let tenantClients = null;
+
+/** Per-tenant passport strategies and the settings fingerprint each was built from. */
+const tenantStrategies = new Map();
+
 const getOpenIdAuthorizationAudience = () =>
   (process.env.OPENID_AUDIENCE ?? '')
     .split(',')
@@ -127,12 +141,16 @@ const getOpenIdAuthorizationAudience = () =>
  */
 class CustomOpenIDStrategy extends OpenIDStrategy {
   currentUrl(req) {
-    const hostAndProtocol = process.env.DOMAIN_SERVER;
+    const hostAndProtocol = getServerOrigin(req);
     return new URL(`${hostAndProtocol}${req.originalUrl ?? req.url}`);
   }
 
   authorizationRequestParams(req, options) {
     const params = super.authorizationRequestParams(req, options);
+    /** The callback is on the tenant's own host, so it is built per request in host mode. */
+    if (req.tenantOrigin && !params.has('redirect_uri')) {
+      params.set('redirect_uri', `${req.tenantOrigin}${process.env.OPENID_CALLBACK_URL}`);
+    }
     if (options?.state && !params.has('state')) {
       params.set('state', options.state);
     }
@@ -343,7 +361,10 @@ function convertToUsername(input, defaultValue = '') {
  * @see https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-on-behalf-of-flow
  */
 async function exchangeTokenForOverage(accessToken, sub) {
-  if (!openidConfig) {
+  let config;
+  try {
+    config = getOpenIdConfig();
+  } catch {
     throw new Error('[openidStrategy] OpenID config not initialized; cannot exchange OBO token');
   }
 
@@ -357,7 +378,7 @@ async function exchangeTokenForOverage(accessToken, sub) {
   }
 
   const grantResponse = await client.genericGrantRequest(
-    openidConfig,
+    config,
     'urn:ietf:params:oauth:grant-type:jwt-bearer',
     {
       scope: 'https://graph.microsoft.com/User.Read',
@@ -573,12 +594,18 @@ async function processOpenIDAuth(tokenset, existingUsersOnly = false) {
   };
 
   if (tokenset.access_token) {
-    const providerUserinfo = await getUserInfo(openidConfig, tokenset.access_token, claims.sub);
+    const providerUserinfo = await getUserInfo(
+      getOpenIdConfig(),
+      tokenset.access_token,
+      claims.sub,
+    );
     Object.assign(userinfo, providerUserinfo);
   }
 
+  assertHostTenantClaims(userinfo);
+
   const email = getOpenIdEmail(userinfo);
-  const openidIssuer = getOpenIdIssuer(claims, openidConfig);
+  const openidIssuer = getOpenIdIssuer(claims, getOpenIdConfig());
 
   const baseConfig = await getAppConfig({ baseOnly: true });
   if (!isEmailDomainAllowed(email, baseConfig?.registration?.allowedDomains)) {
@@ -797,7 +824,7 @@ async function processOpenIDAuth(tokenset, existingUsersOnly = false) {
     const imageBuffer = await resizeIdentityProviderAvatar(
       imageUrl,
       userId,
-      openidConfig,
+      getOpenIdConfig(),
       tokenset.access_token,
       userinfo.sub,
     );
@@ -970,14 +997,122 @@ async function setupOpenId() {
  * @returns {Configuration}
  */
 function getOpenIdConfig() {
+  /** Host mode: the client of the tenant this request belongs to, ensured before the route ran. */
+  const tenantConfig = tenantClients?.current();
+  if (tenantConfig) {
+    return tenantConfig;
+  }
   if (!openidConfig) {
     throw new Error('OpenID client is not initialized. Please call setupOpenId first.');
   }
   return openidConfig;
 }
 
+/**
+ * Discovers one tenant's provider. Mirrors `setupOpenId` for a single global client, with the
+ * issuer, client id and secret taken from the tenant registry instead of the environment.
+ * @param {{ issuer: string, clientId: string, clientSecret: string }} settings
+ * @returns {Promise<Configuration>}
+ */
+function discoverTenantClient({ issuer, clientId, clientSecret }) {
+  /** @type {ClientMetadata} */
+  const clientMetadata = {
+    client_id: clientId,
+    client_secret: clientSecret,
+    response_types: ['code'],
+    grant_types: ['authorization_code'],
+  };
+  if (isEnabled(process.env.OPENID_GENERATE_NONCE)) {
+    clientMetadata.token_endpoint_auth_method = 'client_secret_post';
+  }
+  const issuerUrl = new URL(issuer);
+  return client.discovery(issuerUrl, clientId, clientMetadata, undefined, {
+    [client.customFetch]: customFetch,
+    /* The registry only lets an http issuer through on a .localhost host in development mode. */
+    ...(issuerUrl.protocol === 'http:' && { execute: [client.allowInsecureRequests] }),
+  });
+}
+
+/** `TENANT_OIDC_REQUIRE_TID=false` accepts a provider that does not issue a `tid` claim. */
+const requireTidClaim = () => process.env.TENANT_OIDC_REQUIRE_TID?.trim().toLowerCase() !== 'false';
+
+/**
+ * Host mode: the tenant a token was issued for must be the tenant of the host it is used on.
+ * The issuer already differs per tenant; this checks that the registry and the provider agree.
+ * No-op outside host mode (no tenant strategy is registered for the current tenant).
+ * @param {Record<string, unknown>} userinfo
+ */
+function assertHostTenantClaims(userinfo) {
+  /** Single-tenant mode registers no tenant strategy, so it never reads the tenant context here. */
+  if (tenantStrategies.size === 0) {
+    return;
+  }
+  const tenantId = getTenantId();
+  const registered = tenantId ? tenantStrategies.get(tenantId) : undefined;
+  if (!registered) {
+    return;
+  }
+  const check = checkTenantClaims(
+    userinfo,
+    { tenantId, slug: registered.slug },
+    { requireTid: requireTidClaim() },
+  );
+  if (!check.ok) {
+    logger.warn('[openidStrategy] Token rejected: it does not belong to this tenant', {
+      tenantId,
+      reason: check.reason,
+    });
+    throw new Error(ErrorTypes.AUTH_FAILED);
+  }
+}
+
+/**
+ * Host mode: makes sure the tenant has a discovered client and a registered passport strategy,
+ * and rebuilds both when the tenant's settings (for example the client secret) changed.
+ * @param {{ tenantId: string, slug: string, oidc: { issuer: string, clientId: string, clientSecret: string, scopes: readonly string[] } }} tenant
+ * @returns {Promise<void>}
+ */
+async function ensureTenantOpenId(tenant) {
+  tenantClients ??= createTenantOpenIdClients({ discover: discoverTenantClient });
+
+  const config = await tenantClients.ensure(tenant.tenantId, tenant.oidc);
+  const fingerprint = tenantClients.fingerprintOf(tenant.tenantId);
+  const registered = tenantStrategies.get(tenant.tenantId);
+  if (registered && registered.fingerprint === fingerprint && registered.config === config) {
+    return;
+  }
+
+  const strategy = new CustomOpenIDStrategy(
+    {
+      config,
+      scope: tenant.oidc.scopes.join(' '),
+      clockTolerance: process.env.OPENID_CLOCK_TOLERANCE || 300,
+      usePKCE: isEnabled(process.env.OPENID_USE_PKCE),
+    },
+    createOpenIDCallback(),
+  );
+  passport.use(tenantOpenIdStrategyName(tenant.tenantId), strategy);
+  tenantStrategies.set(tenant.tenantId, { fingerprint, config, slug: tenant.slug });
+}
+
+/** Drops a tenant's (or every tenant's) client and strategy, for example after a registry change. */
+function forgetTenantOpenId(tenantId) {
+  tenantClients?.forget(tenantId);
+  if (tenantId == null) {
+    for (const id of tenantStrategies.keys()) {
+      passport.unuse(tenantOpenIdStrategyName(id));
+    }
+    tenantStrategies.clear();
+    return;
+  }
+  passport.unuse(tenantOpenIdStrategyName(tenantId));
+  tenantStrategies.delete(tenantId);
+}
+
 module.exports = {
   setupOpenId,
+  ensureTenantOpenId,
+  forgetTenantOpenId,
   getOpenIdConfig,
   getOpenIdEmail,
   getRoleSource,

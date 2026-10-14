@@ -24,6 +24,8 @@ const {
   resolveCodeEnvironmentTransitionVersion,
   loadConversationListLimits,
   resolvePullRequestCapabilities,
+  isHostTenancyEnabled,
+  getServerOrigin,
 } = require('@librechat/api');
 const {
   DEFAULT_MCP_APP_CSP_LIMITS,
@@ -72,10 +74,11 @@ function isBirthday() {
  */
 function buildPreLoginPayload() {
   const isOpenIdEnabled =
-    !!process.env.OPENID_CLIENT_ID &&
-    (isEnabled(process.env.OPENID_USE_PKCE) || !!process.env.OPENID_CLIENT_SECRET?.trim()) &&
-    !!process.env.OPENID_ISSUER &&
-    !!process.env.OPENID_SESSION_SECRET;
+    isHostTenancyEnabled() ||
+    (!!process.env.OPENID_CLIENT_ID &&
+      (isEnabled(process.env.OPENID_USE_PKCE) || !!process.env.OPENID_CLIENT_SECRET?.trim()) &&
+      !!process.env.OPENID_ISSUER &&
+      !!process.env.OPENID_SESSION_SECRET);
 
   const isSamlEnabled =
     !!process.env.SAML_ENTRY_POINT &&
@@ -105,7 +108,7 @@ function buildPreLoginPayload() {
     samlLoginEnabled: !isOpenIdEnabled && isSamlEnabled,
     samlLabel: process.env.SAML_BUTTON_LABEL,
     samlImageUrl: process.env.SAML_IMAGE_URL,
-    serverDomain: process.env.DOMAIN_SERVER || 'http://localhost:3080',
+    serverDomain: getServerOrigin() || 'http://localhost:3080',
     emailLoginEnabled,
     registrationEnabled: !ldap?.enabled && isEnabled(process.env.ALLOW_REGISTRATION),
     socialLoginEnabled: isEnabled(process.env.ALLOW_SOCIAL_LOGIN),

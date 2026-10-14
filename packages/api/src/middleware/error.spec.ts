@@ -225,6 +225,49 @@ describe('ErrorController', () => {
     });
   });
 
+  describe('OAuth callback authentication failure redirect', () => {
+    const originalClient = process.env.DOMAIN_CLIENT;
+    afterEach(() => {
+      if (originalClient === undefined) {
+        delete process.env.DOMAIN_CLIENT;
+      } else {
+        process.env.DOMAIN_CLIENT = originalClient;
+      }
+    });
+
+    const authFailure = () => Object.assign(new Error('auth_failed'), { code: 'auth_failed' });
+    const callbackReq = (extra: Record<string, unknown> = {}) =>
+      ({ originalUrl: '/oauth/openid/callback?code=x', ...extra }) as unknown as Request;
+    const redirectingRes = () => ({ redirect: jest.fn() }) as unknown as Response;
+
+    it('redirects to DOMAIN_CLIENT in single-tenant mode, as before', () => {
+      process.env.DOMAIN_CLIENT = 'https://single.example.com';
+      const res = redirectingRes();
+
+      ErrorController(authFailure(), callbackReq(), res, mockNext);
+
+      expect(res.redirect).toHaveBeenCalledWith(
+        'https://single.example.com/login?redirect=false&error=auth_failed',
+      );
+    });
+
+    it('redirects to the tenant the request came from in host mode', () => {
+      process.env.DOMAIN_CLIENT = 'https://other-tenant.example.com';
+      const res = redirectingRes();
+
+      ErrorController(
+        authFailure(),
+        callbackReq({ tenantOrigin: 'https://acme.chat.example.com' }),
+        res,
+        mockNext,
+      );
+
+      expect(res.redirect).toHaveBeenCalledWith(
+        'https://acme.chat.example.com/login?redirect=false&error=auth_failed',
+      );
+    });
+  });
+
   describe('OpenIDReauthRequiredError handling', () => {
     it('should map a re-auth error to a 401 carrying the actionable message', () => {
       const error = new OpenIDReauthRequiredError(

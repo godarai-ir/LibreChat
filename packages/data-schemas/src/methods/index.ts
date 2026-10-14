@@ -66,6 +66,7 @@ import {
   type AclEntryMethods,
 } from './aclEntry';
 import { createSystemGrantMethods, type SystemGrantMethods } from './systemGrant';
+import { createTenantMethods, type TenantMethods } from './tenant';
 import {
   createAuditLogMethods,
   AUDIT_SCHEMA_VERSION,
@@ -269,6 +270,7 @@ export type AllMethods = ToolApprovalGrantStorage &
   UserGroupMethods &
   AclEntryMethods &
   SystemGrantMethods &
+  TenantMethods &
   AuditLogMethods &
   ShareMethods &
   AccessRoleMethods &
@@ -509,6 +511,7 @@ export function createMethods(
     ...userGroupMethods,
     ...aclEntryMethods,
     ...systemGrantMethods,
+    ...createTenantMethods(mongoose),
     ...createAuditLogMethods(mongoose),
     ...createShareMethods(mongoose),
     ...createPluginAuthMethods(mongoose),
@@ -579,6 +582,7 @@ export type {
   UserGroupMethods,
   AclEntryMethods,
   SystemGrantMethods,
+  TenantMethods,
   AuditLogMethods,
   ShareMethods,
   AccessRoleMethods,

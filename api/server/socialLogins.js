@@ -5,6 +5,7 @@ const {
   math,
   isEnabled,
   shouldUseSecureCookie,
+  isHostTenancyEnabled,
   registerOpenIdWithRetry,
 } = require('@librechat/api');
 const { logger, DEFAULT_SESSION_EXPIRY } = require('@librechat/data-schemas');
@@ -47,8 +48,7 @@ const getOpenIdSessionExpiry = () => {
  * @param {AppConfig} [appConfig] - Base app config, read for OpenID discovery retry settings.
  * @returns {Promise<void>}
  */
-async function configureOpenId(app, appConfig) {
-  logger.info('Configuring OpenID Connect...');
+function registerOpenIdSession(app) {
   const sessionExpiry = getOpenIdSessionExpiry();
   const sessionOptions = {
     secret: process.env.OPENID_SESSION_SECRET,
@@ -62,6 +62,22 @@ async function configureOpenId(app, appConfig) {
   };
   app.use(session(sessionOptions));
   app.use(passport.session());
+}
+
+/**
+ * Host multi-tenancy: each tenant brings its own provider settings from the registry, so there
+ * is nothing to discover at startup. Only the session that carries the sign-in state is set up;
+ * its cookie has no Domain, so a tenant host never receives another tenant's session.
+ * @param {Express.Application} app
+ */
+function configureHostOpenId(app) {
+  logger.info('Configuring OpenID Connect per tenant...');
+  registerOpenIdSession(app);
+}
+
+async function configureOpenId(app, appConfig) {
+  logger.info('Configuring OpenID Connect...');
+  registerOpenIdSession(app);
 
   await registerOpenIdWithRetry({
     setupOpenId,
@@ -108,7 +124,9 @@ const configureSocialLogins = async (app, appConfig) => {
     passport.use(appleLogin(stateOptions));
     passport.use('appleAdmin', appleAdminLogin());
   }
-  if (
+  if (isHostTenancyEnabled()) {
+    configureHostOpenId(app);
+  } else if (
     process.env.OPENID_CLIENT_ID &&
     (isEnabled(process.env.OPENID_USE_PKCE) || process.env.OPENID_CLIENT_SECRET?.trim()) &&
     process.env.OPENID_ISSUER &&

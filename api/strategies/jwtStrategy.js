@@ -4,6 +4,8 @@ const { Strategy: JwtStrategy, ExtractJwt } = require('passport-jwt');
 const {
   AGENT_TRIGGER_SCOPE,
   isTokenRetired,
+  logTenantMismatch,
+  belongsToRequestTenant,
   continueAfterBearerRetirement,
 } = require('@librechat/api');
 const { getUserById, updateUser } = require('~/models');
@@ -44,6 +46,12 @@ const jwtLogin = () =>
             '-password -__v -totpSecret -backupCodes +agentTriggerDeletionStartedAt',
           ),
         );
+        /** The lookup above spans tenants; in host mode the user must belong to this host's tenant. */
+        if (user && !belongsToRequestTenant(req, user)) {
+          logTenantMismatch('jwt', req, user);
+          done(null, false, { message: 'Unauthorized' });
+          return;
+        }
         if (user?.agentTriggerDeletionStartedAt != null) {
           done(null, false, {
             message: 'Account deletion is in progress',

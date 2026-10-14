@@ -10,6 +10,7 @@ const {
   createSetBalanceConfig,
   getOAuthFailureMessage,
   redirectToAuthFailure,
+  tenantOpenIdStrategyName,
 } = require('@librechat/api');
 const {
   checkDomainAllowed,
@@ -44,9 +45,14 @@ router.use(markOAuthNavigation);
 router.use(loginLimiter);
 
 const oauthHandler = createOAuthHandler();
+/** Host mode runs one OpenID strategy per tenant; single-tenant mode keeps the one named `openid`. */
+const getOpenIdStrategyName = (req) =>
+  req.tenantId ? tenantOpenIdStrategyName(req.tenantId) : 'openid';
+
 const authenticateOpenIDCallback = createOpenIDCallbackAuthenticator({
   passport,
   logger,
+  strategyName: getOpenIdStrategyName,
   ...authFailureRedirectOptions,
 });
 
@@ -118,7 +124,7 @@ router.get(
  * OpenID Routes
  */
 router.get('/openid', (req, res, next) => {
-  return passport.authenticate('openid', {
+  return passport.authenticate(getOpenIdStrategyName(req), {
     session: false,
     state: randomState(),
   })(req, res, next);

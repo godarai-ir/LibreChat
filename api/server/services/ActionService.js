@@ -9,6 +9,7 @@ const {
   logAxiosError,
   detachOnAbort,
   getTokenExpiresAt,
+  getServerOrigin,
   getOAuthCallbackUrl,
   refreshAccessToken,
   GenerationJobManager,
@@ -227,7 +228,7 @@ async function createActionTool({
               const stateToken = jwt.sign(statePayload, JWT_SECRET, { expiresIn: '10m' });
               try {
                 const redirectUri = getOAuthCallbackUrl(
-                  process.env.DOMAIN_SERVER || 'http://localhost:3080',
+                  getServerOrigin() || 'http://localhost:3080',
                   `/api/actions/${action_id}/oauth/callback`,
                 );
                 const params = new URLSearchParams({

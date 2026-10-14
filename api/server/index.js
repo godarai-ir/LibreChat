@@ -47,6 +47,12 @@ const {
   injectConfiguredFooterBootstrap,
   injectColorModeHandoff,
   preAuthTenantMiddleware,
+  assertHostTenancyEnv,
+  assertHostTenancyAppConfig,
+  createHostTenancyRuntime,
+  createTenantOpenIdMiddleware,
+  resolveHostTenancyConfig,
+  decryptV3,
   requestContextMiddleware,
   registerShutdownTask,
   getRemainingShutdownMs,
@@ -70,15 +76,19 @@ const {
   sweepOrphanedPreviews,
   getRoleByName,
   seedDatabase,
+  getTenantBySlug,
 } = require('~/models');
 const initializeOAuthReconnectManager = require('./services/initializeOAuthReconnectManager');
+const { startProvisioning } = require('./services/tenantProvisioning');
 const { capabilityContextMiddleware } = require('./middleware/roles/capabilities');
 const createValidateImageRequest = require('./middleware/validateImageRequest');
 const { initializeGitHubSkillSync } = require('./services/Skills/sync');
 const { initializeAgentTriggerService } = require('./services/Agents/triggers');
 const { resumeAgentEventDetachedAction } = require('./services/Agents/detachedActionResume');
 const { initializeScheduleEngine, recordExpiredScheduleApproval } = require('./services/Schedules');
-const { jwtLogin, ldapLogin, passportLogin } = require('~/strategies');
+const { jwtLogin, ldapLogin, passportLogin, ensureTenantOpenId } = require('~/strategies');
+const { ErrorTypes } = require('librechat-data-provider');
+const { redirectOAuthFailure } = require('~/server/middleware/oauthNavigation');
 const { startExpiredFileSweep } = require('./services/Files/process');
 const { checkMigrations } = require('./services/start/migration');
 const optionalJwtAuth = require('./middleware/optionalJwtAuth');
@@ -194,11 +204,14 @@ const startServer = async () => {
   if (typeof Bun !== 'undefined') {
     axios.defaults.headers.common['Accept-Encoding'] = 'gzip';
   }
+  /* Fails startup when MULTI_TENANT_MODE=host cannot isolate tenants; no-op otherwise. */
+  assertHostTenancyEnv();
   await connectDb();
 
   logger.info('Connected to MongoDB');
   startCodeEnvironmentLifecycleReconciler({ mongoose });
-  indexSync().catch((err) => {
+  /* A system context: the sync reads every tenant's rows, which strict isolation refuses otherwise. */
+  runAsSystem(() => indexSync()).catch((err) => {
     logger.error('[indexSync] Background sync failed:', err);
   });
 
@@ -232,6 +245,7 @@ const startServer = async () => {
     logger.error('[sweepOrphanedPreviews] Background sweep failed:', err);
   });
   const appConfig = await getAppConfig({ baseOnly: true });
+  assertHostTenancyAppConfig(appConfig);
   await configureSubagentTaskRouting(appConfig?.endpoints?.agents?.subagentActivity);
   registerBackgroundTaskShutdown({
     interruptGraceMs: appConfig?.endpoints?.agents?.backgroundTasks?.shutdownInterruptGraceMs,
@@ -339,6 +353,31 @@ const startServer = async () => {
 
   /* Middleware */
   app.use(requestContextMiddleware);
+  /* Host multi-tenancy: first, so every route, stream and asset runs in the host's tenant. */
+  const hostTenancy = createHostTenancyRuntime({
+    config: resolveHostTenancyConfig(),
+    findBySlug: getTenantBySlug,
+    decryptSecret: decryptV3,
+  });
+  /* The internal API a control plane uses to register tenants; a private port, off without a token. */
+  startProvisioning(hostTenancy);
+  /* Per-tenant OpenID: prepare the tenant's client before the sign-in routes; elsewhere in the background. */
+  const passThrough = (_req, _res, next) => next();
+  let openIdForOAuth = passThrough;
+  let openIdForAuthApi = passThrough;
+  if (hostTenancy) {
+    const openIdDeps = { registry: hostTenancy.registry, ensure: ensureTenantOpenId };
+    app.use(hostTenancy.middleware);
+    app.use(createTenantOpenIdMiddleware(openIdDeps, { blocking: false }));
+    openIdForOAuth = createTenantOpenIdMiddleware(
+      {
+        ...openIdDeps,
+        onFailure: (_req, res) => redirectOAuthFailure(res, ErrorTypes.AUTH_FAILED),
+      },
+      { blocking: true },
+    );
+    openIdForAuthApi = createTenantOpenIdMiddleware(openIdDeps, { blocking: true });
+  }
   app.use('/api/agents/chat', agentStartupIngressMiddleware);
   app.use(metricsMiddleware);
   app.use(noIndex);
@@ -402,9 +441,9 @@ const startServer = async () => {
 
   /* Pre-auth tenant context for unauthenticated routes that need tenant scoping.
    * The reverse proxy / auth gateway sets `X-Tenant-Id` header for multi-tenant deployments. */
-  app.use('/oauth', preAuthTenantMiddleware, routes.oauth);
+  app.use('/oauth', preAuthTenantMiddleware, openIdForOAuth, routes.oauth);
   /* API Endpoints */
-  app.use('/api/auth', preAuthTenantMiddleware, routes.auth);
+  app.use('/api/auth', preAuthTenantMiddleware, openIdForAuthApi, routes.auth);
   app.use('/api/insights', routes.insights);
   app.use('/api/admin', routes.adminAuth);
   app.use('/api/admin/config', routes.adminConfig);
