@@ -317,3 +317,21 @@ Strict isolation refuses a query without a tenant context, so every job that run
 | GitHub skill sync                    | platform-level, one shared source. Refused with S3 storage in host mode (see §11).          |
 
 Known limit: links that schedules and triggers produce in the background carry no tenant origin, because there is no request to take it from.
+
+## 15. Provisioning API and local development
+
+**Local `http` issuers.** With `TENANT_HOST_SCHEME=http` (which already requires a `.localhost` base domain) the issuer template may also be `http://{slug}.localhost:<port>`. The registry accepts an `http` issuer only for a `.localhost` host and only in this mode, and discovery then allows insecure requests for that issuer. A public host always needs `https`.
+
+**Provisioning API.** When `TENANT_PROVISIONING_TOKEN` is set (at least 32 characters), the process also listens on `TENANT_PROVISIONING_PORT` (default 3081). It is a separate port so no tenant host or ingress rule reaches it. Expose it only inside the cluster, and add a NetworkPolicy that allows the control plane only. The caller sends `Authorization: Bearer <token>` with JSON bodies. Every call is idempotent, and the stored secret is never returned.
+
+| Call                         | Effect                                                                      |
+| ---------------------------- | --------------------------------------------------------------------------- |
+| `PUT /tenants/{tenantId}`    | create, or bring an existing tenant to the described slug and OIDC settings |
+| `GET /tenants/{tenantId}`    | read the tenant and whether sign-in works (`ready`)                         |
+| `PATCH /tenants/{tenantId}`  | change `slug`, `status` or `oidc` (secret rotation)                         |
+| `DELETE /tenants/{tenantId}` | mark the tenant `deleting`; data is not purged                              |
+| `GET /healthz`               | liveness, no token                                                          |
+
+`PUT` body: `{ "slug": "acme", "oidc": { "clientId": "godarchat", "clientSecret": "...", "scopes": ["openid"] } }`. The reply carries `ready` and, if sign-in cannot work yet, a `reason`. Unknown fields are rejected. A `deleting` tenant is not brought back by `PUT`.
+
+Limits: another replica keeps its cached view of a tenant for the registry TTL (seconds), so a suspension reaches every replica within that time. Failed-token attempts are not rate limited, which is acceptable on a private port.

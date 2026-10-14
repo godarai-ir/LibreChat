@@ -79,6 +79,7 @@ const {
   getTenantBySlug,
 } = require('~/models');
 const initializeOAuthReconnectManager = require('./services/initializeOAuthReconnectManager');
+const { startProvisioning } = require('./services/tenantProvisioning');
 const { capabilityContextMiddleware } = require('./middleware/roles/capabilities');
 const createValidateImageRequest = require('./middleware/validateImageRequest');
 const { initializeGitHubSkillSync } = require('./services/Skills/sync');
@@ -358,6 +359,8 @@ const startServer = async () => {
     findBySlug: getTenantBySlug,
     decryptSecret: decryptV3,
   });
+  /* The internal API a control plane uses to register tenants; a private port, off without a token. */
+  startProvisioning(hostTenancy);
   /* Per-tenant OpenID: prepare the tenant's client before the sign-in routes; elsewhere in the background. */
   const passThrough = (_req, _res, next) => next();
   let openIdForOAuth = passThrough;

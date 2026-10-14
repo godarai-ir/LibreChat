@@ -1,8 +1,5 @@
+import { SLUG_PATTERN, TENANT_ID_PATTERN, TENANT_STATUSES as STATUSES } from './validation';
 import { reservedSlugsFromEnv } from './config';
-
-const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
-const TENANT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
-const STATUSES = ['active', 'suspended', 'deleting'] as const;
 
 type Status = (typeof STATUSES)[number];
 
