@@ -128,7 +128,7 @@ export function ModelSelectorProvider({ children, startupConfig }: ModelSelector
         return endpoint.assistantNames?.[model] ?? model;
       }
 
-      return model;
+      return endpoint.fqnIndex?.labels.get(model) ?? model;
     },
     [agentsMap],
   );

@@ -7,6 +7,7 @@ import type {
   TAssistantsMap,
   TEndpointsConfig,
 } from 'librechat-data-provider';
+import type { FqnIndex } from '~/utils/fqn';
 import type { useLocalize } from '~/hooks';
 import SpecIcon from '~/components/Chat/Menus/Endpoints/components/SpecIcon';
 import { Endpoint, SelectedValues } from '~/common';
@@ -21,6 +22,7 @@ export function filterItems<
     models?: Array<{ name: string; isGlobal?: boolean }>;
     searchAliases?: string[];
     showMarketplace?: boolean;
+    fqnIndex?: FqnIndex;
   },
 >(
   items: T[],
@@ -57,6 +59,10 @@ export function filterItems<
     if (item.models && item.models.length > 0) {
       return item.models.some((modelId) => {
         if (modelId.name.toLowerCase().includes(searchTermLower)) {
+          return true;
+        }
+
+        if (item.fqnIndex?.labels.get(modelId.name)?.toLowerCase().includes(searchTermLower)) {
           return true;
         }
 
@@ -116,7 +122,10 @@ export function filterModels(
         typeof assistant.name === 'string' && assistant.name ? (assistant.name as string) : modelId;
     }
 
-    return modelName.toLowerCase().includes(searchTermLower);
+    return (
+      modelName.toLowerCase().includes(searchTermLower) ||
+      endpoint.fqnIndex?.labels.get(modelId)?.toLowerCase().includes(searchTermLower) === true
+    );
   });
 }
 
@@ -238,7 +247,9 @@ export const getDisplayValue = ({
       return endpoint.assistantNames[selectedValues.model];
     }
 
-    return shortModelName(selectedValues.model);
+    return (
+      endpoint.fqnIndex?.labels.get(selectedValues.model) ?? shortModelName(selectedValues.model)
+    );
   }
 
   if (selectedValues.endpoint) {

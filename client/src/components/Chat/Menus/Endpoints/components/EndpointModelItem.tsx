@@ -49,7 +49,8 @@ function EndpointModelItemComponent({
 
   const { ref: itemRef, isActive } = useActiveItem<HTMLDivElement>();
 
-  let modelName = modelId;
+  const fqnLabel = modelId != null ? endpoint.fqnIndex?.labels.get(modelId) : undefined;
+  let modelName = fqnLabel ?? modelId;
   const avatarUrl = endpoint?.modelIcons?.[modelId ?? ''] || null;
 
   // Use custom names if available
@@ -110,7 +111,10 @@ function EndpointModelItemComponent({
     >
       <div className="flex w-full min-w-0 items-center gap-2 px-1 py-1">
         {renderAvatar()}
-        <span className="truncate">{modelName}</span>
+        {/* A resolved FQN label is an identifier, so it stays left-to-right in an RTL interface. */}
+        <span className="truncate" dir={fqnLabel != null ? 'ltr' : undefined}>
+          {modelName}
+        </span>
         {isGlobal && <EarthIcon className="text-surface-submit ms-1 size-4" />}
       </div>
       <button

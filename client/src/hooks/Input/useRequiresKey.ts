@@ -12,7 +12,12 @@ export default function useRequiresKey() {
     endpoint,
     'userProvide',
   );
-  const { getExpiry } = useUserKey(endpoint ?? '');
+  const requireUserKey = getEndpointField(endpointsConfig, endpoint, 'requireUserKey') === true;
+  const { getExpiry, hasKey } = useUserKey(endpoint ?? '');
+  if (requireUserKey) {
+    /** The answer is still loading while `hasKey` is undefined; do not lock the composer for that. */
+    return { requiresKey: userProvidesKey === true && hasKey === false };
+  }
   const expiryTime = getExpiry();
   const requiresKey = !expiryTime && userProvidesKey;
   return { requiresKey };
