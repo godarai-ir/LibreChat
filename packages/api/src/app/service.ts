@@ -18,9 +18,11 @@ import {
 import type { AppConfig, IConfig } from '@librechat/data-schemas';
 import type { Types } from 'mongoose';
 import type { CustomConfigLoadMode } from './loader';
+import { listHasSlugPlaceholder, resolveSlugTemplates } from './slug';
 import { checkAppConfigTheme } from './theme';
 
 const BASE_CONFIG_KEY = '_BASE_';
+const TENANT_SLUG_TTL_MS = 30_000;
 
 function hiddenCustomEndpoints(
   config: AppConfig,
@@ -101,12 +103,20 @@ function scopeCustomEndpoints(
   config: AppConfig,
   tenantId?: string,
   inherited?: ReadonlySet<string>,
+  tenantSlug?: string | null,
 ): AppConfig {
   const hiddenEndpoints = hiddenCustomEndpoints(config, tenantId, inherited);
   const custom = config.endpoints?.custom;
-  const scoped = scopeEndpointList(custom, tenantId, hiddenEndpoints);
+  const scopedCustom = scopeEndpointList(custom, tenantId, hiddenEndpoints);
   const sourceCustom = config.config?.endpoints?.custom;
-  const scopedSource = scopeEndpointList(sourceCustom, tenantId, hiddenEndpoints);
+  const scopedSourceCustom = scopeEndpointList(sourceCustom, tenantId, hiddenEndpoints);
+  const slugged = resolveSlugTemplates(scopedCustom, tenantSlug);
+  const sluggedSource = resolveSlugTemplates(scopedSourceCustom, tenantSlug);
+  for (const name of [...(slugged?.rejected ?? []), ...(sluggedSource?.rejected ?? [])]) {
+    hiddenEndpoints.add(normalizeEndpointName(name));
+  }
+  const scoped = slugged?.endpoints ?? scopedCustom;
+  const scopedSource = sluggedSource?.endpoints ?? scopedSourceCustom;
   const modelSpecs = scopeModelSpecs(config.modelSpecs, hiddenEndpoints);
   const sourceModelSpecs = scopeModelSpecs(config.config?.modelSpecs, hiddenEndpoints);
   if (
@@ -134,8 +144,12 @@ function scopeCustomEndpoints(
 }
 
 /** Re-derive only spec-dependent controls before principal overrides are applied. */
-async function scopeBaseConfig(config: AppConfig, tenantId?: string): Promise<AppConfig> {
-  const scoped = scopeCustomEndpoints(config, tenantId);
+async function scopeBaseConfig(
+  config: AppConfig,
+  tenantId?: string,
+  tenantSlug?: string | null,
+): Promise<AppConfig> {
+  const scoped = scopeCustomEndpoints(config, tenantId, undefined, tenantSlug);
   if (scoped.modelSpecs === config.modelSpecs || !config.interfaceConfig) {
     return scoped;
   }
@@ -242,6 +256,11 @@ export interface AppConfigServiceDeps {
   }) => Promise<AppConfig>;
   /** TTL in ms for per-user/role merged config caches. Defaults to 60 000. */
   overrideCacheTtl?: number;
+  /**
+   * Public slug of a tenant, for endpoints whose `baseURL` carries `{slug}`. Only called when
+   * the configuration has such an endpoint. `null` means the tenant is unknown.
+   */
+  getTenantSlug?: (tenantId: string) => Promise<string | null>;
 }
 
 export interface GetAppConfigOptions {
@@ -360,12 +379,35 @@ export function createAppConfigService(deps: AppConfigServiceDeps): {
     getApplicableConfigs,
     getUserPrincipals,
     augmentConfig,
+    getTenantSlug,
     overrideCacheTtl = DEFAULT_OVERRIDE_CACHE_TTL,
   } = deps;
 
   const cache = getCache(cacheKeys.APP_CONFIG);
   let lastGoodBaseConfig: AppConfig | undefined;
   let baseConfigFlight: Promise<AppConfig> | undefined;
+
+  const slugCache = new Map<string, { slug: string | null; expiresAt: number }>();
+
+  /** A slug is a mutable alias, so it is remembered only briefly. */
+  async function lookupTenantSlug(tenantId: string, failClosed?: boolean): Promise<string | null> {
+    const cachedSlug = slugCache.get(tenantId);
+    if (cachedSlug && cachedSlug.expiresAt > Date.now()) {
+      return cachedSlug.slug;
+    }
+    if (!getTenantSlug) {
+      return null;
+    }
+    try {
+      const slug = await getTenantSlug(tenantId);
+      slugCache.set(tenantId, { slug, expiresAt: Date.now() + TENANT_SLUG_TTL_MS });
+      return slug;
+    } catch (error) {
+      if (failClosed) throw error;
+      logger.error('[getAppConfig] Error resolving the tenant slug for endpoint URLs:', error);
+      return null;
+    }
+  }
 
   async function buildPrincipals(
     role?: string,
@@ -500,7 +542,13 @@ export function createAppConfigService(deps: AppConfigServiceDeps): {
     }
 
     const baseConfig = await ensureBaseConfig(refresh);
-    const scopedBaseConfig = await scopeBaseConfig(baseConfig, effectiveTenantId);
+    const tenantSlug =
+      effectiveTenantId &&
+      (listHasSlugPlaceholder(baseConfig.endpoints?.custom) ||
+        listHasSlugPlaceholder(baseConfig.config?.endpoints?.custom))
+        ? await lookupTenantSlug(effectiveTenantId, failClosed)
+        : undefined;
+    const scopedBaseConfig = await scopeBaseConfig(baseConfig, effectiveTenantId, tenantSlug);
     const hiddenEndpoints = hiddenCustomEndpoints(baseConfig, effectiveTenantId);
     if (baseOnly) {
       return scopedBaseConfig;
@@ -535,7 +583,12 @@ export function createAppConfigService(deps: AppConfigServiceDeps): {
     }
 
     const augment = async (appConfig: AppConfig): Promise<AppConfig> => {
-      const scopedConfig = scopeCustomEndpoints(appConfig, effectiveTenantId, hiddenEndpoints);
+      const scopedConfig = scopeCustomEndpoints(
+        appConfig,
+        effectiveTenantId,
+        hiddenEndpoints,
+        tenantSlug,
+      );
       if (augmentConfig == null || skipRuntimeAugmentation === true) return scopedConfig;
       try {
         return scopeCustomEndpoints(
@@ -547,6 +600,7 @@ export function createAppConfigService(deps: AppConfigServiceDeps): {
           }),
           effectiveTenantId,
           hiddenEndpoints,
+          tenantSlug,
         );
       } catch (error) {
         if (failClosed) throw error;
@@ -587,6 +641,7 @@ export function createAppConfigService(deps: AppConfigServiceDeps): {
           ),
           effectiveTenantId,
           hiddenEndpoints,
+          tenantSlug,
         );
       }
     } catch (error) {

@@ -231,6 +231,33 @@ describe('loadCustomEndpointsConfig: host-implied reasoning support', () => {
   });
 });
 
+describe('loadCustomEndpointsConfig – modelDisplay', () => {
+  it('serves modelDisplay to the client when the endpoint opts in', () => {
+    const config = loadCustomEndpointsConfig([
+      { ...baseEndpoint, name: 'Gateway', modelDisplay: 'fqn' },
+    ] as unknown as TCustomEndpoints);
+
+    expect(config?.Gateway?.modelDisplay).toBe('fqn');
+  });
+
+  it('serves requireUserKey so the client can ask for the key first', () => {
+    const config = loadCustomEndpointsConfig([
+      { ...baseEndpoint, name: 'Gateway', apiKey: 'user_provided', requireUserKey: true },
+    ] as unknown as TCustomEndpoints);
+
+    expect(config?.Gateway?.requireUserKey).toBe(true);
+    expect(config?.Gateway?.userProvide).toBe(true);
+  });
+
+  it('leaves modelDisplay unset by default', () => {
+    const config = loadCustomEndpointsConfig([
+      { ...baseEndpoint, name: 'Gateway' },
+    ] as unknown as TCustomEndpoints);
+
+    expect(config?.Gateway?.modelDisplay).toBeUndefined();
+  });
+});
+
 describe('loadCustomEndpointsConfig – user credential prompts', () => {
   it('requires a user key when the custom base URL is user-provided', () => {
     const config = loadCustomEndpointsConfig([

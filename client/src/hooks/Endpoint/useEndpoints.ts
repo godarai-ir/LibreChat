@@ -22,6 +22,7 @@ import type { Endpoint } from '~/common';
 import { useHasAccess, useShowMarketplace } from '~/hooks';
 import { resolveProviderIcon } from './useProviderIcon';
 import { useGetEndpointsQuery } from '~/data-provider';
+import { buildFqnIndex } from '~/utils/fqn';
 import { mapEndpoints } from '~/utils';
 
 const defaultInterface = getConfigDefaults().interface;
@@ -138,6 +139,13 @@ export const useEndpoints = ({
         icon: createEndpointIcon(ep, resolveProviderIcon({ endpoint: ep, endpointsConfig })),
       };
 
+      if (
+        getEndpointField(endpointsConfig, ep, 'requireUserKey') === true &&
+        getEndpointField(endpointsConfig, ep, 'userProvide') === true
+      ) {
+        result.requireUserKey = true;
+      }
+
       if (ep === EModelEndpoint.agents && showAgentMarketplace) {
         result.showMarketplace = true;
         result.searchAliases = ['agent marketplace', 'marketplace'];
@@ -210,6 +218,9 @@ export const useEndpoints = ({
           name: model,
           isGlobal: false,
         }));
+        if (getEndpointField(endpointsConfig, ep, 'modelDisplay') === 'fqn') {
+          result.fqnIndex = buildFqnIndex(modelsQuery.data?.[ep] ?? []);
+        }
       }
 
       acc.push(result);

@@ -4,15 +4,18 @@ import { Spinner, TooltipAnchor } from '@librechat/client';
 import { CheckCircle2, MousePointerClick, SettingsIcon } from 'lucide-react';
 import { EModelEndpoint, isAgentsEndpoint, isAssistantsEndpoint } from 'librechat-data-provider';
 import type { TModelSpec } from 'librechat-data-provider';
+import type { FqnGroup } from '~/utils/fqn';
 import type { Endpoint } from '~/common';
 import { CustomMenu as Menu, CustomMenuItem as MenuItem, CustomMenuSeparator } from '../CustomMenu';
 import { renderEndpointModels, VIRTUALIZE_THRESHOLD } from './EndpointModelItem';
 import MarketplaceItem, { marketplaceSearchMatches } from './Marketplace';
+import GroupedModels, { hasVirtualizedGroup } from './GroupedModels';
 import { filterModels, shouldRenderEndpointOption } from '../utils';
 import { useModelSelectorContext } from '../ModelSelectorContext';
+import { useFavorites, useLocalize, useUserKey } from '~/hooks';
 import VirtualizedModelList from './VirtualizedModelList';
-import { useFavorites, useLocalize } from '~/hooks';
 import { ModelSpecItem } from './ModelSpecItem';
+import { groupFqnModels } from '~/utils/fqn';
 import { cn } from '~/utils';
 
 interface EndpointItemProps {
@@ -83,6 +86,31 @@ const SettingsButton = ({
 };
 
 /**
+ * Row for an endpoint that lists nothing until the user stores a key (`requireUserKey`). It is
+ * not a model choice: clicking it, like its key button, opens the key dialog instead of selecting.
+ */
+function KeyRequiredItem({ endpoint, label }: { endpoint: Endpoint; label: React.ReactNode }) {
+  const localize = useLocalize();
+  const { handleOpenKeyDialog } = useModelSelectorContext();
+  const { hasKey } = useUserKey(endpoint.value);
+  const hint = localize(hasKey ? 'com_endpoint_key_no_models' : 'com_endpoint_key_required');
+
+  return (
+    <MenuItem
+      id={`endpoint-${endpoint.value}-menu`}
+      onClick={(e) => handleOpenKeyDialog(endpoint.value as EModelEndpoint, e)}
+      className="group flex w-full cursor-pointer flex-col items-stretch gap-0.5 py-2 text-sm"
+    >
+      <div className="flex w-full items-center justify-between gap-1.5">
+        {label}
+        <SettingsButton endpoint={endpoint} handleOpenKeyDialog={handleOpenKeyDialog} />
+      </div>
+      <span className="text-text-secondary ps-7 text-xs">{hint}</span>
+    </MenuItem>
+  );
+}
+
+/**
  * Lazily-rendered content for an endpoint submenu. By extracting this into a
  * separate component, the expensive model-list rendering (and per-item hooks
  * such as MutationObservers in EndpointModelItem) only runs when the submenu
@@ -108,6 +136,27 @@ function EndpointMenuContent({
     return modelSpecs.filter((spec: TModelSpec) => spec.group === endpoint.value);
   }, [modelSpecs, endpoint.value]);
 
+  const modelNames = useMemo(
+    () => endpoint.models?.map((model) => model.name) ?? [],
+    [endpoint.models],
+  );
+  const filteredModels = useMemo(
+    () =>
+      searchValue
+        ? filterModels(endpoint, modelNames, searchValue, agentsMap, assistantsMap)
+        : null,
+    [endpoint, modelNames, searchValue, agentsMap, assistantsMap],
+  );
+  /** Provider groups for `modelDisplay: fqn` endpoints; `null` keeps the flat list. */
+  const fqnGroups = useMemo(() => {
+    if (!endpoint.fqnIndex) {
+      return null;
+    }
+    return filteredModels
+      ? groupFqnModels(endpoint.fqnIndex, filteredModels)
+      : endpoint.fqnIndex.groups;
+  }, [endpoint.fqnIndex, filteredModels]);
+
   if (isAssistantsEndpoint(endpoint.value) && endpoint.models === undefined) {
     return (
       <div
@@ -120,16 +169,7 @@ function EndpointMenuContent({
     );
   }
 
-  const filteredModels = searchValue
-    ? filterModels(
-        endpoint,
-        (endpoint.models || []).map((model) => model.name),
-        searchValue,
-        agentsMap,
-        assistantsMap,
-      )
-    : null;
-  const renderedModels = filteredModels ?? endpoint.models?.map((model) => model.name) ?? [];
+  const renderedModels = filteredModels ?? modelNames;
   const showMarketplace =
     endpoint.showMarketplace === true && marketplaceSearchMatches(searchValue, localize);
   const hasSelectableRows = endpointSpecs.length > 0 || renderedModels.length > 0;
@@ -141,7 +181,9 @@ function EndpointMenuContent({
    * set is worse than either — and leave them off entirely when nothing is virtualized.
    */
   const precedingOptionCount = (showMarketplace ? 1 : 0) + endpointSpecs.length;
-  const isVirtualized = renderedModels.length > VIRTUALIZE_THRESHOLD;
+  const isVirtualized = fqnGroups
+    ? hasVirtualizedGroup(fqnGroups)
+    : renderedModels.length > VIRTUALIZE_THRESHOLD;
   const listboxSetSize = isVirtualized ? precedingOptionCount + renderedModels.length : undefined;
 
   return (
@@ -169,6 +211,8 @@ function EndpointMenuContent({
         endpointIndex={endpointIndex}
         searchValue={searchValue}
         precedingOptionCount={precedingOptionCount}
+        fqnGroups={fqnGroups}
+        listboxSetSize={listboxSetSize}
       />
     </>
   );
@@ -186,12 +230,16 @@ function EndpointModels({
   endpointIndex,
   searchValue,
   precedingOptionCount,
+  fqnGroups,
+  listboxSetSize,
 }: {
   endpoint: Endpoint;
   renderedModels: string[];
   endpointIndex: number;
   searchValue: string;
   precedingOptionCount: number;
+  fqnGroups: FqnGroup[] | null;
+  listboxSetSize?: number;
 }) {
   const { isFavoriteModel, toggleFavoriteModel, isFavoriteAgent, toggleFavoriteAgent } =
     useFavorites();
@@ -221,6 +269,22 @@ function EndpointModels({
 
   if (!renderedModels.length) {
     return null;
+  }
+
+  if (fqnGroups) {
+    return (
+      <GroupedModels
+        endpoint={endpoint}
+        groups={fqnGroups}
+        isFavorite={isFavorite}
+        onToggleFavorite={onToggleFavorite}
+        globalByName={globalByName}
+        searchValue={searchValue}
+        endpointIndex={endpointIndex}
+        precedingOptionCount={precedingOptionCount}
+        listboxSetSize={listboxSetSize}
+      />
+    );
   }
 
   if (renderedModels.length > VIRTUALIZE_THRESHOLD) {
@@ -287,6 +351,10 @@ export function EndpointItem({ endpoint, endpointIndex }: EndpointItemProps) {
 
   if (!shouldRenderEndpointOption(endpoint)) {
     return null;
+  }
+
+  if (endpoint.requireUserKey && !endpoint.hasModels) {
+    return <KeyRequiredItem endpoint={endpoint} label={renderIconLabel()} />;
   }
 
   if (endpoint.hasModels) {

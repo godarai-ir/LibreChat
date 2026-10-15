@@ -18,3 +18,14 @@ export function formatKeyExpiryLabel(
     ? localizedLabel
     : `${localizedLabel} ${formattedExpiry}`;
 }
+
+/**
+ * `getExpiry` reports `never` both for a key that never expires and for no key at all, so the
+ * dialog must not announce a current key unless the server says one is stored.
+ */
+export function hasCurrentKey(expiry: string | undefined, hasKey: boolean | undefined): boolean {
+  if (expiry === undefined) {
+    return false;
+  }
+  return expiry !== 'never' || hasKey === true;
+}

@@ -340,6 +340,77 @@ describe('createLoadConfigModels � configured model lists for built-in endpoin
   });
 });
 
+describe('createLoadConfigModels – requireUserKey', () => {
+  const fetchModels = jest.fn();
+  const buildAppConfig = (requireUserKey?: boolean) => ({
+    endpoints: {
+      [EModelEndpoint.custom]: [
+        {
+          name: 'Godar',
+          baseURL: 'https://tenant1.godarai.ir/v1',
+          apiKey: AuthType.USER_PROVIDED,
+          models: { fetch: true, default: ['placeholder-model'] },
+          ...(requireUserKey !== undefined && { requireUserKey }),
+        },
+      ],
+    },
+  });
+  const req = { user: { id: 'user-1' }, config: undefined } as unknown as ServerRequest;
+  const noKey = () => Promise.reject(new Error('{"type":"no_user_key"}'));
+  const load = (requireUserKey: boolean | undefined, getUserKeyValues: jest.Mock) =>
+    createLoadConfigModels({
+      getAppConfig: jest.fn().mockResolvedValue(buildAppConfig(requireUserKey)),
+      getUserKeyValues,
+      fetchModels,
+    })(req);
+
+  beforeEach(() => {
+    fetchModels.mockReset().mockResolvedValue([]);
+  });
+
+  it('lists nothing, not the default, while the user has no key', async () => {
+    const models = await load(true, jest.fn(noKey));
+    expect(models.Godar).toEqual([]);
+    expect(fetchModels).not.toHaveBeenCalled();
+  });
+
+  it("lists exactly what the user's key can see", async () => {
+    fetchModels.mockResolvedValue(['openai:acme:gpt-4o']);
+    const getUserKeyValues = jest.fn().mockResolvedValue({ apiKey: 'pat-user-1' });
+    const models = await load(true, getUserKeyValues);
+
+    expect(models.Godar).toEqual(['openai:acme:gpt-4o']);
+    expect(fetchModels).toHaveBeenCalledWith(
+      expect.objectContaining({
+        apiKey: 'pat-user-1',
+        baseURL: 'https://tenant1.godarai.ir/v1',
+        skipCache: true,
+      }),
+    );
+  });
+
+  it('stays empty when the stored key lists nothing or the fetch fails', async () => {
+    const getUserKeyValues = jest.fn().mockResolvedValue({ apiKey: 'pat-user-1' });
+
+    fetchModels.mockResolvedValue([]);
+    expect((await load(true, getUserKeyValues)).Godar).toEqual([]);
+
+    fetchModels.mockRejectedValue(new Error('401'));
+    expect((await load(true, getUserKeyValues)).Godar).toEqual([]);
+  });
+
+  it.each([undefined, false])(
+    'keeps listing the default when requireUserKey is %p',
+    async (flag) => {
+      expect((await load(flag, jest.fn(noKey))).Godar).toEqual(['placeholder-model']);
+
+      fetchModels.mockResolvedValue([]);
+      const withKey = jest.fn().mockResolvedValue({ apiKey: 'pat-user-1' });
+      expect((await load(flag, withKey)).Godar).toEqual(['placeholder-model']);
+    },
+  );
+});
+
 describe('configuredModelList', () => {
   it('returns string entries of a configured list and undefined otherwise', () => {
     const appConfig = {

@@ -1,5 +1,6 @@
 import React from 'react';
 import { TStartupConfig } from 'librechat-data-provider';
+import type { FqnIndex } from '~/utils/fqn';
 
 export interface Endpoint {
   value: string;
@@ -12,6 +13,10 @@ export interface Endpoint {
   modelIcons?: Record<string, string | undefined>;
   showMarketplace?: boolean;
   searchAliases?: string[];
+  /** Present only when the endpoint opts into `modelDisplay: fqn`; display data only. */
+  fqnIndex?: FqnIndex;
+  /** Lists nothing until the user stores a key; see `endpointSchema.requireUserKey`. */
+  requireUserKey?: boolean;
 }
 
 export interface SelectedValues {

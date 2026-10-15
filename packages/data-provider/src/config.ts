@@ -2151,6 +2151,20 @@ export const endpointSchema = baseEndpointSchema.merge(
     iconURLDark: z.string().optional(),
     modelDisplayLabel: z.string().optional(),
     /**
+     * Presentation only. `fqn` reads each fetched model id as `<provider>:<account>:<model>`,
+     * groups the picker by provider and shows the model name, adding the account when the same
+     * model is served by several accounts of one provider. The id itself is never altered: the
+     * stored and requested model stays the full string. Omit to list ids as-is.
+     */
+    modelDisplay: z.literal('fqn').optional(),
+    /**
+     * With `apiKey: user_provided` and `models.fetch`, list only what the user's own key can see.
+     * No stored key lists no models (instead of `models.default`), the picker shows a row that
+     * asks for the key, and the key dialog defaults to a key that never expires. Omit to keep
+     * today's behavior of listing `models.default` until a key is stored.
+     */
+    requireUserKey: z.boolean().optional(),
+    /**
      * Forces the endpoint to use a provider's native client / request format
      * instead of the default OpenAI-compatible client. Currently supports
      * `anthropic`, for endpoints that speak the Anthropic `/v1/messages` API

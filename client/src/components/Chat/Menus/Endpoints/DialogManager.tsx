@@ -19,6 +19,10 @@ const DialogManager = ({
     <>
       {keyDialogEndpoint && (
         <SetKeyDialog
+          key={keyDialogEndpoint}
+          neverExpiresByDefault={
+            getEndpointField(endpointsConfig, keyDialogEndpoint, 'requireUserKey') === true
+          }
           open={keyDialogOpen}
           endpoint={keyDialogEndpoint}
           endpointType={getEndpointField(endpointsConfig, keyDialogEndpoint, 'type')}

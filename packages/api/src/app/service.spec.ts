@@ -165,6 +165,91 @@ describe('createAppConfigService', () => {
       expect(custom).toHaveLength(2);
     });
 
+    describe('{slug} in a custom endpoint baseURL', () => {
+      const custom = [
+        { name: 'Global', apiKey: 'k', baseURL: 'https://global.example' },
+        { name: 'Godar', apiKey: 'user_provided', baseURL: 'https://{slug}.godarai.ir/v1' },
+      ];
+      const modelSpecs = {
+        list: [{ name: 'godar-spec', preset: { endpoint: 'Godar' } }],
+        addedEndpoints: ['Godar'],
+      };
+      const build = (getTenantSlug?: (tenantId: string) => Promise<string | null>) => {
+        const deps = createDeps({
+          loadBaseConfig: jest.fn().mockResolvedValue({
+            endpoints: { custom },
+            modelSpecs,
+            config: { endpoints: { custom }, modelSpecs },
+          }),
+          ...(getTenantSlug && { getTenantSlug }),
+        });
+        return { deps, ...createAppConfigService(deps) };
+      };
+      const godarURL = (config: AppConfig) =>
+        config.endpoints?.custom?.find((endpoint) => endpoint.name === 'Godar')?.baseURL;
+
+      it('gives each tenant its own address, in every kind of config read', async () => {
+        const slugs: Record<string, string> = { t1: 'tenant1', t2: 'tenant2' };
+        const { getAppConfig } = build(async (tenantId) => slugs[tenantId] ?? null);
+
+        const base = await getAppConfig({ baseOnly: true, tenantId: 't1' });
+        const user = await getAppConfig({ role: 'USER', userId: 'uid1', tenantId: 't1' });
+        const other = await getAppConfig({ role: 'USER', tenantId: 't2' });
+
+        expect(godarURL(base)).toBe('https://tenant1.godarai.ir/v1');
+        expect(godarURL(user)).toBe('https://tenant1.godarai.ir/v1');
+        expect(godarURL(other)).toBe('https://tenant2.godarai.ir/v1');
+        expect(user.config.endpoints?.custom?.[1].baseURL).toBe('https://tenant1.godarai.ir/v1');
+        expect(custom[1].baseURL).toBe('https://{slug}.godarai.ir/v1');
+      });
+
+      it('serves a cached merged config with the same address', async () => {
+        const { getAppConfig, deps } = build(async () => 'tenant1');
+        await getAppConfig({ role: 'USER', userId: 'uid1', tenantId: 't1' });
+        const again = await getAppConfig({ role: 'USER', userId: 'uid1', tenantId: 't1' });
+        expect(godarURL(again)).toBe('https://tenant1.godarai.ir/v1');
+        expect(deps.getApplicableConfigs).toHaveBeenCalledTimes(1);
+      });
+
+      it('looks the slug up once per tenant within its lifetime', async () => {
+        const getTenantSlug = jest.fn().mockResolvedValue('tenant1');
+        const { getAppConfig } = build(getTenantSlug);
+        await getAppConfig({ baseOnly: true, tenantId: 't1' });
+        await getAppConfig({ baseOnly: true, tenantId: 't1' });
+        expect(getTenantSlug).toHaveBeenCalledTimes(1);
+      });
+
+      const unresolvable: Array<[string, string | undefined, () => Promise<string | null>]> = [
+        ['no tenant (single-tenant mode)', undefined, async () => 'tenant1'],
+        ['an unknown tenant', 't9', async () => null],
+        [
+          'a registry failure',
+          't1',
+          async () => {
+            throw new Error('db down');
+          },
+        ],
+      ];
+
+      it.each(unresolvable)(
+        'hides the endpoint and its specs for %s',
+        async (_label, tenantId, getTenantSlug) => {
+          const { getAppConfig } = build(getTenantSlug);
+          const config = await getAppConfig({ baseOnly: true, tenantId });
+          expect(config.endpoints?.custom?.map((endpoint) => endpoint.name)).toEqual(['Global']);
+          expect(config.modelSpecs?.list ?? []).toEqual([]);
+        },
+      );
+
+      it('never looks the slug up when no endpoint uses the placeholder', async () => {
+        const getTenantSlug = jest.fn().mockResolvedValue('tenant1');
+        const deps = createDeps({ getTenantSlug });
+        const { getAppConfig } = createAppConfigService(deps);
+        await getAppConfig({ baseOnly: true, tenantId: 't1' });
+        expect(getTenantSlug).not.toHaveBeenCalled();
+      });
+    });
+
     it.each([false, true])(
       'prefers tenant providers over same-named global providers (tenant first: %s)',
       async (tenantFirst) => {
