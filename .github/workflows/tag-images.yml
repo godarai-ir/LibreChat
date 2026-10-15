@@ -64,8 +64,9 @@ jobs:
     uses: ./.github/workflows/docker-publish.yml
     with:
       images: >-
-        [{"target":"api-build","file":"Dockerfile.multi","image_name":"librechat-api"},
+        [{"target":"api-build","file":"Dockerfile.multi","image_name":"librechat-api","dockerhub_tag_prefix":"api-"},
          {"target":"node","file":"Dockerfile","image_name":"librechat"}]
+      dockerhub_repository: godar-ai
       tag_suffixes: ${{ needs.resolve-tags.outputs.tag_suffixes }}
       build_branch: ${{ github.ref_name }}
     secrets:
