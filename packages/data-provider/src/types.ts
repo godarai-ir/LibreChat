@@ -706,6 +706,10 @@ export type TConfig = {
   providerId?: ProviderId;
   version?: string;
   modelDisplayLabel?: string;
+  /** Picker presentation of this endpoint's model ids; see `endpointSchema.modelDisplay`. */
+  modelDisplay?: 'fqn';
+  /** The endpoint lists nothing until the user stores a key; see `endpointSchema.requireUserKey`. */
+  requireUserKey?: boolean;
   userProvide?: boolean | null;
   userProvideURL?: boolean | null;
   userProvideAccessKeyId?: boolean;

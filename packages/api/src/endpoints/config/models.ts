@@ -53,6 +53,18 @@ import { tokenConfigCache } from '~/cache';
 import { isUserProvided } from '~/utils';
 
 /**
+ * Whether `models.default` must not stand in for a model list the user's own key has not
+ * produced: the endpoint opted into `requireUserKey` and the key is the user's to supply.
+ */
+function withholdsDefaults(endpoint: TEndpoint): boolean {
+  return (
+    endpoint.requireUserKey === true &&
+    endpoint.models?.fetch === true &&
+    isUserProvided(extractEnvVariable(endpoint.apiKey ?? ''))
+  );
+}
+
+/**
  * Stable fingerprint of a headers object, used to disambiguate the
  * in-request fetch-coalescing key. Two endpoints that share the same
  * baseURL+apiKey but configure different headers must NOT share a fetch
@@ -279,6 +291,10 @@ export function createLoadConfigModels(deps: LoadConfigModelsDeps) {
         }
       }
 
+      if (withholdsDefaults(endpoint)) {
+        continue;
+      }
+
       if (Array.isArray(models?.default)) {
         modelsConfig[name] = models.default.map((model) =>
           typeof model === 'string' ? model : model.name,
@@ -303,7 +319,8 @@ export function createLoadConfigModels(deps: LoadConfigModelsDeps) {
         const defaults = (endpoint.models?.default ?? []).map((m) =>
           typeof m === 'string' ? m : m.name,
         );
-        modelsConfig[name] = !modelData?.length ? defaults : modelData;
+        modelsConfig[name] =
+          !modelData?.length && !withholdsDefaults(endpoint) ? defaults : (modelData ?? []);
       }
 
       /** A shared fetch caches token config under one endpoint's tokenKey;

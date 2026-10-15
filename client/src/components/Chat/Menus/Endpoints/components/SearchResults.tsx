@@ -12,6 +12,8 @@ import VirtualizedModelList from './VirtualizedModelList';
 import { shouldRenderEndpointOption } from '../utils';
 import { cn, getSpecAgentAvatarURL } from '~/utils';
 import SpecDescription from './SpecDescription';
+import { groupFqnModels } from '~/utils/fqn';
+import GroupedModels from './GroupedModels';
 import { useFavorites } from '~/hooks';
 import SpecIcon from './SpecIcon';
 
@@ -75,7 +77,10 @@ function prepareSearchResults(
           ) {
             modelName = endpoint.assistantNames[model.name];
           }
-          return modelName.toLowerCase().includes(lowerQuery);
+          return (
+            modelName.toLowerCase().includes(lowerQuery) ||
+            endpoint.fqnIndex?.labels.get(model.name)?.toLowerCase().includes(lowerQuery) === true
+          );
         });
 
     if (!filteredModels.length && !showMarketplace) {
@@ -136,6 +141,26 @@ function SearchModelRows({
     () => new Map(filteredModels.map((model) => [model.name, model.isGlobal ?? false])),
     [filteredModels],
   );
+
+  const fqnGroups = useMemo(
+    () => (endpoint.fqnIndex ? groupFqnModels(endpoint.fqnIndex, modelIds) : null),
+    [endpoint.fqnIndex, modelIds],
+  );
+
+  if (fqnGroups) {
+    return (
+      <GroupedModels
+        endpoint={endpoint}
+        groups={fqnGroups}
+        isFavorite={isFavorite}
+        onToggleFavorite={onToggleFavorite}
+        globalByName={globalByName}
+        searchValue={searchValue}
+        precedingOptionCount={precedingOptionCount}
+        listboxSetSize={listboxSetSize}
+      />
+    );
+  }
 
   if (filteredModels.length > VIRTUALIZE_THRESHOLD) {
     return (
