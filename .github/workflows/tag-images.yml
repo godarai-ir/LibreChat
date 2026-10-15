@@ -12,7 +12,10 @@ jobs:
   # `latest` is only applied when this tag is both stable and the newest stable
   # tag in the repository, so re-cutting an older patch cannot move `latest`.
   resolve-tags:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 10
     outputs:
       tag_suffixes: ${{ steps.tags.outputs.tag_suffixes }}
@@ -67,6 +70,8 @@ jobs:
         [{"target":"api-build","file":"Dockerfile.multi","image_name":"librechat-api","dockerhub_tag_prefix":"api-"},
          {"target":"node","file":"Dockerfile","image_name":"librechat"}]
       dockerhub_repository: godar-ai
+      runs_on: '["self-hosted"]'
+      arches: '["amd64"]'
       tag_suffixes: ${{ needs.resolve-tags.outputs.tag_suffixes }}
       build_branch: ${{ github.ref_name }}
     secrets:

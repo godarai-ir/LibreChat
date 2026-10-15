@@ -34,6 +34,13 @@ on:
           "abc1234\nlatest". Blank lines are ignored.
         required: true
         type: string
+      runs_on:
+        description: >-
+          JSON value for `runs-on` of every job, e.g. '["self-hosted"]'. Empty keeps the
+          GitHub-hosted runners, with native arm64 builds on an arm64 runner. A self-hosted
+          runner is one architecture, so pair this with `arches`.
+        type: string
+        default: ''
       arches:
         description: JSON array of architectures to build.
         type: string
@@ -62,7 +69,13 @@ permissions:
 jobs:
   build:
     name: Build ${{ matrix.image.image_name }} (${{ matrix.arch }})
-    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.runs_on && fromJSON(inputs.runs_on) || (matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest') }}
+    # Explicit so a Windows self-hosted runner uses Git Bash, not PowerShell.
+    defaults:
+      run:
+        shell: bash
+    env:
+      DIGEST_DIR: ${{ runner.temp }}/digests
     timeout-minutes: ${{ inputs.build_timeout_minutes }}
     strategy:
       fail-fast: false
@@ -138,13 +151,13 @@ jobs:
           BUILD_DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           set -euo pipefail
-          mkdir -p /tmp/digests
+          mkdir -p "$DIGEST_DIR"
           digest="$BUILD_DIGEST"
           if [ -z "$digest" ]; then
             echo "Build produced no digest." >&2
             exit 1
           fi
-          touch "/tmp/digests/${digest#sha256:}"
+          touch "$DIGEST_DIR/${digest#sha256:}"
 
       # The `-arch-` separator keeps one image's artifacts out of another's glob.
       # Image names commonly prefix one another (`librechat` / `librechat-api`,
@@ -154,7 +167,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: digests-${{ matrix.image.image_name }}-arch-${{ matrix.arch }}
-          path: /tmp/digests/*
+          path: ${{ runner.temp }}/digests/*
           if-no-files-found: error
           retention-days: 1
           # A full re-run (retry-docker-builds uses `rerun` when a job was
@@ -166,7 +179,10 @@ jobs:
 
   merge:
     name: Merge manifests (${{ matrix.image.image_name }})
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on && fromJSON(inputs.runs_on) || 'ubuntu-latest' }}
+    defaults:
+      run:
+        shell: bash
     needs: build
     timeout-minutes: 15
     strategy:
@@ -186,7 +202,7 @@ jobs:
         with:
           pattern: digests-${{ matrix.image.image_name }}-arch-*
           merge-multiple: true
-          path: /tmp/digests
+          path: ${{ runner.temp }}/digests
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -207,7 +223,7 @@ jobs:
       # The digests are identical across registries (manifests are content-addressed),
       # so the same set sources both manifest lists.
       - name: Create manifest lists and push
-        working-directory: /tmp/digests
+        working-directory: ${{ runner.temp }}/digests
         env:
           DOCKERHUB_IMAGE: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.dockerhub_repository || matrix.image.image_name }}
           DOCKERHUB_TAG_PREFIX: ${{ matrix.image.dockerhub_tag_prefix || '' }}
