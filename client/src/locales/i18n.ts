@@ -216,10 +216,14 @@ export function normalizeLocale(locale?: string | null): SupportedLocale {
   return localeByLowercase[base] ?? localeAliases[base] ?? 'en';
 }
 
+/** GodarChat is Persian-first: with no saved choice, the browser's language is ignored. */
+export const DEFAULT_LOCALE: SupportedLocale = 'fa';
+
 export function detectInitialLanguage() {
   const cookieLang = readCookie('lang');
   const storedLang = readStoredLanguage();
-  return normalizeLocale(cookieLang || storedLang || getNavigatorLanguage());
+  const saved = normalizeLocale(cookieLang || storedLang || DEFAULT_LOCALE);
+  return saved === 'en' || saved === 'fa' ? saved : DEFAULT_LOCALE;
 }
 
 export async function ensureLocale(locale?: string | null): Promise<SupportedLocale> {

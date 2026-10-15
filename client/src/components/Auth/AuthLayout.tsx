@@ -95,12 +95,12 @@ function AuthLayout({
           <img
             src="assets/logo.svg"
             className="h-full w-full object-contain"
-            alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'LibreChat' })}
+            alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'گدار چت' })}
           />
         </div>
       </BlinkAnimation>
       <DisplayError />
-      <div className="absolute bottom-0 start-0 md:m-4">
+      <div className="absolute start-0 bottom-0 md:m-4">
         <ThemeSelector />
       </div>
 
