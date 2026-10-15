@@ -16,9 +16,18 @@ on:
       images:
         description: >-
           JSON array of objects with `target`, `file` and `image_name`, e.g.
-          [{"target":"node","file":"Dockerfile","image_name":"lc-dev"}]
+          [{"target":"node","file":"Dockerfile","image_name":"lc-dev"}].
+          An object may also set `dockerhub_tag_prefix`, prepended to every Docker Hub tag of
+          that image (used with `dockerhub_repository`).
         required: true
         type: string
+      dockerhub_repository:
+        description: >-
+          Docker Hub repository (under the DOCKERHUB_USERNAME account) that receives every
+          image. Empty publishes each image to a repository named after its `image_name`.
+          Several images share one repository only if their `dockerhub_tag_prefix` differ.
+        type: string
+        default: ''
       tag_suffixes:
         description: >-
           Newline-separated tags applied to every image in every registry, e.g.
@@ -118,7 +127,7 @@ jobs:
           target: ${{ matrix.image.target }}
           cache-from: type=registry,ref=${{ env.GHCR_IMAGE }}:buildcache-${{ matrix.arch }}
           cache-to: type=registry,ref=${{ env.GHCR_IMAGE }}:buildcache-${{ matrix.arch }},mode=max
-          outputs: type=image,"name=${{ env.GHCR_IMAGE }},docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image.image_name }}",push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,"name=${{ env.GHCR_IMAGE }},docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.dockerhub_repository || matrix.image.image_name }}",push-by-digest=true,name-canonical=true,push=true
           build-args: |
             BUILD_COMMIT=${{ env.BUILD_COMMIT }}
             BUILD_BRANCH=${{ env.BUILD_BRANCH }}
@@ -200,7 +209,8 @@ jobs:
       - name: Create manifest lists and push
         working-directory: /tmp/digests
         env:
-          DOCKERHUB_IMAGE: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image.image_name }}
+          DOCKERHUB_IMAGE: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.dockerhub_repository || matrix.image.image_name }}
+          DOCKERHUB_TAG_PREFIX: ${{ matrix.image.dockerhub_tag_prefix || '' }}
           EXPECTED_ARCHES: ${{ join(fromJSON(inputs.arches), ' ') }}
           TAG_SUFFIXES: ${{ inputs.tag_suffixes }}
         run: |
@@ -218,20 +228,28 @@ jobs:
             exit 1
           fi
 
-          tag_args=()
+          suffixes=()
           while IFS= read -r suffix; do
             [ -n "$suffix" ] || continue
-            tag_args+=(-t "IMAGE:${suffix}")
+            suffixes+=("$suffix")
           done <<< "$TAG_SUFFIXES"
-          if [ "${#tag_args[@]}" -eq 0 ]; then
+          if [ "${#suffixes[@]}" -eq 0 ]; then
             echo "No tag suffixes supplied; refusing to publish an untagged manifest." >&2
             exit 1
           fi
 
-          echo "Merging ${#digests[@]} digests into $(( ${#tag_args[@]} / 2 )) tag(s) per registry"
-          for image in "$GHCR_IMAGE" "$DOCKERHUB_IMAGE"; do
+          # Docker Hub tags may carry a per-image prefix so several images can share one
+          # repository; GHCR keeps one repository per image and never takes the prefix.
+          echo "Merging ${#digests[@]} digests into ${#suffixes[@]} tag(s) per registry"
+          for target in "$GHCR_IMAGE|" "$DOCKERHUB_IMAGE|$DOCKERHUB_TAG_PREFIX"; do
+            image="${target%%|*}"
+            prefix="${target#*|}"
+            tag_args=()
+            for suffix in "${suffixes[@]}"; do
+              tag_args+=(-t "${image}:${prefix}${suffix}")
+            done
             docker buildx imagetools create \
-              "${tag_args[@]/IMAGE:/${image}:}" \
+              "${tag_args[@]}" \
               "${digests[@]/#/${image}@sha256:}"
           done
 
