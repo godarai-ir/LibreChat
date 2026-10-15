@@ -127,6 +127,8 @@ export function loadCustomEndpointsConfig(
         iconURL,
         iconURLDark,
         modelDisplayLabel,
+        modelDisplay,
+        requireUserKey,
         customParams,
         provider,
         dropParams,
@@ -156,6 +158,8 @@ export function loadCustomEndpointsConfig(
         userProvideURL,
         customParams: resolvedCustomParams,
         modelDisplayLabel,
+        modelDisplay,
+        requireUserKey,
         iconURL,
         iconURLDark,
         providerId: resolveEndpointProviderId({

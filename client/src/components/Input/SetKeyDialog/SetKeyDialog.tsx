@@ -20,8 +20,8 @@ import {
 } from '@librechat/client';
 import type { TDialogProps } from '~/common';
 import { useUserKey, useLocalize, useClockFormat } from '~/hooks';
+import { formatKeyExpiryLabel, hasCurrentKey } from './utils';
 import { NotificationSeverity } from '~/common';
-import { formatKeyExpiryLabel } from './utils';
 import useCalendar from '~/hooks/useCalendar';
 import CustomConfig from './CustomEndpoint';
 import BedrockConfig from './BedrockConfig';
@@ -159,6 +159,7 @@ const SetKeyDialog = ({
   userProvideSecretAccessKey,
   userProvideSessionToken,
   userProvideBearerToken,
+  neverExpiresByDefault = false,
 }: Pick<TDialogProps, 'open' | 'onOpenChange'> & {
   endpoint: EModelEndpoint | string;
   endpointType?: EModelEndpoint;
@@ -167,6 +168,8 @@ const SetKeyDialog = ({
   userProvideSecretAccessKey?: boolean;
   userProvideSessionToken?: boolean;
   userProvideBearerToken?: boolean;
+  /** Long-lived credentials (access tokens) should not lapse after the 12 hour default. */
+  neverExpiresByDefault?: boolean;
 }) => {
   const methods = useForm({
     defaultValues: {
@@ -188,8 +191,10 @@ const SetKeyDialog = ({
   });
 
   const [userKey, setUserKey] = useState('');
-  const [expiresAtLabel, setExpiresAtLabel] = useState(EXPIRY.TWELVE_HOURS.label);
-  const { getExpiry, saveUserKey } = useUserKey(endpoint);
+  const [expiresAtLabel, setExpiresAtLabel] = useState(
+    neverExpiresByDefault ? EXPIRY.NEVER.label : EXPIRY.TWELVE_HOURS.label,
+  );
+  const { getExpiry, saveUserKey, hasKey } = useUserKey(endpoint);
   const { showToast } = useToastContext();
   const localize = useLocalize();
 
@@ -368,7 +373,9 @@ const SetKeyDialog = ({
   const hour12 = useClockFormat();
   const { dateLocale } = useCalendar();
   let currentExpiryLabel: string | null = null;
-  if (expiryTime === 'never') {
+  if (!hasCurrentKey(expiryTime, hasKey)) {
+    currentExpiryLabel = null;
+  } else if (expiryTime === 'never') {
     currentExpiryLabel = localize('com_endpoint_config_key_never_expires');
   } else if (expiryTime !== undefined) {
     currentExpiryLabel = formatKeyExpiryLabel(localize, expiryTime, hour12, dateLocale);

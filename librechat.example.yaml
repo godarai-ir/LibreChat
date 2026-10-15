@@ -1171,6 +1171,32 @@ endpoints:
       # iconURL: 'https://example.com/logo-on-light.svg'
       # iconURLDark: 'https://example.com/logo-on-dark.svg'
 
+    # Gateway that serves models as `<provider>:<account>:<model>` ids (e.g. `openai:acme-main:gpt-4o`).
+    # `modelDisplay: 'fqn'` only changes how the picker presents them: models are grouped by provider
+    # and shown by model name, with `(account)` appended when one provider serves the same model from
+    # several accounts. The full id is still what is stored and sent as `model`. Ids that are not
+    # exactly three non-empty `:`-separated parts are listed unchanged under "Other".
+    # - name: 'Gateway'
+    #   apiKey: '${GATEWAY_API_KEY}'
+    #   baseURL: 'https://gateway.example.com/v1'
+    #   models:
+    #     default: ['openai:acme-main:gpt-4o']
+    #     fetch: true
+    #   modelDisplay: 'fqn'
+
+    # Per-user key, per-tenant address (host multi-tenancy). `{slug}` stands for the caller's tenant
+    # slug and must be the whole first label of the host. With `requireUserKey` the endpoint lists
+    # no models until the user stores a key (for example a personal access token), then lists
+    # exactly what that key can see; `models.default` is not shown in between.
+    # - name: 'Godar'
+    #   apiKey: 'user_provided'
+    #   baseURL: 'https://{slug}.godarai.ir/v1'   # or ${GODAR_GATEWAY_URL}, e.g. https://{slug}.localhost/v1
+    #   models:
+    #     default: ['placeholder']   # required by the schema, never shown with requireUserKey
+    #     fetch: true
+    #   requireUserKey: true
+    #   modelDisplay: 'fqn'
+
     # Anthropic-compatible Example (native `/v1/messages` API)
     # Set `provider: anthropic` to use the native Anthropic client instead of the
     # default OpenAI-compatible one — for Anthropic itself or Anthropic-compatible

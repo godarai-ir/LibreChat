@@ -36,6 +36,18 @@ const useUserKey = (endpoint: string) => {
     return true;
   }, [getExpiry]);
 
+  /** `undefined` until the server has answered, so callers do not treat loading as "no key". */
+  const hasKey = useMemo(() => {
+    if (!checkUserKey.data) {
+      return undefined;
+    }
+    const expiresAt = checkUserKey.data.expiresAt;
+    if (!expiresAt) {
+      return false;
+    }
+    return expiresAt === 'never' || new Date(expiresAt) > new Date();
+  }, [checkUserKey.data]);
+
   const saveUserKey = useCallback(
     (userKey: string, expiresAt: number | null) => {
       const dateStr = expiresAt ? new Date(expiresAt).toISOString() : '';
@@ -49,8 +61,8 @@ const useUserKey = (endpoint: string) => {
   );
 
   return useMemo(
-    () => ({ getExpiry, checkExpiry, saveUserKey }),
-    [getExpiry, checkExpiry, saveUserKey],
+    () => ({ getExpiry, checkExpiry, saveUserKey, hasKey }),
+    [getExpiry, checkExpiry, saveUserKey, hasKey],
   );
 };
 

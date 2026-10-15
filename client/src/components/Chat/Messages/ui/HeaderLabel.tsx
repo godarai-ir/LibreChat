@@ -1,3 +1,4 @@
+import useModelLabel from '~/hooks/Endpoint/useModelLabel';
 import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
@@ -58,8 +59,10 @@ const labelSlot =
  *  `revealOnRowHoverClasses` in `../styles`: the row itself or a descendant
  *  that is not a text-entry control. Both halves matter here for the same
  *  reasons they matter to the timestamp and the footer actions. */
-export default function HeaderLabel({ label, hoverLabel }: HeaderLabelProps) {
+export default function HeaderLabel({ label, hoverLabel: rawHoverLabel }: HeaderLabelProps) {
   const localize = useLocalize();
+  const getModelLabel = useModelLabel();
+  const hoverLabel = rawHoverLabel ? getModelLabel(rawHoverLabel) : rawHoverLabel;
 
   if (!hoverLabel || hoverLabel === label) {
     return <span className="min-w-0 truncate">{label}</span>;

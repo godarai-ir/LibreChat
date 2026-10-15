@@ -297,6 +297,45 @@ describe('endpointSchema deprecated fields', () => {
   });
 });
 
+describe('endpointSchema modelDisplay', () => {
+  const validEndpoint = {
+    name: 'Gateway',
+    apiKey: 'test-key',
+    baseURL: 'https://api.example.com',
+    models: { default: ['model-1'], fetch: true },
+  };
+
+  it('accepts fqn and keeps it', () => {
+    const result = endpointSchema.safeParse({ ...validEndpoint, modelDisplay: 'fqn' });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.modelDisplay).toBe('fqn');
+    }
+  });
+
+  it('is optional, so existing configs are unchanged', () => {
+    const result = endpointSchema.safeParse(validEndpoint);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.modelDisplay).toBeUndefined();
+    }
+  });
+
+  it('accepts requireUserKey as a boolean only', () => {
+    const accepted = endpointSchema.safeParse({ ...validEndpoint, requireUserKey: true });
+    expect(accepted.success && accepted.data.requireUserKey).toBe(true);
+    expect(endpointSchema.safeParse({ ...validEndpoint, requireUserKey: 'yes' }).success).toBe(
+      false,
+    );
+  });
+
+  it('rejects an unknown mode', () => {
+    expect(endpointSchema.safeParse({ ...validEndpoint, modelDisplay: 'short' }).success).toBe(
+      false,
+    );
+  });
+});
+
 describe('endpointSchema addParams validation', () => {
   const validEndpoint = {
     name: 'CustomEndpoint',
