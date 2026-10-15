@@ -2,6 +2,7 @@ import { LocalStorageKeys } from 'librechat-data-provider';
 import type { LocalizeFunction } from '~/common';
 import {
   hasRealTitle,
+  DEFAULT_APP_TITLE,
   getDisplayTitle,
   setDocumentTitle,
   CHAT_TITLE_IN_TAB_KEY,
@@ -52,7 +53,7 @@ describe('document title', () => {
 
     setDocumentTitle('', true);
 
-    expect(document.title).toBe('LibreChat');
+    expect(document.title).toBe(DEFAULT_APP_TITLE);
   });
 
   it('uses the default app title when the stored app title is empty', () => {
@@ -60,7 +61,7 @@ describe('document title', () => {
 
     setDocumentTitle('', true);
 
-    expect(document.title).toBe('LibreChat');
+    expect(document.title).toBe(DEFAULT_APP_TITLE);
   });
 
   it('uses the default app title when storage is unavailable', () => {
@@ -70,7 +71,7 @@ describe('document title', () => {
 
     setDocumentTitle('', true);
 
-    expect(document.title).toBe('LibreChat');
+    expect(document.title).toBe(DEFAULT_APP_TITLE);
   });
 
   it('defaults to enabled when the stored setting is malformed', () => {

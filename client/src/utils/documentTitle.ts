@@ -2,7 +2,7 @@ import { LocalStorageKeys } from 'librechat-data-provider';
 import type { LocalizeFunction } from '~/common';
 
 export const CHAT_TITLE_IN_TAB_KEY = 'chatTitleInTab';
-export const DEFAULT_APP_TITLE = 'LibreChat';
+export const DEFAULT_APP_TITLE = 'گدار چت';
 let documentTitleRevision = 0;
 
 export const getDocumentTitleRevision = (): number => documentTitleRevision;
