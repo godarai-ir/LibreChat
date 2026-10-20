@@ -8,11 +8,11 @@ import {
 } from 'librechat-data-provider';
 import type { TMessageContentParts } from 'librechat-data-provider';
 import type { ReactNode } from 'react';
-import { useMessagesConversation, useMessagesOperations } from '~/Providers';
 import { getPartText, isEditablePart, withPartText } from './editableParts';
+import { useMessagePartsHost } from '~/Providers/MessagePartsHostContext';
+import useGetAddedConvo from '~/hooks/Conversations/useGetAddedConvo';
 import { findRerunParent } from './rerunParent';
-import { useGetAddedConvo } from '~/hooks/Chat';
-import { useLocalize, useChatDirection } from '~/hooks';
+import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
 type EditableType = ContentTypes.TEXT | ContentTypes.THINK;
@@ -46,9 +46,9 @@ export default function EditContentParts({
   renderReadOnlyPart,
 }: EditContentPartsProps) {
   const localize = useLocalize();
+  const { useChatDirection, useMessagesEditing } = useMessagePartsHost();
   const isRTL = useChatDirection() === 'rtl';
-  const { conversation } = useMessagesConversation();
-  const { ask, getMessages, setMessages } = useMessagesOperations();
+  const { conversation, ask, getMessages, setMessages } = useMessagesEditing();
   const getAddedConvo = useGetAddedConvo();
   const firstEditorRef = useRef<HTMLTextAreaElement | null>(null);
   const [saveError, setSaveError] = useState(false);

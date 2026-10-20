@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { logger, runAsSystem } = require('@librechat/data-schemas');
+const { logger, runAsSystem, warnOnMissingSearchTokens } = require('@librechat/data-schemas');
 const {
   logAgentMigrationWarning,
   logPromptMigrationWarning,
@@ -18,6 +18,8 @@ function checkMigrations() {
 }
 
 async function checkMigrationsUnscoped() {
+  /** Started first so it overlaps the permission checks; it logs its own failures. */
+  const searchTokens = warnOnMissingSearchTokens(mongoose.connection);
   try {
     const agentMigrationResult = await checkAgentPermissionsMigration({
       mongoose,
@@ -42,6 +44,7 @@ async function checkMigrationsUnscoped() {
   } catch (error) {
     logger.error('Failed to check prompt permissions migration:', error);
   }
+  await searchTokens;
 }
 
 module.exports = {
