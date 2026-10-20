@@ -20,11 +20,15 @@ const readStoredLang = () => {
   }
 };
 
+/** GodarChat is Persian-first: the browser's language is deliberately ignored. */
+export const DEFAULT_LANG = 'fa-IR';
+
+/** Only these are offered; a saved choice outside them (including legacy `auto`) falls back to Persian. */
+export const OFFERED_LANGS = ['fa-IR', 'en-US'];
+
 const defaultLang = () => {
-  const userLang =
-    (typeof navigator !== 'undefined' ? navigator.language || navigator.languages?.[0] : null) ??
-    'en';
-  return Cookies.get('lang') || readStoredLang() || userLang;
+  const saved = Cookies.get('lang') || readStoredLang();
+  return saved && OFFERED_LANGS.includes(saved) ? saved : DEFAULT_LANG;
 };
 
 const lang = atomWithLocalStorage('lang', defaultLang());

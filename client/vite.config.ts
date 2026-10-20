@@ -154,8 +154,8 @@ export default defineConfig(({ command }) => ({
       },
       includeAssets: [],
       manifest: {
-        name: 'LibreChat',
-        short_name: 'LibreChat',
+        name: 'گدار چت',
+        short_name: 'گدار چت',
         display: 'standalone',
         background_color: '#000000',
         theme_color: '#009688',
