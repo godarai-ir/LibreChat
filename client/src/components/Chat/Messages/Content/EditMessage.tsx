@@ -3,14 +3,13 @@ import { useForm } from 'react-hook-form';
 import { Alert, Button, TextareaAutosize } from '@librechat/client';
 import { useUpdateMessageMutation } from 'librechat-data-provider/react-query';
 import type { TEditProps } from '~/common';
-import { useMessagesOperations, useMessagesConversation } from '~/Providers';
-import { useLocalize, useChatDirection } from '~/hooks';
+import { useMessagePartsHost } from '~/Providers/MessagePartsHostContext';
+import useGetAddedConvo from '~/hooks/Conversations/useGetAddedConvo';
 import { cn, isSubmittableMessage } from '~/utils';
 import { findRerunParent } from './rerunParent';
-import { useGetAddedConvo } from '~/hooks/Chat';
+import { useLocalize } from '~/hooks';
 import Container from './Container';
 import EditFiles from './EditFiles';
-import store from '~/store';
 
 const EditMessage = ({
   text,
@@ -24,8 +23,8 @@ const EditMessage = ({
   const saveButtonRef = useRef<HTMLButtonElement | null>(null);
   const submitButtonRef = useRef<HTMLButtonElement | null>(null);
   const [saveError, setSaveError] = useState(false);
-  const { conversation } = useMessagesConversation();
-  const { getMessages, setMessages } = useMessagesOperations();
+  const { useChatDirection, useMessagesEditing } = useMessagePartsHost();
+  const { conversation, getMessages, setMessages } = useMessagesEditing();
 
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 

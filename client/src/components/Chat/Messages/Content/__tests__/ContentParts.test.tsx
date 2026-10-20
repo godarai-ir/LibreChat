@@ -352,11 +352,11 @@ describe('ContentParts: thinking-dot header alignment', () => {
     expect(screen.getByTestId('empty-text')).toHaveAttribute('data-under-header-icon', 'false');
   });
 
-  it('renders a persisted empty text part normally once submission ends', () => {
+  it('shows the empty-response notice for a persisted empty text part once submission ends', () => {
     const seeded = [{ type: ContentTypes.TEXT, text: { value: '' } }] as TMessageContentParts[];
     render(<ContentParts {...baseProps} content={seeded} />);
     expect(screen.queryByTestId('empty-text')).toBeNull();
-    expect(screen.getByTestId('real-part-text')).toBeInTheDocument();
+    expect(screen.getByTestId('empty-response')).toBeInTheDocument();
   });
 
   it('leaves real text content out of the placeholder path', () => {

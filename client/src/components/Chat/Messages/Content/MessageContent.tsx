@@ -1,17 +1,15 @@
 import { memo, Suspense, useMemo } from 'react';
-import { useRecoilValue } from 'recoil';
 import { Alert, DelayedRender } from '@librechat/client';
+import { EmptyText, CollapsibleText } from '@librechat/chat/components';
 import { Constants, parseThinkingContent } from 'librechat-data-provider';
 import type { TMessage } from 'librechat-data-provider';
 import type { TMessageContentProps, TDisplayProps } from '~/common';
 import AttachmentRecoveryActions from '~/components/Messages/Content/Error/recovery';
+import { useMessagePartsHost } from '~/Providers/MessagePartsHostContext';
 import useSmoothStreaming from '~/hooks/Messages/useSmoothStreaming';
 import Error from '~/components/Messages/Content/Error';
 import ToolCallLimitNotice from './ToolCallLimitNotice';
-import CollapsibleText from './Parts/CollapsibleText';
 import EmptyResponse from './Parts/EmptyResponse';
-import { useMessageContext } from '~/Providers';
-import EmptyText from './Parts/EmptyText';
 import MarkdownLite from './MarkdownLite';
 import EditMessage from './EditMessage';
 import Thinking from './Parts/Thinking';
@@ -19,7 +17,6 @@ import { useLocalize } from '~/hooks';
 import Container from './Container';
 import Markdown from './Markdown';
 import { cn } from '~/utils';
-import store from '~/store';
 
 const ERROR_CONNECTION_TEXT = 'Error connecting to server, try refreshing the page.';
 const DELAYED_ERROR_TIMEOUT = 5500;
@@ -94,9 +91,9 @@ export const ErrorMessage = ({
 };
 
 export const DisplayMessage = ({ text, isCreatedByUser, message, showCursor }: TDisplayProps) => {
-  const { isSubmitting = false, isLatestMessage = false } = useMessageContext();
-  const enableUserMsgMarkdown = useRecoilValue(store.enableUserMsgMarkdown);
-  const collapseLongUserMessages = useRecoilValue(store.collapseLongUserMessages);
+  const { useMessage, useUserTextPreferences } = useMessagePartsHost();
+  const { isSubmitting = false, isLatestMessage = false } = useMessage();
+  const { enableUserMsgMarkdown, collapseLongUserMessages } = useUserTextPreferences();
   const smoothStreaming = useSmoothStreaming();
 
   // The word fade itself indicates streaming, so the trailing block cursor
