@@ -26,6 +26,10 @@ jest.mock('~/data-provider', () => ({
   usePullRequestConnectionStatus: () => mockConnection,
 }));
 
+jest.mock('~/data-provider/Godar/queries', () => ({
+  useGodarSeatQuery: () => ({ data: null }),
+}));
+
 jest.mock('../../SettingsTabs/ProviderKeys/useProviderKeys', () => () => []);
 
 const baseUser: Omit<TUser, 'provider'> = {

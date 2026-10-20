@@ -41,6 +41,8 @@ export type SectionId =
 
 export interface SettingsContextValue {
   balanceEnabled: boolean;
+  /** The member signed in with Godar and the gateway reports a seat for them. */
+  hasGodarSeat: boolean;
   hasAnyPersonalizationFeature: boolean;
   hasMemoryOptOut: boolean;
   hasStatefulCodeSessions: boolean;

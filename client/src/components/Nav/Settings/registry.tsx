@@ -38,6 +38,7 @@ import { EngineSTTSetting, EngineTTSSetting } from './SpeechControls';
 import UiScaleSelector from '../SettingsTabs/General/UiScaleSelector';
 import FontSizeSelector from '../SettingsTabs/Chat/FontSizeSelector';
 import ChatTitleInTab from '../SettingsTabs/General/ChatTitleInTab';
+import GodarSeatSummary from '~/components/Godar/GodarSeatSummary';
 import AdvancedPrompts from '../SettingsTabs/Chat/AdvancedPrompts';
 import DuringRunAction from '../SettingsTabs/Chat/DuringRunAction';
 import DeleteAccount from '../SettingsTabs/Account/DeleteAccount';
@@ -850,6 +851,15 @@ export const registry: SettingEntry[] = [
     Component: ConnectedAccounts,
   },
   // Account · Billing
+  {
+    id: 'godarSeat',
+    tab: ACCOUNT,
+    section: 'billing',
+    labelKey: 'com_ui_settings_label_godar_seat',
+    keywords: ['seat', 'credits', 'godar', 'pro', 'max', 'صندلی', 'اعتبار'],
+    show: (ctx) => ctx.hasGodarSeat,
+    Component: GodarSeatSummary,
+  },
   {
     id: 'tokenCredits',
     tab: ACCOUNT,

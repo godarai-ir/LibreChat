@@ -2,6 +2,7 @@ import { ErrorTypes, ViolationTypes } from 'librechat-data-provider';
 import type { ComponentType } from 'react';
 import type { ErrorRendererProps } from './parts';
 import type { TranslationKeys } from '~/hooks';
+import SeatError, { SEAT_BLOCK_CODES } from './SeatError';
 import { ProviderErrorCodes } from './parts';
 import ProviderError from './ProviderError';
 import UserKeyError from './UserKeyError';
@@ -77,4 +78,6 @@ export const errorRenderers: Record<string, ComponentType<ErrorRendererProps>> =
   [ViolationTypes.FILE_UPLOAD_LIMIT]: LimitError,
   [ViolationTypes.TTS_LIMIT]: LimitError,
   [ViolationTypes.STT_LIMIT]: LimitError,
+  /** GodarAI gateway refusals from the member's seat, nested under `error` in the 402 body. */
+  ...Object.fromEntries(SEAT_BLOCK_CODES.map((code) => [code, SeatError])),
 };
