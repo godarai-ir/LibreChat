@@ -9,6 +9,7 @@ const validTabSections = new Map(TABS.map((t) => [t.id, new Set(t.sections.map((
 
 const settingsContext: SettingsContextValue = {
   balanceEnabled: false,
+  hasGodarSeat: false,
   hasAnyPersonalizationFeature: false,
   hasMemoryOptOut: false,
   hasStatefulCodeSessions: false,

@@ -372,4 +372,75 @@ describe('terminal agent-run error logging', () => {
       errorType: '_OTHER',
     });
   });
+
+  describe('provider error codes', () => {
+    const FALLBACK = 'The model provider could not complete this request.\n';
+    /** An OpenAI SDK APIError for a gateway 402: body fields on the error, the body under `error`. */
+    function gatewayRefusal(code: string) {
+      return Object.assign(new Error('402 refused'), {
+        status: 402,
+        code,
+        type: code,
+        error: { message: 'refused', type: code, code, scope: 'seat' },
+      });
+    }
+
+    function render(providerError: Error, providerErrorCodes?: string[], protectionEnabled = true) {
+      const observer = createTerminalRunErrorObserver({
+        logger: { error: jest.fn() },
+        source: '[Agent API]',
+        protectionEnabled,
+        providerErrorCodes,
+      });
+      observer.modelCallback.handleLLMError(providerError);
+      return observer.getUserFacingError(
+        new Error('graph failed', { cause: providerError }),
+        () => 'fallback',
+      );
+    }
+
+    it('names a listed code even while provider text is withheld', () => {
+      expect(render(gatewayRefusal('personal_limit_reached'), ['personal_limit_reached'])).toBe(
+        FALLBACK +
+          JSON.stringify({
+            type: 'upstream_model_error',
+            code: 'personal_limit_reached',
+            status: 402,
+          }),
+      );
+    });
+
+    it('reads a code that only the nested body carries', () => {
+      const providerError = Object.assign(new Error('402 refused'), {
+        status: 402,
+        error: { code: 'pool_exhausted' },
+      });
+      expect(JSON.parse(render(providerError, ['pool_exhausted']).split('\n')[1])).toEqual({
+        type: 'upstream_model_error',
+        code: 'pool_exhausted',
+        status: 402,
+      });
+    });
+
+    it.each([
+      ['an unlisted code', ['pool_exhausted']],
+      ['no configured codes', undefined],
+    ])('forwards nothing for %s', (_label, providerErrorCodes) => {
+      expect(render(gatewayRefusal('personal_limit_reached'), providerErrorCodes)).toBe(
+        FALLBACK + JSON.stringify({ type: 'upstream_model_error', status: 402 }),
+      );
+    });
+
+    it('survives hostile accessors on the provider error', () => {
+      const providerError = Object.assign(new Error('402 refused'), { status: 402 });
+      Object.defineProperty(providerError, 'code', {
+        get() {
+          throw new Error('boom');
+        },
+      });
+      expect(render(providerError, ['personal_limit_reached'])).toBe(
+        FALLBACK + JSON.stringify({ type: 'upstream_model_error', status: 402 }),
+      );
+    });
+  });
 });

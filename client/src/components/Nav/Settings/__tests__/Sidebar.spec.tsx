@@ -7,6 +7,7 @@ import Sidebar from '../Sidebar';
 
 const ctx: SettingsContextValue = {
   balanceEnabled: false,
+  hasGodarSeat: false,
   hasAnyPersonalizationFeature: false,
   hasMemoryOptOut: false,
   hasStatefulCodeSessions: false,

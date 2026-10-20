@@ -4548,6 +4548,7 @@ class AgentClient extends BaseClient {
     const appConfig = this.options.req.config;
     const terminalRunError = createTerminalRunErrorObserver({
       maxProviderErrorChars: appConfig?.endpoints?.agents?.maxProviderErrorChars,
+      providerErrorCodes: appConfig?.endpoints?.agents?.providerErrorCodes,
       logger,
       responseMessageId: this.responseMessageId,
       source: '[api/server/controllers/agents/client.js #sendCompletion]',
@@ -5436,6 +5437,7 @@ class AgentClient extends BaseClient {
     const appConfig = this.options.req.config;
     const terminalRunError = createTerminalRunErrorObserver({
       maxProviderErrorChars: appConfig?.endpoints?.agents?.maxProviderErrorChars,
+      providerErrorCodes: appConfig?.endpoints?.agents?.providerErrorCodes,
       logger,
       responseMessageId: this.responseMessageId,
       source: '[api/server/controllers/agents/client.js #resumeCompletion]',

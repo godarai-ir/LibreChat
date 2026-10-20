@@ -38,7 +38,7 @@ export default function Sidebar({
     >
       <div className="relative shrink-0">
         <Search
-          className="text-text-tertiary pointer-events-none absolute top-1/2 start-2 h-4 w-4 -translate-y-1/2"
+          className="text-text-tertiary pointer-events-none absolute start-2 top-1/2 h-4 w-4 -translate-y-1/2"
           aria-hidden="true"
         />
         <input
@@ -54,14 +54,14 @@ export default function Sidebar({
           }}
           placeholder={localize('com_ui_settings_search_placeholder')}
           aria-label={localize('com_ui_settings_search_placeholder')}
-          className="bg-surface-secondary text-text-primary w-full rounded-lg py-2 pe-8 ps-8 text-sm focus-visible:outline-hidden"
+          className="bg-surface-secondary text-text-primary w-full rounded-lg py-2 ps-8 pe-8 text-sm focus-visible:outline-hidden"
         />
         {query.length > 0 && (
           <button
             type="button"
             onClick={() => onQueryChange('')}
             aria-label={localize('com_ui_clear_search')}
-            className="text-text-secondary hover:bg-surface-hover hover:text-text-primary focus-visible:ring-text-primary absolute top-1/2 end-1.5 -translate-y-1/2 rounded-md p-1 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+            className="text-text-secondary hover:bg-surface-hover hover:text-text-primary focus-visible:ring-text-primary absolute end-1.5 top-1/2 -translate-y-1/2 rounded-md p-1 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -87,7 +87,10 @@ export default function Sidebar({
                 <span className="min-w-0 text-start break-words">{localize(tab.labelKey)}</span>
               </span>
               {showChevron && (
-                <ChevronRight className="text-text-tertiary h-4 w-4 shrink-0 rtl:-scale-x-100" aria-hidden="true" />
+                <ChevronRight
+                  className="text-text-tertiary h-4 w-4 shrink-0 rtl:-scale-x-100"
+                  aria-hidden="true"
+                />
               )}
             </Tabs.Trigger>
           ))}

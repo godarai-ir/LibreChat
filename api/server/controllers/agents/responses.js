@@ -619,6 +619,7 @@ const executeResponse = async (envelope, { req, res }) => {
   const responseId = generateResponseId();
   const terminalRunError = createTerminalRunErrorObserver({
     maxProviderErrorChars: appConfig?.endpoints?.agents?.maxProviderErrorChars,
+    providerErrorCodes: appConfig?.endpoints?.agents?.providerErrorCodes,
     logger,
     responseMessageId: responseId,
     source: '[Responses API]',

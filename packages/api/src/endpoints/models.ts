@@ -16,6 +16,7 @@ import {
   isUserProvided,
   resolveHeaders,
   deriveBaseURL,
+  resolveModelHeaders,
   logAxiosError,
   inputSchema,
   applyAxiosProxyConfig,
@@ -236,12 +237,14 @@ export async function fetchModels({
 
   try {
     // Resolve template variables (e.g. {{LIBRECHAT_OPENID_ID_TOKEN}}) in the
-    // configured headers, mirroring fetchOllamaModels above. Without this,
-    // placeholder strings are forwarded literally on the model-fetch path.
-    const resolvedHeaders = resolveHeaders({
+    // configured headers. Without this, placeholder strings are forwarded
+    // literally on the model-fetch path. Model-header resolution also signs
+    // {{LIBRECHAT_USER_ASSERTION}}, so a gateway lists exactly what the user can
+    // reach; the authenticated user's tenant was already matched to the request.
+    const resolvedHeaders = resolveModelHeaders({
       headers: headers ?? undefined,
       user: userObject,
-      stripUnresolved: true,
+      tenantId: userObject?.tenantId,
     });
 
     const options: AxiosRequestConfig & {

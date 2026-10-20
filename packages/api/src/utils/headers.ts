@@ -1,6 +1,8 @@
+import { logger } from '@librechat/data-schemas';
 import type { AnthropicClientOptions } from '@librechat/agents';
 import type { IUser } from '@librechat/data-schemas';
 import type { RequestBody, RunLLMConfig } from '~/types';
+import { USER_ASSERTION_PLACEHOLDER, createUserAssertion } from '~/auth/assertion';
 import { resolveHeaders } from './env';
 
 const TENANT_ID_HEADER_PLACEHOLDERS = [
@@ -102,9 +104,41 @@ function resolveTenantPlaceholders(
 }
 
 /**
+ * Signs one user assertion for every header that asks for it. A header whose
+ * assertion cannot be minted is omitted, never sent with a blank or literal
+ * credential, so the gateway answers with its own unauthenticated error.
+ */
+function resolveAssertionPlaceholders(
+  headers: Record<string, string>,
+  user: Partial<IUser> | { id: string } | undefined,
+  tenantId?: string,
+): Record<string, string> {
+  const names = Object.keys(headers).filter((name) =>
+    headers[name].includes(USER_ASSERTION_PLACEHOLDER),
+  );
+  if (names.length === 0) {
+    return headers;
+  }
+
+  const assertion = createUserAssertion({ user, tenantId });
+  const resolved = { ...headers };
+  for (const name of names) {
+    if (assertion == null) {
+      logger.warn(
+        `Omitting header "${name}": ${USER_ASSERTION_PLACEHOLDER} could not be resolved for the current request`,
+      );
+      delete resolved[name];
+      continue;
+    }
+    resolved[name] = resolved[name].replaceAll(USER_ASSERTION_PLACEHOLDER, assertion);
+  }
+  return resolved;
+}
+
+/**
  * Resolves model-header templates with the request-scoped tenant supplied by
- * the run host. Tenant substitution is intentionally scoped to model headers;
- * it does not widen the user fields exposed to other template consumers.
+ * the run host. Tenant and user-assertion substitution are intentionally scoped
+ * to model headers; they do not widen what other template consumers can expose.
  */
 export function resolveModelHeaders({
   headers,
@@ -127,7 +161,11 @@ export function resolveModelHeaders({
     stripUnresolved: true,
   });
 
-  return resolveTenantPlaceholders(resolved, tenantId);
+  return resolveAssertionPlaceholders(
+    resolveTenantPlaceholders(resolved, tenantId),
+    user,
+    tenantId,
+  );
 }
 
 /**
