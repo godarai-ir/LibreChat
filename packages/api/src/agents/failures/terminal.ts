@@ -74,6 +74,47 @@ export function getUpstreamModelErrorMetadata(
   };
 }
 
+function readStringProperty(value: unknown, property: string): string | undefined {
+  if (value == null || typeof value !== 'object') {
+    return undefined;
+  }
+  try {
+    const read = Reflect.get(value, property);
+    return typeof read === 'string' ? read : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The provider's own failure code when the deployment lists it. OpenAI-compatible clients surface
+ * the body's `code`/`type` on the error and keep the body under `error`; both are read, so a
+ * gateway refusal (for example a 402 naming why) reaches the UI as a stable identifier.
+ */
+function getAllowedProviderErrorCode(
+  error: unknown,
+  allowed: ReadonlySet<string>,
+): string | undefined {
+  if (allowed.size === 0) {
+    return undefined;
+  }
+  let body: unknown;
+  try {
+    body = error != null && typeof error === 'object' ? Reflect.get(error, 'error') : undefined;
+  } catch {
+    body = undefined;
+  }
+  for (const candidate of [error, body]) {
+    for (const property of ['code', 'type']) {
+      const value = readStringProperty(candidate, property);
+      if (value != null && allowed.has(value)) {
+        return value;
+      }
+    }
+  }
+  return undefined;
+}
+
 /** Applies one terminal-run log taxonomy to every agent ingress. */
 export function createTerminalRunErrorObserver({
   logger,
@@ -81,6 +122,7 @@ export function createTerminalRunErrorObserver({
   source,
   protectionEnabled,
   maxProviderErrorChars,
+  providerErrorCodes,
   genericMessage = `${source} Error:`,
 }: {
   logger: TerminalRunErrorLogger;
@@ -94,9 +136,16 @@ export function createTerminalRunErrorObserver({
    */
   protectionEnabled?: boolean;
   maxProviderErrorChars?: number;
+  /**
+   * Provider error codes the UI may be told about (`endpoints.agents.providerErrorCodes`). A listed
+   * code is an identifier the deployment chose to expose, not submitted content, so it is forwarded
+   * whether or not content protection withholds the provider's text.
+   */
+  providerErrorCodes?: readonly string[];
   genericMessage?: string;
 }): TerminalRunErrorObserver {
   const modelErrorTracker = createModelErrorTracker();
+  const allowedProviderErrorCodes = new Set(providerErrorCodes ?? []);
   return Object.freeze({
     modelCallback: modelErrorTracker.callback,
     getUserFacingError(error: unknown, fallback: () => string) {
@@ -124,8 +173,12 @@ export function createTerminalRunErrorObserver({
           ? undefined
           : (getProviderErrorMessage(upstreamModelError, maxProviderErrorChars) ??
             getProviderErrorMessage(error, maxProviderErrorChars));
+      const code =
+        getAllowedProviderErrorCode(upstreamModelError, allowedProviderErrorCodes) ??
+        getAllowedProviderErrorCode(error, allowedProviderErrorCodes);
       return `${UPSTREAM_MODEL_ERROR_FALLBACK}\n${JSON.stringify({
         type: ErrorTypes.UPSTREAM_MODEL_ERROR,
+        ...(code != null ? { code } : {}),
         ...(status != null ? { status } : {}),
         ...(providerMessage != null ? { message: providerMessage } : {}),
       })}`;

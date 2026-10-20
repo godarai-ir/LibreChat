@@ -49,6 +49,7 @@ jest.mock('~/utils', () => {
     processModelData: jest.fn((...args) => originalUtils.processModelData(...args)),
     logAxiosError: jest.fn(),
     resolveHeaders: jest.fn((options) => options?.headers || {}),
+    resolveModelHeaders: jest.fn((options) => options?.headers || {}),
   };
 });
 
@@ -62,7 +63,7 @@ jest.mock('@librechat/data-schemas', () => ({
 }));
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
-const { logAxiosError, resolveHeaders } = jest.requireMock('~/utils');
+const { logAxiosError, resolveHeaders, resolveModelHeaders } = jest.requireMock('~/utils');
 
 mockedAxios.get.mockResolvedValue({
   data: {
@@ -180,9 +181,9 @@ describe('fetchModels', () => {
       Authorization: 'Bearer {{LIBRECHAT_OPENID_ID_TOKEN}}',
       'X-User-Email': '{{LIBRECHAT_USER_EMAIL}}',
     };
-    const userObject = { id: 'user123', email: 'user@example.com' };
+    const userObject = { id: 'user123', email: 'user@example.com', tenantId: 'tenant-a' };
 
-    (resolveHeaders as jest.Mock).mockReturnValueOnce({
+    (resolveModelHeaders as jest.Mock).mockReturnValueOnce({
       Authorization: 'Bearer resolved-jwt',
       'X-User-Email': 'user@example.com',
     });
@@ -196,10 +197,11 @@ describe('fetchModels', () => {
       userObject,
     });
 
-    expect(resolveHeaders).toHaveBeenCalledWith({
+    /** Model-header resolution, so the user's tenant and assertion resolve as on chat requests */
+    expect(resolveModelHeaders).toHaveBeenCalledWith({
       headers: customHeaders,
       user: userObject,
-      stripUnresolved: true,
+      tenantId: 'tenant-a',
     });
     expect(mockedAxios.get).toHaveBeenCalledWith(
       expect.stringContaining('https://api.test.com/models'),

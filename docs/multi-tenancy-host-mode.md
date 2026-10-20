@@ -183,7 +183,7 @@ Host-mode startup now also requires `OPENID_SESSION_SECRET` and refuses a global
 Not done in this phase, on purpose:
 
 - **`OPENID_REUSE_TOKENS` / `openidJwt`.** Reusing the provider's bearer token as the app token needs a per-tenant issuer, audience and JWKS in `openIdJwtStrategy`. It is refused at startup until then.
-- **Gateway access token.** `{{LIBRECHAT_OPENID_ACCESS_TOKEN}}` comes from `user.federatedTokens`, set at login. Whether it is still available on later chat requests without token reuse has to be confirmed end to end.
+- **Gateway access token.** `{{LIBRECHAT_OPENID_ACCESS_TOKEN}}` is not available in host mode: without token reuse the callback issues LibreChat's own tokens and drops the provider's access token, and the session token provider is gated on `OPENID_REUSE_TOKENS`. The Godar endpoint authenticates with `{{LIBRECHAT_USER_ASSERTION}}` instead, a short-lived JWT LibreChat signs per request (`sub` = provider subject, `tid` = request tenant; `USER_ASSERTION_*` in `.env.example`) that the gateway verifies with LibreChat's public key. It also works for scheduled runs, which have no browser session.
 - **OBO token cache.** `OPENID_EXCHANGED_TOKENS` was keyed by `sub` alone, so two tenants could share an entry. It is a `standardCache` namespace, so Phase 10 scopes it to the tenant.
 - **End-to-end test.** Everything above is unit-tested with a mocked provider; a real login against the Godar provider has not been run.
 

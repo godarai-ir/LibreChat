@@ -739,6 +739,15 @@ endpoints:
   #   recursionLimit: 50
   #   # Maximum provider error characters retained without content protection (0 hides detail).
   #   maxProviderErrorChars: 2000
+  #   # Provider error codes (the error body's `code` or `type`) a failed run may name to the UI,
+  #   # which shows its own copy for them. Only listed codes are forwarded, never provider text.
+  #   # The GodarAI seat refusals below render as an explanation with a seat request.
+  #   providerErrorCodes:
+  #     - seat_unassigned
+  #     - seat_credits_exhausted
+  #     - personal_limit_reached
+  #     - budget_rule_reached
+  #     - pool_exhausted
   #   # (optional) Max recursion depth for agents, defaults to 25
   #   maxRecursionLimit: 100
   #   # (optional) Abort a run once a single streamed tool call's arguments exceed this many bytes.
@@ -1191,17 +1200,23 @@ endpoints:
     #     fetch: true
     #   modelDisplay: 'fqn'
 
-    # Per-user key, per-tenant address (host multi-tenancy). `{slug}` stands for the caller's tenant
-    # slug and must be the whole first label of the host. With `requireUserKey` the endpoint lists
-    # no models until the user stores a key (for example a personal access token), then lists
-    # exactly what that key can see; `models.default` is not shown in between.
+    # Signed-in user, per-tenant address (host multi-tenancy). `{slug}` stands for the caller's
+    # tenant slug and must be the whole first label of the host. `{{LIBRECHAT_USER_ASSERTION}}` is a
+    # short-lived JWT LibreChat signs for each request (see USER_ASSERTION_* in .env.example) naming
+    # the user's identity-provider subject (`sub`) and tenant (`tid`); the gateway verifies it with
+    # LibreChat's public key, so users never paste a key and the model list is fetched per user.
+    # `apiKey` is only a fallback the SDK requires; the Authorization header replaces it. A user
+    # without an OpenID identity gets no assertion, the header is dropped, and the gateway refuses.
+    # List the gateway's seat refusal codes in `endpoints.agents.providerErrorCodes` so a refused
+    # chat explains why and offers a seat request instead of a generic provider error.
     # - name: 'Godar'
-    #   apiKey: 'user_provided'
+    #   apiKey: 'user-assertion'
     #   baseURL: 'https://{slug}.godarai.ir/v1'   # or ${GODAR_GATEWAY_URL}, e.g. https://{slug}.localhost/v1
+    #   headers:
+    #     Authorization: 'Bearer {{LIBRECHAT_USER_ASSERTION}}'
     #   models:
-    #     default: ['placeholder']   # required by the schema, never shown with requireUserKey
+    #     default: ['placeholder']   # required by the schema; shown only if the fetch returns nothing
     #     fetch: true
-    #   requireUserKey: true
     #   modelDisplay: 'fqn'
 
     # Anthropic-compatible Example (native `/v1/messages` API)

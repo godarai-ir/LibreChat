@@ -11,6 +11,7 @@ import { useGetStartupConfig, usePullRequestConnectionStatus } from '~/data-prov
 import useProviderKeys from '../SettingsTabs/ProviderKeys/useProviderKeys';
 import { useHasAccess, useAuthContext, useGetAgentsConfig } from '~/hooks';
 import usePersonalizationAccess from '~/hooks/usePersonalizationAccess';
+import { useGodarSeatQuery } from '~/data-provider/Godar/queries';
 import { hasAnalyticsGtmId } from '~/store/analytics';
 import store from '~/store';
 
@@ -19,6 +20,9 @@ export function useSettingsContext(): SettingsContextValue {
   const { data: startupConfig } = useGetStartupConfig();
   const { agentsConfig } = useGetAgentsConfig();
   const pullRequestConnection = usePullRequestConnectionStatus();
+  /** Only Godar sign-ins have a seat; the query answers null for everyone else. */
+  const { data: godarSeat } = useGodarSeatQuery(user?.provider === 'openid');
+  const hasGodarSeat = godarSeat != null;
   const { hasAnyPersonalizationFeature, hasMemoryOptOut } = usePersonalizationAccess();
 
   const hasRemoteAgents = useHasAccess({
@@ -73,6 +77,7 @@ export function useSettingsContext(): SettingsContextValue {
   return useMemo(
     () => ({
       balanceEnabled,
+      hasGodarSeat,
       hasAnyPersonalizationFeature,
       hasMemoryOptOut,
       hasStatefulCodeSessions,
@@ -100,6 +105,7 @@ export function useSettingsContext(): SettingsContextValue {
     }),
     [
       balanceEnabled,
+      hasGodarSeat,
       hasAnyPersonalizationFeature,
       hasMemoryOptOut,
       hasStatefulCodeSessions,
