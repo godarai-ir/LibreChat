@@ -1,13 +1,17 @@
 const express = require('express');
 const { logger } = require('@librechat/data-schemas');
-const { extractOpenIDTokenInfo, isOpenIDTokenValid } = require('@librechat/api');
+const {
+  resolveModelHeaders,
+  resolveRequestTenantId,
+  OpenIDReauthRequiredError,
+} = require('@librechat/api');
 const { requireJwtAuth } = require('../middleware/');
 const { getAppConfig } = require('~/server/services/Config');
 
 /**
  * GodarAI member seats. The gateway knows each member's seat and personal credits; these routes
- * ask it on the member's behalf with their own Godar access token, the same credential the Godar
- * endpoint sends with every chat request.
+ * ask it on the member's behalf with the Godar endpoint's own resolved headers, the same
+ * credential (for example `{{LIBRECHAT_USER_ASSERTION}}`) it sends with every chat request.
  */
 const router = express.Router();
 
@@ -23,38 +27,51 @@ const BLOCK_REASONS = new Set([
   'pool_exhausted',
 ]);
 
-/** The tenant's gateway base URL (".../v1") with `{slug}` already resolved, or null. */
-async function resolveGatewayBaseURL(user) {
+/** The tenant's Godar endpoint, whose base URL (".../v1") has `{slug}` already resolved. */
+async function resolveGatewayEndpoint(user) {
   const appConfig = await getAppConfig({
     role: user.role,
     userId: user.id,
     tenantId: user.tenantId,
   });
-  const endpoint = appConfig?.endpoints?.custom?.find((item) => item?.name === GODAR_ENDPOINT_NAME);
-  const baseURL = typeof endpoint?.baseURL === 'string' ? endpoint.baseURL.trim() : '';
-  return baseURL ? baseURL.replace(/\/+$/, '') : null;
+  return appConfig?.endpoints?.custom?.find((item) => item?.name === GODAR_ENDPOINT_NAME) ?? null;
 }
 
 /** Calls the gateway as the member. Responds itself and returns null when it cannot. */
 async function callGateway(req, res, path, init = {}) {
-  const tokenInfo = extractOpenIDTokenInfo(req.user);
-  if (!isOpenIDTokenValid(tokenInfo)) {
-    res.status(401).json({ error: { code: 'godar_reauth_required' } });
-    return null;
-  }
-
-  const baseURL = await resolveGatewayBaseURL(req.user);
+  const endpoint = await resolveGatewayEndpoint(req.user);
+  const baseURL = typeof endpoint?.baseURL === 'string' ? endpoint.baseURL.trim() : '';
   if (!baseURL) {
     res.status(204).end();
     return null;
   }
 
+  let headers;
   try {
-    const response = await fetch(`${baseURL}${path}`, {
+    headers = resolveModelHeaders({
+      headers: endpoint.headers,
+      user: req.user,
+      tenantId: resolveRequestTenantId(req),
+    });
+  } catch (error) {
+    if (error instanceof OpenIDReauthRequiredError) {
+      res.status(401).json({ error: { code: 'godar_reauth_required' } });
+      return null;
+    }
+    throw error;
+  }
+  if (!Object.keys(headers).some((name) => name.toLowerCase() === 'authorization')) {
+    logger.warn('[godar] the Godar endpoint resolved no Authorization header for this member');
+    res.status(503).json({ error: { code: 'godar_auth_unavailable' } });
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${baseURL.replace(/\/+$/, '')}${path}`, {
       ...init,
       headers: {
+        ...headers,
         Accept: 'application/json',
-        Authorization: `Bearer ${tokenInfo.accessToken}`,
         ...(init.body ? { 'Content-Type': 'application/json' } : {}),
       },
       signal: AbortSignal.timeout(GATEWAY_TIMEOUT_MS),

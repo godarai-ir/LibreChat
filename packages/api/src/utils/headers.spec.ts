@@ -1,5 +1,11 @@
+import { generateKeyPairSync, verify } from 'crypto';
 import type { RunLLMConfig } from '~/types';
-import { mediaTypeEssence, mergeHeaders, resolveConfigHeaders } from './headers';
+import {
+  mergeHeaders,
+  mediaTypeEssence,
+  resolveModelHeaders,
+  resolveConfigHeaders,
+} from './headers';
 
 describe('mediaTypeEssence', () => {
   it('returns the bare type for a header with no parameters', () => {
@@ -247,5 +253,87 @@ describe('resolveConfigHeaders', () => {
     resolveConfigHeaders({ llmConfig, user, body });
 
     expect(llmConfig.configuration?.defaultHeaders).toEqual({ 'X-LibreChat-User': '' });
+  });
+});
+
+describe('resolveModelHeaders with {{LIBRECHAT_USER_ASSERTION}}', () => {
+  const { privateKey, publicKey } = generateKeyPairSync('ed25519');
+  const assertionEnv = {
+    USER_ASSERTION_PRIVATE_KEY: privateKey.export({ type: 'pkcs8', format: 'pem' }).toString(),
+    USER_ASSERTION_AUDIENCE: 'godar-gateway',
+  };
+  const user = { id: 'lc-user-1', openidId: 'idp-sub-1', tenantId: 'tenant-stored' };
+  const headers = {
+    Authorization: 'Bearer {{LIBRECHAT_USER_ASSERTION}}',
+    'X-Tenant': '{{LIBRECHAT_USER_TENANTID}}',
+  };
+  const saved: Record<string, string | undefined> = {};
+
+  beforeEach(() => {
+    for (const [name, value] of Object.entries(assertionEnv)) {
+      saved[name] = process.env[name];
+      process.env[name] = value;
+    }
+  });
+
+  afterEach(() => {
+    for (const [name, value] of Object.entries(saved)) {
+      if (value === undefined) {
+        delete process.env[name];
+      } else {
+        process.env[name] = value;
+      }
+    }
+  });
+
+  function claimsOf(authorization: string) {
+    const [header, payload, signature] = authorization.replace(/^Bearer /, '').split('.');
+    expect(
+      verify(
+        null,
+        Buffer.from(`${header}.${payload}`),
+        publicKey,
+        Buffer.from(signature, 'base64url'),
+      ),
+    ).toBe(true);
+    return JSON.parse(Buffer.from(payload, 'base64url').toString());
+  }
+
+  it('signs the assertion for the request tenant alongside other model headers', () => {
+    const resolved = resolveModelHeaders({ headers, user, tenantId: 'tenant-request' });
+
+    expect(resolved['X-Tenant']).toBe('tenant-request');
+    expect(claimsOf(resolved.Authorization)).toMatchObject({
+      aud: 'godar-gateway',
+      sub: 'idp-sub-1',
+      tid: 'tenant-request',
+      uid: 'lc-user-1',
+    });
+  });
+
+  it('reaches the provider request through resolveConfigHeaders', () => {
+    const llmConfig = {
+      configuration: { defaultHeaders: { Authorization: headers.Authorization } },
+    } as unknown as RunLLMConfig;
+
+    resolveConfigHeaders({ llmConfig, user, tenantId: 'tenant-request' });
+
+    const resolved = llmConfig.configuration?.defaultHeaders as Record<string, string>;
+    expect(claimsOf(resolved.Authorization).sub).toBe('idp-sub-1');
+  });
+
+  it('omits the header instead of sending a literal or empty credential', () => {
+    const localUser = { id: 'local-user' };
+    expect(resolveModelHeaders({ headers, user: localUser, tenantId: 't' })).toEqual({
+      'X-Tenant': 't',
+    });
+
+    delete process.env.USER_ASSERTION_PRIVATE_KEY;
+    expect(resolveModelHeaders({ headers, user, tenantId: 't' })).toEqual({ 'X-Tenant': 't' });
+  });
+
+  it('leaves headers without the placeholder untouched', () => {
+    const plain = { Authorization: 'Bearer static-key' };
+    expect(resolveModelHeaders({ headers: plain, user })).toEqual(plain);
   });
 });
