@@ -55,9 +55,16 @@ function seat(overrides: Partial<GodarSeat> = {}): GodarSeat {
   };
 }
 
-/** The gateway's 402 body, persisted as the message text. */
+/**
+ * A gateway 402 as the agents backend persists it: the provider's text is withheld and only a
+ * code listed in `endpoints.agents.providerErrorCodes` is named beside the upstream error type.
+ */
 function gatewayRefusal(code: string) {
-  return JSON.stringify({ error: { message: 'refused', type: code, code, scope: 'seat' } });
+  return `The model provider could not complete this request.\n${JSON.stringify({
+    type: 'upstream_model_error',
+    code,
+    status: 402,
+  })}`;
 }
 
 describe('SeatError', () => {
@@ -96,5 +103,21 @@ describe('SeatError', () => {
     expect(screen.getByText('Your organization has no credits left.')).toBeInTheDocument();
     expect(screen.getByText("Contact your organization's administrator.")).toBeInTheDocument();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('leaves a 402 without a listed code to the generic model error', () => {
+    render(
+      <Error
+        text={`The model provider could not complete this request.\n${JSON.stringify({
+          type: 'upstream_model_error',
+          status: 402,
+        })}`}
+      />,
+    );
+
+    expect(
+      screen.queryByText("Contact your organization's administrator."),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /seat/i })).not.toBeInTheDocument();
   });
 });

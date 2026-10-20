@@ -1566,6 +1566,14 @@ export const agentsEndpointSchema = baseEndpointSchema
         .min(0)
         .max(1_000_000)
         .default(DEFAULT_MAX_PROVIDER_ERROR_CHARS),
+      /**
+       * Provider error codes (the body's `code` or `type`) a terminal failure may name to the UI,
+       * which maps them to its own copy. Only listed codes are forwarded, never provider text.
+       */
+      providerErrorCodes: z
+        .array(z.string().regex(/^[A-Za-z0-9_.:-]{1,64}$/))
+        .max(100)
+        .default([]),
       /** Maximum inactivity between provider response body chunks; 0 disables the idle timeout. */
       modelResponseBodyTimeoutMs: z
         .number()
