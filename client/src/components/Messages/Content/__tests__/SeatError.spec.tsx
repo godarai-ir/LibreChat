@@ -40,7 +40,6 @@ jest.mock('~/data-provider/Godar/queries', () => ({
 
 function seat(overrides: Partial<GodarSeat> = {}): GodarSeat {
   return {
-    enabled: true,
     enforced: true,
     type: 'free',
     monthly_credits: '500.00',
