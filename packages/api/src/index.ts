@@ -76,6 +76,8 @@ export * from './protection';
 export * from './imports';
 /* Memory */
 export * from './memory';
+/* GodarAI seats */
+export * from './godar';
 /* Model Specs */
 export * from './modelSpecs';
 /* Agents */

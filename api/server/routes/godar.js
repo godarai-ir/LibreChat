@@ -1,124 +1,20 @@
 const express = require('express');
-const { logger } = require('@librechat/data-schemas');
-const {
-  resolveModelHeaders,
-  resolveRequestTenantId,
-  OpenIDReauthRequiredError,
-} = require('@librechat/api');
-const { requireJwtAuth } = require('../middleware/');
+const { createGodarSeatHandlers, GODAR_ENDPOINT_NAME } = require('@librechat/api');
 const { getAppConfig } = require('~/server/services/Config');
+const { requireJwtAuth } = require('../middleware/');
+const db = require('~/models');
 
-/**
- * GodarAI member seats. The gateway knows each member's seat and personal credits; these routes
- * ask it on the member's behalf with the Godar endpoint's own resolved headers, the same
- * credential (for example `{{LIBRECHAT_USER_ASSERTION}}`) it sends with every chat request.
- */
+/** GodarAI member seats, asked of the gateway as the signed-in member. */
 const router = express.Router();
 
-/** The custom endpoint that talks to the GodarAI gateway. */
-const GODAR_ENDPOINT_NAME = process.env.GODAR_ENDPOINT_NAME || 'Godar';
-const GATEWAY_TIMEOUT_MS = 10_000;
-const SEAT_TYPES = new Set(['pro', 'max']);
-const BLOCK_REASONS = new Set([
-  'seat_unassigned',
-  'seat_credits_exhausted',
-  'personal_limit_reached',
-  'budget_rule_reached',
-  'pool_exhausted',
-]);
-
-/** The tenant's Godar endpoint, whose base URL (".../v1") has `{slug}` already resolved. */
-async function resolveGatewayEndpoint(user) {
-  const appConfig = await getAppConfig({
-    role: user.role,
-    userId: user.id,
-    tenantId: user.tenantId,
-  });
-  return appConfig?.endpoints?.custom?.find((item) => item?.name === GODAR_ENDPOINT_NAME) ?? null;
-}
-
-/** Calls the gateway as the member. Responds itself and returns null when it cannot. */
-async function callGateway(req, res, path, init = {}) {
-  const endpoint = await resolveGatewayEndpoint(req.user);
-  const baseURL = typeof endpoint?.baseURL === 'string' ? endpoint.baseURL.trim() : '';
-  if (!baseURL) {
-    res.status(204).end();
-    return null;
-  }
-
-  let headers;
-  try {
-    headers = resolveModelHeaders({
-      headers: endpoint.headers,
-      user: req.user,
-      tenantId: resolveRequestTenantId(req),
-    });
-  } catch (error) {
-    if (error instanceof OpenIDReauthRequiredError) {
-      res.status(401).json({ error: { code: 'godar_reauth_required' } });
-      return null;
-    }
-    throw error;
-  }
-  if (!Object.keys(headers).some((name) => name.toLowerCase() === 'authorization')) {
-    logger.warn('[godar] the Godar endpoint resolved no Authorization header for this member');
-    res.status(503).json({ error: { code: 'godar_auth_unavailable' } });
-    return null;
-  }
-
-  try {
-    const response = await fetch(`${baseURL.replace(/\/+$/, '')}${path}`, {
-      ...init,
-      headers: {
-        ...headers,
-        Accept: 'application/json',
-        ...(init.body ? { 'Content-Type': 'application/json' } : {}),
-      },
-      signal: AbortSignal.timeout(GATEWAY_TIMEOUT_MS),
-    });
-    const body = await response.json().catch(() => ({}));
-    return { status: response.status, body };
-  } catch (error) {
-    logger.warn(`[godar] gateway call ${path} failed: ${error?.message ?? error}`);
-    res.status(502).json({ error: { code: 'godar_gateway_unavailable' } });
-    return null;
-  }
-}
-
-/** GET /api/godar/seat — the member's seat, personal credits, and why chat would be refused. */
-router.get('/seat', requireJwtAuth, async (req, res) => {
-  const result = await callGateway(req, res, '/budget/me');
-  if (!result) {
-    return;
-  }
-  if (result.status !== 200) {
-    return res.status(result.status >= 500 ? 502 : result.status).json(result.body);
-  }
-  if (!result.body?.seat) {
-    return res.status(204).end();
-  }
-  res.set('Cache-Control', 'no-store');
-  return res.status(200).json(result.body.seat);
+const { getSeat, requestSeat } = createGodarSeatHandlers({
+  getAppConfig,
+  getUserKeyValues: db.getUserKeyValues,
+  getUserKeyExpiry: db.getUserKeyExpiry,
+  endpointName: process.env.GODAR_ENDPOINT_NAME || GODAR_ENDPOINT_NAME,
 });
 
-/** POST /api/godar/seat-requests — the member asks their organization for a Pro or Max seat. */
-router.post('/seat-requests', requireJwtAuth, async (req, res) => {
-  const seat = typeof req.body?.seat === 'string' ? req.body.seat.trim().toLowerCase() : '';
-  if (!SEAT_TYPES.has(seat)) {
-    return res.status(400).json({ error: { code: 'invalid_seat_type' } });
-  }
-
-  const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim().slice(0, 500) : '';
-  const blockReason = BLOCK_REASONS.has(req.body?.block_reason) ? req.body.block_reason : '';
-
-  const result = await callGateway(req, res, '/seat-requests', {
-    method: 'POST',
-    body: JSON.stringify({ seat, reason, block_reason: blockReason }),
-  });
-  if (!result) {
-    return;
-  }
-  return res.status(result.status >= 500 ? 502 : result.status).json(result.body);
-});
+router.get('/seat', requireJwtAuth, getSeat);
+router.post('/seat-requests', requireJwtAuth, requestSeat);
 
 module.exports = router;
