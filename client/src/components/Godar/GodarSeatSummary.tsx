@@ -97,7 +97,7 @@ export default function GodarSeatSummary() {
         </p>
       ) : null}
 
-      {!seat.enforced && seat.enabled ? (
+      {!seat.enforced ? (
         <p className="text-text-secondary">{localize('com_godar_seat_not_enforced')}</p>
       ) : null}
 
