@@ -16,7 +16,6 @@ export type GodarBlockReason =
 
 /** The member's own seat, as the GodarAI gateway reports it on `/v1/budget/me`. */
 export interface GodarSeat {
-  enabled: boolean;
   enforced: boolean;
   type: GodarSeatType;
   /** Credit amounts are decimal strings with two places. */

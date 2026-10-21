@@ -3713,7 +3713,7 @@
   "com_godar_seat_lifetime": "The free seat's credits are given once and do not renew.",
   "com_godar_seat_renews": "Your credits renew on {{0}}.",
   "com_godar_seat_pool_limit": "After your seat credits you have used {{0}} of the {{1}} organization credits allowed this month.",
-  "com_godar_seat_not_enforced": "Seat limits are not active in your organization yet; you are using its shared credits.",
+  "com_godar_seat_not_enforced": "Your organization has no active subscription, so seat limits do not apply; you are using its shared credits.",
   "com_godar_seat_request_pro": "Request a Pro seat",
   "com_godar_seat_request_max": "Request a Max seat",
   "com_godar_seat_request_pending": "You asked for a {{0}} seat. Your organization will review it.",
