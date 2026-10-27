@@ -152,6 +152,29 @@ describe('PUT /tenants/:id', () => {
     expect(ctx.invalidate).toHaveBeenCalledWith('tid-1');
   });
 
+  it('prepares a newly created tenant once, and not on a later update', async () => {
+    const onTenantCreated = jest.fn(async (_tenantId: string) => {});
+    ctx.deps.onTenantCreated = onTenantCreated;
+
+    await create();
+    await call('PUT', '/tenants/tid-1', { slug: 'acme-two' });
+
+    expect(onTenantCreated).toHaveBeenCalledTimes(1);
+    expect(onTenantCreated).toHaveBeenCalledWith('tid-1');
+  });
+
+  it('still answers 201 when preparing the new tenant fails', async () => {
+    ctx.deps.onTenantCreated = jest.fn(async () => {
+      throw new Error('role sync failed: mongodb://user:secret@db');
+    });
+
+    const response = await create();
+
+    expect(response.status).toBe(201);
+    expect(response.text).not.toContain('secret@db');
+    expect(ctx.rows.has('tid-1')).toBe(true);
+  });
+
   it('is idempotent: the same call again changes nothing and still succeeds', async () => {
     await create();
     const again = await create();

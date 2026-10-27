@@ -1,5 +1,17 @@
-const { startTenantProvisioningServer, encryptV3 } = require('@librechat/api');
-const { getTenantById, createTenant, updateTenant } = require('~/models');
+const {
+  startTenantProvisioningServer,
+  updateInterfacePermissions,
+  encryptV3,
+} = require('@librechat/api');
+const {
+  getTenantById,
+  createTenant,
+  updateTenant,
+  getRoleByName,
+  updateAccessPermissions,
+  recordAuditEntry,
+} = require('~/models');
+const { getAppConfig } = require('./Config');
 const { ensureTenantOpenId, forgetTenantOpenId } = require('~/strategies');
 
 /**
@@ -20,6 +32,14 @@ function startProvisioning(hostTenancy) {
       methods: { getTenantById, createTenant, updateTenant },
       encryptSecret: encryptV3,
       env: process.env,
+      onTenantCreated: async (tenantId) =>
+        updateInterfacePermissions({
+          appConfig: await getAppConfig({ baseOnly: true }),
+          getRoleByName,
+          updateAccessPermissions,
+          recordAuditEntry,
+          tenantId,
+        }),
       invalidate: (tenantId) => {
         registry.invalidate();
         forgetTenantOpenId(tenantId);

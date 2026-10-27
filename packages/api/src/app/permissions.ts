@@ -868,3 +868,46 @@ export async function updateInterfacePermissions({
     hasExplicitConfig(interfaceConfig, PermissionTypes.WEB_SEARCH),
   );
 }
+
+export interface TenantPermissionSyncResult {
+  synced: string[];
+  failed: string[];
+}
+
+/**
+ * Applies the `librechat.yaml` interface permissions to every tenant's own role documents.
+ *
+ * Tenant roles are created from `roleDefaults` on first read, and the startup sync only
+ * reaches the system tenant, so without this a tenant keeps the defaults no matter what the
+ * YAML says (for example `interface.mcpServers.create: true`). Tenants are synced one at a
+ * time and a failing tenant is logged and skipped, so one broken tenant cannot block the rest.
+ * Tenants being deleted are left alone.
+ */
+export async function updateTenantInterfacePermissions({
+  listTenants,
+  ...deps
+}: Omit<Parameters<typeof updateInterfacePermissions>[0], 'tenantId'> & {
+  listTenants: () => Promise<Array<{ tenantId: string; status?: string }>>;
+}): Promise<TenantPermissionSyncResult> {
+  const result: TenantPermissionSyncResult = { synced: [], failed: [] };
+  if (!deps.appConfig?.interfaceConfig) {
+    return result;
+  }
+  const tenants = await listTenants();
+  for (const { tenantId, status } of tenants) {
+    if (!tenantId || tenantId === SYSTEM_TENANT_ID || status === 'deleting') {
+      continue;
+    }
+    try {
+      await updateInterfacePermissions({ ...deps, tenantId });
+      result.synced.push(tenantId);
+    } catch (err) {
+      result.failed.push(tenantId);
+      logger.error(
+        `[updateTenantInterfacePermissions] could not sync roles for tenant '${tenantId}'`,
+        getSafeErrorMetadata(err),
+      );
+    }
+  }
+  return result;
+}

@@ -62,6 +62,7 @@ const {
   configureServerTimeouts,
   setupGracefulShutdown,
   updateInterfacePermissions,
+  updateTenantInterfacePermissions,
   configureMessageFilterRegexValidator,
   configureFileConfigRegexEngine,
   configureAgentEventRuntime,
@@ -80,6 +81,7 @@ const {
   seedDatabase,
   getTenantBySlug,
   recordAuditEntry,
+  listTenants,
 } = require('~/models');
 const initializeOAuthReconnectManager = require('./services/initializeOAuthReconnectManager');
 const { startProvisioning } = require('./services/tenantProvisioning');
@@ -549,6 +551,20 @@ const startServer = async () => {
     } else {
       logger.info(`Server listening at http://${host == '0.0.0.0' ? 'localhost' : host}:${port}`);
     }
+
+    /* Tenant roles only change through the admin settings otherwise, so a slow or failing
+     * tenant must not hold up readiness: sync them in the background. */
+    runAsSystem(() =>
+      updateTenantInterfacePermissions({
+        appConfig,
+        listTenants,
+        getRoleByName,
+        updateAccessPermissions,
+        recordAuditEntry,
+      }),
+    ).catch((error) =>
+      logger.error('[updateTenantInterfacePermissions] Failed to list tenants', error),
+    );
 
     /**
      * The listen callback is async, so any rejection from these awaits would
