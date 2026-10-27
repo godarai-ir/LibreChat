@@ -83,7 +83,10 @@ const { configureSubagentTaskRouting } = require('./services/Endpoints/agents/su
 const { jwtLogin, ldapLogin, passportLogin, ensureTenantOpenId } = require('~/strategies');
 const { ErrorTypes } = require('librechat-data-provider');
 const { redirectOAuthFailure } = require('~/server/middleware/oauthNavigation');
-const { updateInterfacePermissions: updateInterfacePerms } = require('@librechat/api');
+const {
+  updateInterfacePermissions: updateInterfacePerms,
+  updateTenantInterfacePermissions,
+} = require('@librechat/api');
 const {
   getRoleByName,
   updateAccessPermissions,
@@ -91,6 +94,7 @@ const {
   getTenantBySlug,
   recordAuditEntry,
   sweepOrphanedPreviews,
+  listTenants,
 } = require('~/models');
 const { checkMigrations } = require('./services/start/migration');
 const initializeMCPs = require('./services/initializeMCPs');
@@ -754,6 +758,20 @@ if (cluster.isMaster) {
         `Worker ${process.pid} started: Server listening at http://${
           host == '0.0.0.0' ? 'localhost' : host
         }:${port}`,
+      );
+
+      /* Tenant roles only change through the admin settings otherwise, so a slow or failing
+       * tenant must not hold up readiness: sync them in the background. */
+      runAsSystem(() =>
+        updateTenantInterfacePermissions({
+          appConfig,
+          listTenants,
+          getRoleByName,
+          updateAccessPermissions,
+          recordAuditEntry,
+        }),
+      ).catch((error) =>
+        logger.error('[updateTenantInterfacePermissions] Failed to list tenants', error),
       );
 
       /**
