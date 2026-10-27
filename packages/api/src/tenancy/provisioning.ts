@@ -3,6 +3,7 @@ import { logger } from '@librechat/data-schemas';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import { SLUG_PATTERN, TENANT_ID_PATTERN } from './validation';
+import { getSafeErrorMetadata } from '~/utils/errors';
 import { reservedSlugsFromEnv } from './config';
 
 /** A shared secret shorter than this is refused at startup. */
@@ -42,6 +43,11 @@ export interface TenantProvisioningDeps {
   invalidate(tenantId: string): void;
   /** Resolves the tenant fresh and tries OpenID discovery, so the caller learns if sign-in works. */
   checkReady(slug: string): Promise<{ ready: boolean; reason?: string }>;
+  /**
+   * Prepares what a new tenant needs beyond its record, such as syncing its roles with
+   * `librechat.yaml`. A failure is logged, not returned: the tenant already exists.
+   */
+  onTenantCreated?(tenantId: string): Promise<void>;
   /** The shared secret callers present as a bearer token. */
   token: string;
   env: Readonly<Record<string, string | undefined>>;
@@ -248,6 +254,12 @@ export function createTenantProvisioningHandler(
       if (!created.ok) {
         throw failureToHttp(created);
       }
+      await deps.onTenantCreated?.(tenantId).catch((error: unknown) => {
+        logger.error(
+          `[provisioning] could not prepare new tenant '${tenantId}'`,
+          getSafeErrorMetadata(error),
+        );
+      });
       return respondWithState(res, 201, created.value);
     }
 
