@@ -27,6 +27,7 @@ import type { TMCPAppOperationLimits } from 'librechat-data-provider';
 import type { MCPClientCapabilityProfile } from './capabilities';
 import type { MCPRequestScopeRunner } from './signal';
 import type { MCPOAuthTokens } from './oauth/types';
+import type { MCPDeploymentProxy } from './proxy';
 import type * as t from './types';
 import {
   extractSSEErrorMessage,
@@ -48,6 +49,11 @@ import {
   getMCPAppOperationLimits,
   guardMCPAppSSEEvents,
 } from './apps/budget';
+import {
+  getMCPDeploymentProxy,
+  getMCPDeploymentProxyUrl,
+  assertMCPDeploymentProxyTarget,
+} from './proxy';
 import { MCP_APPS_CAPABILITY_PROFILE, STANDARD_MCP_CAPABILITY_PROFILE } from './capabilities';
 import { createSSRFSafeUndiciConnect, isSSRFTarget, resolveHostnameSSRF } from '~/auth';
 import { projectMCPAppRuntimeTarget, type MCPAppRuntimeTarget } from './apps/binding';
@@ -108,6 +114,10 @@ type MCPProxyConfig =
       httpProxy?: string;
       httpsProxy?: string;
       noProxy?: string;
+    }
+  | {
+      type: 'deployment';
+      proxy: MCPDeploymentProxy;
     };
 
 function isStdioOptions(options: t.MCPOptions): options is t.StdioOptions {
@@ -700,6 +710,11 @@ function getMCPProxyConfig(options: t.MCPOptions): MCPProxyConfig | undefined {
     return { type: 'explicit', proxyUrl: configuredProxy };
   }
 
+  const deploymentProxy = getMCPDeploymentProxy();
+  if (deploymentProxy) {
+    return { type: 'deployment', proxy: deploymentProxy };
+  }
+
   const libreChatProxy = process.env.PROXY?.trim() ?? '';
   if (libreChatProxy) {
     return { type: 'explicit', proxyUrl: libreChatProxy };
@@ -931,6 +946,9 @@ function getProxyUrlForRequest(
   if (proxyConfig.type === 'explicit') {
     return proxyConfig.proxyUrl;
   }
+  if (proxyConfig.type === 'deployment') {
+    return getMCPDeploymentProxyUrl(urlString, proxyConfig.proxy);
+  }
 
   const url = new URL(urlString);
   if (shouldBypassEnvProxy(url, proxyConfig.noProxy)) {
@@ -985,6 +1003,9 @@ async function assertProxiedRequestTargetAllowed(
   const proxyUrl = getProxyUrlForRequest(proxyConfig, urlString);
   if (!proxyUrl || !useSSRFProtection) {
     return;
+  }
+  if (proxyConfig?.type === 'deployment') {
+    return assertMCPDeploymentProxyTarget(urlString, allowedAddresses);
   }
 
   const targetUrl = new URL(urlString);

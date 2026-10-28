@@ -1,8 +1,9 @@
-import { Agent } from 'undici';
 import { isIP } from 'node:net';
+import { Agent, ProxyAgent } from 'undici';
 import type { FetchLike } from '@modelcontextprotocol/sdk/shared/transport';
 import type { Dispatcher } from 'undici';
 import { createSSRFSafeUndiciConnect, isOAuthUrlAllowed, isSSRFTarget } from '~/auth';
+import { getMCPDeploymentProxyUrl, assertMCPDeploymentProxyTarget } from '../proxy';
 import { getOAuthUrlPort } from './url';
 
 type FetchInitWithDispatcher = RequestInit & {
@@ -11,6 +12,7 @@ type FetchInitWithDispatcher = RequestInit & {
 
 const MAX_OAUTH_DISPATCHERS = 64;
 const oauthDispatchers = new Map<string, Agent>();
+const proxyDispatchers = new Map<string, ProxyAgent>();
 
 function shouldBypassSSRFDispatcher(url: string | URL, allowedDomains?: string[] | null): boolean {
   if (!Array.isArray(allowedDomains) || allowedDomains.length === 0) {
@@ -74,6 +76,15 @@ function getOAuthDispatcher(
   return dispatcher;
 }
 
+function getProxyDispatcher(proxyUrl: string): ProxyAgent {
+  let dispatcher = proxyDispatchers.get(proxyUrl);
+  if (!dispatcher) {
+    dispatcher = new ProxyAgent({ uri: proxyUrl });
+    proxyDispatchers.set(proxyUrl, dispatcher);
+  }
+  return dispatcher;
+}
+
 export function createHardenedOAuthFetch({
   allowedDomains,
   allowedAddresses,
@@ -82,6 +93,20 @@ export function createHardenedOAuthFetch({
   allowedAddresses?: string[] | null;
 } = {}): FetchLike {
   return async (url: string | URL, init?: RequestInit): Promise<Response> => {
+    const proxyUrl = getMCPDeploymentProxyUrl(url);
+    if (proxyUrl) {
+      if (!shouldBypassSSRFDispatcher(url, allowedDomains)) {
+        const hasAllowedDomains = Array.isArray(allowedDomains) && allowedDomains.length > 0;
+        await assertMCPDeploymentProxyTarget(url, hasAllowedDomains ? null : allowedAddresses);
+      }
+      const proxied: FetchInitWithDispatcher = {
+        ...init,
+        dispatcher: getProxyDispatcher(proxyUrl),
+        redirect: 'error',
+      };
+      return fetch(url, proxied);
+    }
+
     const dispatcher = getOAuthDispatcher(url, allowedDomains, allowedAddresses);
     const fetchInit: FetchInitWithDispatcher =
       dispatcher != null
@@ -96,4 +121,8 @@ export function resetHardenedOAuthFetchDispatchers(): void {
     dispatcher.destroy();
   }
   oauthDispatchers.clear();
+  for (const dispatcher of proxyDispatchers.values()) {
+    dispatcher.destroy();
+  }
+  proxyDispatchers.clear();
 }

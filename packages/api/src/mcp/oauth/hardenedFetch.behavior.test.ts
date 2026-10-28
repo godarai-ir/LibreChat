@@ -1,3 +1,4 @@
+import net from 'node:net';
 import http from 'node:http';
 import type { AddressInfo, Socket } from 'node:net';
 import { createHardenedOAuthFetch, resetHardenedOAuthFetchDispatchers } from './hardenedFetch';
@@ -144,5 +145,110 @@ describe('createHardenedOAuthFetch request policy', () => {
     ).rejects.toThrow();
 
     expect(server.requestCount()).toBe(0);
+  });
+});
+
+type ConnectProxy = {
+  url: string;
+  targets: string[];
+  close: () => Promise<void>;
+};
+
+/** A minimal HTTP CONNECT proxy that records each tunnel target. */
+async function createConnectProxy(): Promise<ConnectProxy> {
+  const targets: string[] = [];
+  const sockets = new Set<Socket>();
+  const server = http.createServer((_req, res) => {
+    res.writeHead(405);
+    res.end();
+  });
+  server.on('connect', (req, clientSocket: Socket, head: Buffer) => {
+    targets.push(req.url ?? '');
+    const [host, port] = (req.url ?? '').split(':');
+    const upstream = net.connect(Number(port), host, () => {
+      clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+      upstream.write(head);
+      upstream.pipe(clientSocket);
+      clientSocket.pipe(upstream);
+    });
+    for (const socket of [clientSocket, upstream]) {
+      sockets.add(socket);
+      socket.once('close', () => sockets.delete(socket));
+      socket.on('error', () => socket.destroy());
+    }
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const { port } = server.address() as AddressInfo;
+  return {
+    url: `http://127.0.0.1:${port}`,
+    targets,
+    close: () =>
+      new Promise<void>((resolve) => {
+        for (const socket of sockets) {
+          socket.destroy();
+        }
+        server.close(() => resolve());
+      }),
+  };
+}
+
+describe('createHardenedOAuthFetch through MCP_PROXY', () => {
+  let proxy: ConnectProxy;
+  let target: TestServer;
+  const originalProxy = process.env.MCP_PROXY;
+  const originalNoProxy = process.env.MCP_NO_PROXY;
+
+  beforeEach(async () => {
+    proxy = await createConnectProxy();
+    target = await createLocalServer('127.0.0.1');
+    process.env.MCP_PROXY = proxy.url;
+    delete process.env.MCP_NO_PROXY;
+  });
+
+  afterEach(async () => {
+    resetHardenedOAuthFetchDispatchers();
+    for (const [key, value] of [
+      ['MCP_PROXY', originalProxy],
+      ['MCP_NO_PROXY', originalNoProxy],
+    ] as const) {
+      if (value == null) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+    await target.close();
+    await proxy.close();
+  });
+
+  it('tunnels an allowed OAuth request through the proxy', async () => {
+    const response = await createHardenedOAuthFetch({
+      allowedAddresses: [`127.0.0.1:${target.port}`],
+    })(`http://127.0.0.1:${target.port}/.well-known/oauth-authorization-server`);
+
+    await expect(response.json()).resolves.toEqual({ ok: true });
+    expect(proxy.targets).toEqual([`127.0.0.1:${target.port}`]);
+    expect(target.requestCount()).toBe(1);
+  });
+
+  it('refuses a private target before contacting the proxy', async () => {
+    await expect(
+      createHardenedOAuthFetch()(`http://127.0.0.1:${target.port}/token`),
+    ).rejects.toThrow('resolved to a private/reserved address');
+
+    expect(proxy.targets).toEqual([]);
+    expect(target.requestCount()).toBe(0);
+  });
+
+  it('connects directly to hosts listed in MCP_NO_PROXY', async () => {
+    process.env.MCP_NO_PROXY = '127.0.0.1';
+
+    const response = await createHardenedOAuthFetch({
+      allowedAddresses: [`127.0.0.1:${target.port}`],
+    })(`http://127.0.0.1:${target.port}/token`);
+
+    await expect(response.json()).resolves.toEqual({ ok: true });
+    expect(proxy.targets).toEqual([]);
+    expect(target.requestCount()).toBe(1);
   });
 });
