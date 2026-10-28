@@ -1371,6 +1371,8 @@ describe('MCP SSRF protection – customFetch input shapes', () => {
     'http_proxy',
     'https_proxy',
     'no_proxy',
+    'MCP_PROXY',
+    'MCP_NO_PROXY',
   ] as const;
   type ProxyEnvKey = (typeof proxyEnvKeys)[number];
 
@@ -1812,6 +1814,59 @@ describe('MCP SSRF protection – customFetch input shapes', () => {
       await expectDispatcherNamesForUrl('http://10.2.3.4/mcp', ['Agent', 'Agent']);
       await expectDispatcherNamesForUrl('http://192.168.1.15/mcp', ['Agent', 'Agent']);
       await expectDispatcherNamesForUrl('http://192.168.1.25/mcp', ['ProxyAgent', 'ProxyAgent']);
+    } finally {
+      restoreProxyEnv(originalEnv);
+    }
+  });
+
+  it('should route through MCP_PROXY ahead of PROXY and honor MCP_NO_PROXY', async () => {
+    const originalEnv = snapshotProxyEnv();
+    clearProxyEnv();
+    process.env.PROXY = 'http://env-proxy.example.com:8080';
+    process.env.MCP_PROXY = 'http://mcp-proxy.example.com:1443';
+    process.env.MCP_NO_PROXY = 'internal.example.com';
+
+    try {
+      conn = new MCPConnection({
+        serverName: 'customfetch-mcp-proxy',
+        serverConfig: { type: 'streamable-http', url: 'https://mcp.example.com/mcp' },
+        useSSRFProtection: false,
+      });
+      expect(createBaseUrlDispatchers(conn, 'https://mcp.example.com/mcp')).toEqual([
+        'ProxyAgent',
+        'ProxyAgent',
+      ]);
+
+      /** PROXY would have proxied this host too; reaching it directly shows MCP_PROXY won. */
+      await safeDisconnect(conn);
+      conn = new MCPConnection({
+        serverName: 'customfetch-mcp-no-proxy',
+        serverConfig: { type: 'streamable-http', url: 'https://internal.example.com/mcp' },
+        useSSRFProtection: false,
+      });
+      expect(createBaseUrlDispatchers(conn, 'https://internal.example.com/mcp')).toEqual([
+        'Agent',
+        'Agent',
+      ]);
+    } finally {
+      restoreProxyEnv(originalEnv);
+    }
+  });
+
+  it('should refuse a private target through MCP_PROXY under SSRF protection', async () => {
+    const originalEnv = snapshotProxyEnv();
+    clearProxyEnv();
+    process.env.MCP_PROXY = 'http://mcp-proxy.example.com:1443';
+
+    try {
+      conn = new MCPConnection({
+        serverName: 'customfetch-mcp-proxy-private',
+        serverConfig: { type: 'streamable-http', url: 'http://127.0.0.1:9/mcp' },
+        useSSRFProtection: true,
+      });
+      await expect(getCustomFetch(conn)('http://127.0.0.1:9/mcp')).rejects.toThrow(
+        /resolved to a private\/reserved address/,
+      );
     } finally {
       restoreProxyEnv(originalEnv);
     }
