@@ -180,6 +180,39 @@ describe('createHostTenantMiddleware', () => {
     );
   });
 
+  it('sets the admin panel origin of the tenant when an admin base domain is configured', async () => {
+    const { registry } = makeRegistry({ acme: active('tenant-acme', 'acme') });
+    const withAdmin = { ...config, adminBaseDomain: 'admin.example.com' };
+    const mw = createHostTenantMiddleware({ config: withAdmin, registry });
+
+    const custom = await call(
+      mw,
+      { host: 'acme.chat.example.com:8443' },
+      { tenantAdminOrigin: 'https://evil.example.org' },
+    );
+    const standard = await call(mw, { host: 'acme.chat.example.com' });
+
+    expect((custom.req as { tenantAdminOrigin?: string }).tenantAdminOrigin).toBe(
+      'https://acme.admin.example.com:8443',
+    );
+    expect((standard.req as { tenantAdminOrigin?: string }).tenantAdminOrigin).toBe(
+      'https://acme.admin.example.com',
+    );
+  });
+
+  it('sets no admin panel origin without an admin base domain', async () => {
+    const { registry } = makeRegistry({ acme: active('tenant-acme', 'acme') });
+    const mw = createHostTenantMiddleware({ config, registry });
+
+    const { req } = await call(
+      mw,
+      { host: 'acme.chat.example.com' },
+      { tenantAdminOrigin: 'https://evil.example.org' },
+    );
+
+    expect((req as { tenantAdminOrigin?: string }).tenantAdminOrigin).toBeUndefined();
+  });
+
   it('clears a pre-set tenant origin when the host is not a tenant host', async () => {
     const { registry } = makeRegistry({});
     const mw = createHostTenantMiddleware({ config, registry });

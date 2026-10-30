@@ -65,6 +65,8 @@ export type HostTenantRequest = Request & {
   tenantSlug?: string;
   /** Public origin of the tenant, for redirects, callbacks and links built during this request. */
   tenantOrigin?: string;
+  /** Public origin of the tenant's admin panel; unset when `ADMIN_HOST_BASE_DOMAIN` is. */
+  tenantAdminOrigin?: string;
 };
 
 const DEFAULT_PORTS: Readonly<Record<string, string>> = { https: '443', http: '80' };
@@ -90,6 +92,7 @@ export function createHostTenantMiddleware({
     delete req.tenantId;
     delete req.tenantSlug;
     delete req.tenantOrigin;
+    delete req.tenantAdminOrigin;
 
     const parsed = parseTenantHost(req.headers.host, config.baseDomain);
     if (parsed.kind !== 'slug' || config.reservedSlugs.has(parsed.slug)) {
@@ -131,12 +134,21 @@ export function createHostTenantMiddleware({
     const { tenantId, slug } = lookup.tenant;
     req.tenantId = tenantId;
     req.tenantSlug = slug;
+    const port = parsed.port === DEFAULT_PORTS[config.scheme] ? undefined : parsed.port;
     req.tenantOrigin = buildTenantOrigin({
       scheme: config.scheme,
       slug,
       baseDomain: config.baseDomain,
-      port: parsed.port === DEFAULT_PORTS[config.scheme] ? undefined : parsed.port,
+      port,
     });
+    if (config.adminBaseDomain) {
+      req.tenantAdminOrigin = buildTenantOrigin({
+        scheme: config.scheme,
+        slug,
+        baseDomain: config.adminBaseDomain,
+        port,
+      });
+    }
     runWithTenantContext(buildTenantContext(req, tenantId), next);
   }
 

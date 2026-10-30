@@ -1,3 +1,4 @@
+export * from './admin';
 export * from './assign';
 export * from './binding';
 export * from './cli';

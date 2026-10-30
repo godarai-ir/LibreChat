@@ -104,7 +104,7 @@ Keep `getOpenIdConfig()` **synchronous and signature-compatible**. In host mode 
 - One passport strategy per tenant (`openid:<tenantId>`), created lazily, with `callbackURL = https://{slug}.chat.godarai.ir/oauth/openid/callback` built from the validated host. The `/oauth/openid` route picks the strategy by `req.tenantId`.
 - `iss` must equal the tenant issuer; if `tid`/`tenant` claims are present they must match the registry (mix-up protection). State/nonce/PKCE are stored in the tenant-bound session.
 - `openIdJwtStrategy`: per-tenant audience (client id), issuer and JWKS client (cache keyed by issuer).
-- `openidAdmin` / admin-panel SSO: disabled in host mode.
+- `openidAdmin` / admin-panel SSO: one admin strategy per tenant, enabled by `ADMIN_HOST_BASE_DOMAIN` (see section 17).
 
 ### 2.5 Host↔user binding
 
@@ -163,7 +163,7 @@ Data audit (M1-M3: coverage spec fails for any model without `tenantId` unless a
 - The host middleware sets `req.tenantOrigin` (`<TENANT_HOST_SCHEME>://<slug>.<base domain>[:port]`) from validated parts only, and the same value rides in the tenant's async context (`TenantContext.origin`, `getTenantOrigin()`), so code that runs inside a request without `req` still gets it.
 - `getClientOrigin(req?)` / `getServerOrigin(req?)` return the tenant origin and otherwise `DOMAIN_CLIENT` / `DOMAIN_SERVER` exactly as before. The async-context lookup happens only when `MULTI_TENANT_MODE=host`, so single-tenant deployments never touch it.
 - Converted: OAuth success redirect, OAuth/OpenID failure redirects (`redirectToAuthFailure`, error middleware), OpenID post-logout redirect, `/api/config` `serverDomain`, email-change links (lazy `clientDomain`), MCP OAuth redirect URI, pull-request OAuth redirect URI, Actions OAuth redirect URI, Flux image URLs.
-- New startup refusals in host mode: a set `DOMAIN_CLIENT`/`DOMAIN_SERVER` (one fixed origin would put links to the wrong tenant in redirects and emails), `ADMIN_PANEL_URL` (every tenant would trust it as a cross-site origin), `ALLOW_PASSKEY_LOGIN` (a passkey is bound to one relying-party host), and an unsupported `TENANT_HOST_SCHEME`.
+- New startup refusals in host mode: a set `DOMAIN_CLIENT`/`DOMAIN_SERVER` (one fixed origin would put links to the wrong tenant in redirects and emails), `ADMIN_PANEL_URL` (every tenant would trust it as a cross-site origin; `ADMIN_HOST_BASE_DOMAIN` replaces it, section 17), `ALLOW_PASSKEY_LOGIN` (a passkey is bound to one relying-party host), and an unsupported `TENANT_HOST_SCHEME`.
 - Not converted on purpose: the social-login `failureRedirect` strings and `admin` routes (refused at startup in host mode), and OpenID logout, whose `OPENID_ISSUER` precondition belongs to the per-tenant OIDC work (Phase 5).
 
 ## 8. Per-tenant OpenID Connect (Phase 5, implemented)
@@ -348,3 +348,27 @@ Verified over HTTP: provisioning API; unknown, bare and malformed hosts refused;
 Not exercised over HTTP: Meilisearch queries, email links, agent runs, MCP, schedules and triggers.
 
 Local note: Node on Windows does not resolve `*.localhost`; a preload that maps it to 127.0.0.1 was needed. The Godar local provider advertises an `https://<slug>.localhost` issuer through its Caddy proxy (internal CA), not `http://<slug>.localhost:4000`.
+
+## 17. Admin panel in host mode
+
+Each tenant gets its own admin panel origin, `<TENANT_HOST_SCHEME>://<slug>.<ADMIN_HOST_BASE_DOMAIN>[:port]`, next to its chat origin. For example `https://acme.admin.example.com` manages `https://acme.chat.example.com`. The admin panel reads the same variables (`MULTI_TENANT_MODE`, `TENANT_HOST_BASE_DOMAIN`, `ADMIN_HOST_BASE_DOMAIN`, `TENANT_HOST_SCHEME`). It takes the slug from the `Host` it was reached on, and calls LibreChat on `API_SERVER_URL` with `Host: <slug>.<TENANT_HOST_BASE_DOMAIN>[:port]`, so LibreChat's host middleware resolves the tenant exactly as for a browser.
+
+- **Admin origin.** The host middleware sets `req.tenantAdminOrigin` from validated parts only (scheme, registry slug, admin base domain, the port the client connected on). `getAdminPanelUrl(req)` returns it. `ADMIN_PANEL_URL` stays refused: one trusted admin origin would be trusted by every tenant. Without `ADMIN_HOST_BASE_DOMAIN`, `/api/admin/*` answers 404 `ADMIN_PANEL_DISABLED`.
+- **Sign-in.** `ensureTenantOpenId` registers `openidAdmin:<tenantId>` (an `AdminOpenIDStrategy` with `existingUsersOnly`) next to `openid:<tenantId>`, from the same registry client. `/api/admin/oauth/*` waits for the tenant's client like `/api/auth`. The authorization request uses `redirect_uri = <tenantOrigin>/api/admin/oauth/openid/callback`, so the provider client of each tenant must allow that URI too. The callback applies the same `iss`/`tid`/`tenant` checks as a user sign-in, requires `ACCESS_ADMIN` (map the provider's admin role with `OPENID_ADMIN_ROLE`, `OPENID_ADMIN_ROLE_PARAMETER_PATH`, `OPENID_ADMIN_ROLE_TOKEN_KIND`), and redirects to `<tenantAdminOrigin>/auth/openid/callback` with an exchange code bound to that origin. A code issued for one tenant's panel is refused when another tenant's panel presents it.
+- **Refresh.** In host mode the exchange carries the provider's refresh token even without `OPENID_REUSE_TOKENS`, and `/api/admin/oauth/refresh` renews it at the tenant's provider (`getOpenIdConfig()` is the tenant's client there). The tenant's scopes need `offline_access` for the provider to issue one. Without it the admin signs in again when the LibreChat token expires.
+- **Sessions.** The panel's session cookie is host-only, so each tenant's panel has its own. The panel also records the slug in the session and drops a session presented on another tenant's host.
+- **Other admin providers.** SAML, Google, GitHub, Discord, Facebook and Apple admin sign-in keep their global strategies and are refused at startup in host mode, as before.
+
+**Identity provider (Godar).** For each tenant client: allow the redirect URI `https://<slug>.<chat base domain>/api/admin/oauth/openid/callback` next to `/oauth/openid/callback`, issue `tid` (and `tenant`) as for user sign-in, grant `offline_access`, and put the tenant-admin role in a claim LibreChat maps with `OPENID_ADMIN_ROLE*`. An admin must already exist in the tenant (one sign-in to the chat is enough) because admin sign-in never creates users.
+
+**Local development.** `docs/host-mode.Caddyfile` serves `https://<slug>.chat.localhost:3010` (LibreChat on 3080) and `https://<slug>.admin.localhost:3010` (panel on 3000) behind one port, keeping `Host`.
+
+| Setting | LibreChat `.env` | admin panel `.env` |
+| --- | --- | --- |
+| `MULTI_TENANT_MODE` | `host` | `host` |
+| `TENANT_HOST_BASE_DOMAIN` | `chat.localhost` | `chat.localhost` |
+| `ADMIN_HOST_BASE_DOMAIN` | `admin.localhost` | `admin.localhost` |
+| `TENANT_HOST_SCHEME` | `https` | `https` |
+| `API_SERVER_URL` | | `http://localhost:3080` |
+| `ADMIN_PANEL_URL`, `VITE_API_BASE_URL`, `VITE_BASE_PATH` | unset | unset |
+

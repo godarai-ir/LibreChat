@@ -30,6 +30,8 @@ const {
   checkTenantClaims,
   createTenantOpenIdClients,
   tenantOpenIdStrategyName,
+  tenantOpenIdAdminStrategyName,
+  ADMIN_OPENID_CALLBACK_PATH,
   preserveAdminOAuthState,
   getOpenIdRolesForOpenIdSync,
   getLibreChatRolesForOpenIdSync,
@@ -144,6 +146,11 @@ const getOpenIdAuthorizationAudience = () =>
  * More info: https://github.com/panva/openid-client/pull/713
  */
 class CustomOpenIDStrategy extends OpenIDStrategy {
+  /** Path of this strategy's callback on the tenant host (host mode only). */
+  tenantCallbackPath() {
+    return process.env.OPENID_CALLBACK_URL;
+  }
+
   currentUrl(req) {
     const hostAndProtocol = getServerOrigin(req);
     return new URL(`${hostAndProtocol}${req.originalUrl ?? req.url}`);
@@ -153,7 +160,7 @@ class CustomOpenIDStrategy extends OpenIDStrategy {
     const params = super.authorizationRequestParams(req, options);
     /** The callback is on the tenant's own host, so it is built per request in host mode. */
     if (req.tenantOrigin && !params.has('redirect_uri')) {
-      params.set('redirect_uri', `${req.tenantOrigin}${process.env.OPENID_CALLBACK_URL}`);
+      params.set('redirect_uri', `${req.tenantOrigin}${this.tenantCallbackPath()}`);
     }
     if (options?.state && !params.has('state')) {
       params.set('state', options.state);
@@ -182,6 +189,10 @@ class CustomOpenIDStrategy extends OpenIDStrategy {
 
 /** Admin sign-in strategy: keeps the admin route's `state`, which keys the admin panel's PKCE challenge. */
 class AdminOpenIDStrategy extends CustomOpenIDStrategy {
+  tenantCallbackPath() {
+    return ADMIN_OPENID_CALLBACK_PATH;
+  }
+
   authorizationRequestParams(req, options) {
     return preserveAdminOAuthState(
       super.authorizationRequestParams(req, options),
@@ -957,7 +968,7 @@ const setupOpenIdAdmin = (openidConfig) => {
         scope: process.env.OPENID_SCOPE,
         usePKCE: isEnabled(process.env.OPENID_USE_PKCE),
         clockTolerance: process.env.OPENID_CLOCK_TOLERANCE || 300,
-        callbackURL: process.env.DOMAIN_SERVER + '/api/admin/oauth/openid/callback',
+        callbackURL: process.env.DOMAIN_SERVER + ADMIN_OPENID_CALLBACK_PATH,
       },
       createOpenIDCallback(true),
     );
@@ -1130,16 +1141,18 @@ async function ensureTenantOpenId(tenant) {
     return;
   }
 
-  const strategy = new CustomOpenIDStrategy(
-    {
-      config,
-      scope: tenant.oidc.scopes.join(' '),
-      clockTolerance: process.env.OPENID_CLOCK_TOLERANCE || 300,
-      usePKCE: isEnabled(process.env.OPENID_USE_PKCE),
-    },
-    createOpenIDCallback(),
-  );
+  const strategyOptions = {
+    config,
+    scope: tenant.oidc.scopes.join(' '),
+    clockTolerance: process.env.OPENID_CLOCK_TOLERANCE || 300,
+    usePKCE: isEnabled(process.env.OPENID_USE_PKCE),
+  };
+  const strategy = new CustomOpenIDStrategy(strategyOptions, createOpenIDCallback());
   passport.use(tenantOpenIdStrategyName(tenant.tenantId), strategy);
+  passport.use(
+    tenantOpenIdAdminStrategyName(tenant.tenantId),
+    new AdminOpenIDStrategy(strategyOptions, createOpenIDCallback(true)),
+  );
   tenantStrategies.set(tenant.tenantId, { fingerprint, config, slug: tenant.slug });
 }
 
@@ -1149,11 +1162,13 @@ function forgetTenantOpenId(tenantId) {
   if (tenantId == null) {
     for (const id of tenantStrategies.keys()) {
       passport.unuse(tenantOpenIdStrategyName(id));
+      passport.unuse(tenantOpenIdAdminStrategyName(id));
     }
     tenantStrategies.clear();
     return;
   }
   passport.unuse(tenantOpenIdStrategyName(tenantId));
+  passport.unuse(tenantOpenIdAdminStrategyName(tenantId));
   tenantStrategies.delete(tenantId);
 }
 

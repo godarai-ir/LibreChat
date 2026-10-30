@@ -17,6 +17,8 @@ const {
   requirePreAuthTenantContext,
   getAdminPanelUrl,
   exchangeAdminCode,
+  tenantOpenIdAdminStrategyName,
+  isHostTenancyEnabled,
   createSetBalanceConfig,
   storeAndStripChallenge,
   tenantContextMiddleware,
@@ -51,6 +53,29 @@ const setBalanceConfig = createSetBalanceConfig({
 });
 
 const router = express.Router();
+
+const PKCE_STORE_FAILED = 'Failed to store PKCE challenge';
+const AUTH_FAILED = 'Authentication failed';
+const TENANT_CONTEXT_MISSING = 'Tenant context required in strict isolation mode';
+
+/** Host mode runs one admin OpenID strategy per tenant; single-tenant mode keeps `openidAdmin`. */
+const getOpenIdAdminStrategyName = (req) =>
+  req.tenantId ? tenantOpenIdAdminStrategyName(req.tenantId) : 'openidAdmin';
+
+/** The admin panel's callback page for `provider`, on this request's admin origin. */
+const adminCallbackUrl = (req, provider) => `${getAdminPanelUrl(req)}/auth/${provider}/callback`;
+
+/** The admin panel's callback page carrying an error, as the panel's SSO callback route reads it. */
+function adminCallbackErrorUrl(req, provider, error, description) {
+  const url = new URL(adminCallbackUrl(req, provider));
+  url.searchParams.set('error', error);
+  url.searchParams.set('error_description', description);
+  return url.toString();
+}
+
+function redirectAdminCallback(req, res, provider, error, description) {
+  return res.redirect(adminCallbackErrorUrl(req, provider, error, description));
+}
 
 function getOptionalOpenIdConfig() {
   try {
@@ -224,8 +249,12 @@ function retrievePkceChallenge(provider) {
         `[admin/oauth/${provider}/callback] Failed to retrieve PKCE challenge, aborting:`,
         err,
       );
-      return res.redirect(
-        `${getAdminPanelUrl()}/auth/${provider}/callback?error=pkce_retrieval_failed&error_description=Failed+to+retrieve+PKCE+challenge`,
+      return redirectAdminCallback(
+        req,
+        res,
+        provider,
+        'pkce_retrieval_failed',
+        'Failed to retrieve PKCE challenge',
       );
     }
     next();
@@ -246,12 +275,10 @@ router.get(
     const cache = getLogStores(CacheKeys.ADMIN_OAUTH_EXCHANGE);
     const stored = await storeAndStripChallenge(cache, req, state, 'openid');
     if (!stored) {
-      return res.redirect(
-        `${getAdminPanelUrl()}/auth/openid/callback?error=pkce_store_failed&error_description=Failed+to+store+PKCE+challenge`,
-      );
+      return redirectAdminCallback(req, res, 'openid', 'pkce_store_failed', PKCE_STORE_FAILED);
     }
 
-    return passport.authenticate('openidAdmin', {
+    return passport.authenticate(getOpenIdAdminStrategyName(req), {
       session: false,
       state,
     })(req, res, next);
@@ -261,25 +288,32 @@ router.get(
 router.get(
   '/oauth/openid/callback',
   preAuthTenantMiddleware,
-  createPreAuthTenantGuard({
-    failureRedirect: `${getAdminPanelUrl()}/auth/openid/callback?error=${TENANT_CONTEXT_REQUIRED}&error_description=Tenant+context+required+in+strict+isolation+mode`,
-  }),
+  (req, res, next) =>
+    createPreAuthTenantGuard({
+      failureRedirect: adminCallbackErrorUrl(
+        req,
+        'openid',
+        TENANT_CONTEXT_REQUIRED,
+        TENANT_CONTEXT_MISSING,
+      ),
+    })(req, res, next),
   (req, res, next) => {
     req.oauthState = typeof req.query.state === 'string' ? req.query.state : undefined;
     next();
   },
   requireOpenIdConfig,
-  passport.authenticate('openidAdmin', {
-    failureRedirect: `${getAdminPanelUrl()}/auth/openid/callback?error=auth_failed&error_description=Authentication+failed`,
-    failureMessage: true,
-    session: false,
-  }),
+  (req, res, next) =>
+    passport.authenticate(getOpenIdAdminStrategyName(req), {
+      failureRedirect: adminCallbackErrorUrl(req, 'openid', 'auth_failed', AUTH_FAILED),
+      failureMessage: true,
+      session: false,
+    })(req, res, next),
   tenantContextMiddleware,
   retrievePkceChallenge('openid'),
   requireAdminAccess,
   setBalanceConfig,
   middleware.checkDomainAllowed,
-  createOAuthHandler(`${getAdminPanelUrl()}/auth/openid/callback`),
+  createOAuthHandler((req) => adminCallbackUrl(req, 'openid')),
 );
 
 /* ──────────────────────────────────────────────
@@ -674,7 +708,7 @@ router.post('/oauth/exchange', middleware.loginLimiter, async (req, res) => {
  *   401 ISSUER_MISMATCH        — refreshed tokenset was issued by an unexpected issuer
  *   401 TENANT_MISMATCH        — resolved user belongs to a different tenant than the request
  *   403 FORBIDDEN              — resolved user no longer holds ACCESS_ADMIN
- *   403 TOKEN_REUSE_DISABLED   — OPENID_REUSE_TOKENS is not enabled (openid provider only)
+ *   403 TOKEN_REUSE_DISABLED   — OPENID_REUSE_TOKENS is not enabled outside host mode (openid only)
  *   502 IDP_INCOMPLETE         — IdP returned a tokenset missing access_token / id_token
  *   502 CLAIMS_INCOMPLETE      — IdP tokenset has no readable claims or no sub
  *   503 OPENID_NOT_CONFIGURED  — OpenID is not configured on this server
@@ -734,7 +768,8 @@ router.post(
         }
       }
 
-      if (!isEnabled(process.env.OPENID_REUSE_TOKENS)) {
+      /** Host mode refreshes at the tenant's own provider: `getOpenIdConfig()` is the tenant's client. */
+      if (!isEnabled(process.env.OPENID_REUSE_TOKENS) && !isHostTenancyEnabled()) {
         return res.status(403).json({
           error: 'OpenID token reuse is not enabled',
           error_code: 'TOKEN_REUSE_DISABLED',

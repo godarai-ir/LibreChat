@@ -90,14 +90,17 @@ describe('per-tenant OpenID (host multi-tenancy)', () => {
     expect(betaMetadata).toMatchObject({ client_secret: 'secret-beta' });
   });
 
-  it('registers one strategy per tenant, named after the tenant, with its scopes', async () => {
+  it('registers a user and an admin strategy per tenant, named after the tenant, with its scopes', async () => {
     await ensureTenantOpenId(tenant('acme'));
     await ensureTenantOpenId(tenant('beta', { scopes: ['openid'] }));
 
     expect([...passport.__strategies.keys()].sort()).toEqual([
       'openid:tenant-acme',
       'openid:tenant-beta',
+      'openidAdmin:tenant-acme',
+      'openidAdmin:tenant-beta',
     ]);
+    expect(passport.__strategies.get('openidAdmin:tenant-acme').options.scope).toBe('openid email');
     expect(passport.__strategies.get('openid:tenant-acme').options.scope).toBe('openid email');
     expect(passport.__strategies.get('openid:tenant-beta').options.scope).toBe('openid');
     expect(passport.__strategies.has('openid')).toBe(false);
@@ -108,7 +111,7 @@ describe('per-tenant OpenID (host multi-tenancy)', () => {
     await ensureTenantOpenId(tenant('acme'));
 
     expect(client.discovery).toHaveBeenCalledTimes(1);
-    expect(passport.use).toHaveBeenCalledTimes(1);
+    expect(passport.use).toHaveBeenCalledTimes(2);
   });
 
   it('allows insecure requests only for an http issuer', async () => {
@@ -129,7 +132,7 @@ describe('per-tenant OpenID (host multi-tenancy)', () => {
 
     expect(client.discovery).toHaveBeenCalledTimes(2);
     expect(client.discovery.mock.calls[1][2]).toMatchObject({ client_secret: 'rotated' });
-    expect(passport.use).toHaveBeenCalledTimes(2);
+    expect(passport.use).toHaveBeenCalledTimes(4);
     expect(passport.__strategies.get('openid:tenant-acme')).not.toBe(before);
   });
 
@@ -197,6 +200,29 @@ describe('per-tenant OpenID (host multi-tenancy)', () => {
       expect(params.get('redirect_uri')).toBe(
         'https://acme.chat.example.com/oauth/openid/callback',
       );
+    });
+
+    it("send the admin sign-in back to the admin callback on the tenant's origin", async () => {
+      process.env.DOMAIN_SERVER = 'https://fixed.example.com';
+      await ensureTenantOpenId(tenant('acme'));
+      const strategy = passport.__strategies.get('openidAdmin:tenant-acme');
+      strategy._config = { serverMetadata: () => ({ supportsPKCE: () => true }) };
+
+      const params = strategy.authorizationRequestParams(
+        { tenantOrigin: 'https://acme.chat.example.com' },
+        {},
+      );
+      expect(params.get('redirect_uri')).toBe(
+        'https://acme.chat.example.com/api/admin/oauth/openid/callback',
+      );
+      expect(
+        strategy
+          .currentUrl({
+            tenantOrigin: 'https://acme.chat.example.com',
+            originalUrl: '/api/admin/oauth/openid/callback?code=abc',
+          })
+          .toString(),
+      ).toBe('https://acme.chat.example.com/api/admin/oauth/openid/callback?code=abc');
     });
   });
 
@@ -279,7 +305,9 @@ describe('per-tenant OpenID (host multi-tenancy)', () => {
       forgetTenantOpenId('tenant-acme');
 
       expect(passport.unuse).toHaveBeenCalledWith('openid:tenant-acme');
+      expect(passport.unuse).toHaveBeenCalledWith('openidAdmin:tenant-acme');
       expect(passport.__strategies.has('openid:tenant-acme')).toBe(false);
+      expect(passport.__strategies.has('openidAdmin:tenant-acme')).toBe(false);
       expect(passport.__strategies.has('openid:tenant-beta')).toBe(true);
       await tenantStorage.run({ tenantId: 'tenant-acme' }, async () => {
         expect(() => getOpenIdConfig()).toThrow(/not initialized/);

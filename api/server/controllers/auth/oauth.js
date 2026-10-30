@@ -3,6 +3,7 @@ const { logger, DEFAULT_SESSION_EXPIRY } = require('@librechat/data-schemas');
 const {
   isEnabled,
   getAdminPanelUrl,
+  isHostTenancyEnabled,
   getClientOrigin,
   isAdminPanelRedirect,
   generateAdminExchangeCode,
@@ -19,10 +20,17 @@ const domains = {
   server: process.env.DOMAIN_SERVER,
 };
 
+/**
+ * @param {string | ((req: ServerRequest) => string)} [fixedRedirectUri] - Where to send the user:
+ *   a URI, or one built per request (the admin panel of the request's tenant in host mode).
+ */
 function createOAuthHandler(fixedRedirectUri) {
   /** The default destination is the client app; an explicit URI (admin panel) is always honored. */
   const usesDefaultRedirect = fixedRedirectUri == null;
-  const redirectUri = fixedRedirectUri ?? domains.client;
+  const resolveRedirectUri =
+    typeof fixedRedirectUri === 'function'
+      ? fixedRedirectUri
+      : () => fixedRedirectUri ?? domains.client;
 
   /**
    * A handler to process OAuth authentication results.
@@ -44,10 +52,10 @@ function createOAuthHandler(fixedRedirectUri) {
 
       /** In host mode the default destination is the tenant the user signed in on. */
       const clientOrigin = getClientOrigin(req) ?? domains.client;
-      const redirectTarget = usesDefaultRedirect ? clientOrigin : redirectUri;
+      const redirectTarget = usesDefaultRedirect ? clientOrigin : resolveRedirectUri(req);
 
       /** Check if this is an admin panel redirect (cross-origin or same-origin subpath) */
-      if (isAdminPanelRedirect(redirectTarget, getAdminPanelUrl(), clientOrigin)) {
+      if (isAdminPanelRedirect(redirectTarget, getAdminPanelUrl(req), clientOrigin)) {
         /** For admin panel, generate exchange code instead of setting cookies */
         const cache = getLogStores(CacheKeys.ADMIN_OAUTH_EXCHANGE);
         const sessionExpiry = Number(process.env.SESSION_EXPIRY) || DEFAULT_SESSION_EXPIRY;
@@ -55,7 +63,8 @@ function createOAuthHandler(fixedRedirectUri) {
 
         let refreshToken;
         if (req.user.provider === 'openid') {
-          if (isEnabled(process.env.OPENID_REUSE_TOKENS) === true) {
+          /** Host mode renews admin sessions at the tenant's provider (`/api/admin/oauth/refresh`). */
+          if (isEnabled(process.env.OPENID_REUSE_TOKENS) === true || isHostTenancyEnabled()) {
             refreshToken =
               req.user.tokenset?.refresh_token || req.user.federatedTokens?.refresh_token;
           }

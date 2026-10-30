@@ -18,6 +18,7 @@ jest.mock(
 import {
   exchangeAdminCode,
   generateAdminExchangeCode,
+  getAdminPanelUrl,
   isAdminPanelRedirect,
   verifyCodeChallenge,
 } from './exchange';
@@ -292,6 +293,61 @@ describe('admin OAuth code exchange', () => {
 
       expect(result).not.toBeNull();
       expect(result!.token).toBe('jwt-token');
+    });
+  });
+
+  describe('per-tenant admin panel origins', () => {
+    it("rejects a code issued for one tenant's panel when another tenant's panel presents it", async () => {
+      const { cache } = createCache();
+      const exchangeCode = await generateAdminExchangeCode(
+        cache,
+        user,
+        'jwt-token',
+        undefined,
+        'https://tenant1.admin.example.com',
+      );
+
+      await expect(
+        exchangeAdminCode(cache, exchangeCode, 'https://tenant2.admin.example.com'),
+      ).resolves.toBeNull();
+    });
+
+    it("treats the tenant's admin origin as an admin panel redirect from its chat origin", () => {
+      expect(
+        isAdminPanelRedirect(
+          'https://tenant1.admin.example.com/auth/openid/callback',
+          'https://tenant1.admin.example.com',
+          'https://tenant1.chat.example.com',
+        ),
+      ).toBe(true);
+      expect(
+        isAdminPanelRedirect(
+          'https://tenant2.admin.example.com/auth/openid/callback',
+          'https://tenant1.admin.example.com',
+          'https://tenant1.chat.example.com',
+        ),
+      ).toBe(false);
+    });
+  });
+
+  describe('getAdminPanelUrl', () => {
+    const original = process.env.ADMIN_PANEL_URL;
+    afterEach(() => {
+      process.env.ADMIN_PANEL_URL = original;
+    });
+
+    it("prefers the request tenant's admin origin", () => {
+      process.env.ADMIN_PANEL_URL = 'https://admin.example.com';
+      expect(getAdminPanelUrl({ tenantAdminOrigin: 'https://acme.admin.example.com' })).toBe(
+        'https://acme.admin.example.com',
+      );
+    });
+
+    it('falls back to ADMIN_PANEL_URL, then the development default', () => {
+      process.env.ADMIN_PANEL_URL = 'https://admin.example.com';
+      expect(getAdminPanelUrl({})).toBe('https://admin.example.com');
+      delete process.env.ADMIN_PANEL_URL;
+      expect(getAdminPanelUrl()).toBe('http://localhost:3000');
     });
   });
 

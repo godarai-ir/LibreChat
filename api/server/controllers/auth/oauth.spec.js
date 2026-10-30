@@ -25,6 +25,7 @@ jest.mock('@librechat/api', () => ({
   isAdminPanelRedirect: (...args) => mockIsAdminPanelRedirect(...args),
   generateAdminExchangeCode: (...args) => mockGenerateAdminExchangeCode(...args),
   getClientOrigin: (req) => req?.tenantOrigin ?? process.env.DOMAIN_CLIENT,
+  isHostTenancyEnabled: () => process.env.MULTI_TENANT_MODE === 'host',
 }));
 
 jest.mock('~/server/services/PermissionService', () => ({
@@ -88,6 +89,7 @@ describe('createOAuthHandler', () => {
       DOMAIN_CLIENT: 'http://localhost:3080',
       DOMAIN_SERVER: 'http://localhost:3080',
       OPENID_REUSE_TOKENS: 'false',
+      MULTI_TENANT_MODE: undefined,
     };
     mockIsEnabled.mockImplementation((value) => value === 'true' || value === true);
     mockGetAdminPanelUrl.mockReturnValue('http://admin.example.com');
@@ -126,6 +128,41 @@ describe('createOAuthHandler', () => {
     expect(mockSendOpenIDAuthResponse).not.toHaveBeenCalled();
     expect(mockSetAuthTokens).not.toHaveBeenCalled();
     expect(next).not.toHaveBeenCalled();
+  });
+
+  it("includes the provider's refresh token in admin exchange in host mode", async () => {
+    process.env.MULTI_TENANT_MODE = 'host';
+    const handler = createOAuthHandler('http://admin.example.com/auth/openid/callback');
+    const req = buildReq();
+
+    await handler(req, buildRes(), jest.fn());
+
+    expect(mockGenerateAdminExchangeCode).toHaveBeenCalledWith(
+      {},
+      req.user,
+      'jwt-token',
+      'openid-refresh-token',
+      'http://admin.example.com',
+      'pkce-challenge',
+      expect.any(Number),
+    );
+  });
+
+  it('builds the admin redirect per request when given a function', async () => {
+    const handler = createOAuthHandler((req) => `${req.tenantAdminOrigin}/auth/openid/callback`);
+    const req = { ...buildReq(), tenantAdminOrigin: 'https://acme.admin.example.com' };
+    const res = buildRes();
+
+    await handler(req, res, jest.fn());
+
+    expect(mockIsAdminPanelRedirect).toHaveBeenCalledWith(
+      'https://acme.admin.example.com/auth/openid/callback',
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(res.redirect).toHaveBeenCalledWith(
+      'https://acme.admin.example.com/auth/openid/callback?code=exchange-code',
+    );
   });
 
   it('includes refresh token in admin exchange when OPENID_REUSE_TOKENS is enabled', async () => {

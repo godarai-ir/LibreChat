@@ -4,15 +4,22 @@ import { logger } from '@librechat/data-schemas';
 import type { IUser } from '@librechat/data-schemas';
 import { consumeCacheEntry } from '../cache/consume';
 
+/** Where the identity provider returns an admin panel sign-in, on the API (tenant) origin. */
+export const ADMIN_OPENID_CALLBACK_PATH = '/api/admin/oauth/openid/callback';
+
 /** Default admin panel URL for local development */
 const DEFAULT_ADMIN_PANEL_URL = 'http://localhost:3000';
 
 /**
- * Gets the admin panel URL from environment or falls back to default.
+ * Gets the admin panel URL: in host mode the admin origin of the request's tenant (set by the host
+ * middleware from validated parts only), otherwise `ADMIN_PANEL_URL` or the development default.
+ * @param req - The request, when there is one; read for `tenantAdminOrigin` only
  * @returns The admin panel URL
  */
-export function getAdminPanelUrl(): string {
-  return process.env.ADMIN_PANEL_URL || DEFAULT_ADMIN_PANEL_URL;
+export function getAdminPanelUrl(req?: object | null): string {
+  const tenantAdminOrigin = (req as { tenantAdminOrigin?: string } | null | undefined)
+    ?.tenantAdminOrigin;
+  return tenantAdminOrigin || process.env.ADMIN_PANEL_URL || DEFAULT_ADMIN_PANEL_URL;
 }
 
 /**

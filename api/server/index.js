@@ -53,6 +53,7 @@ const {
   assertHostTenancyAppConfig,
   createHostTenancyRuntime,
   createTenantOpenIdMiddleware,
+  requireTenantAdminOrigin,
   resolveHostTenancyConfig,
   decryptV3,
   requestContextMiddleware,
@@ -476,6 +477,9 @@ const startServer = async () => {
   /* API Endpoints */
   app.use('/api/auth', preAuthTenantMiddleware, openIdForAuthApi, routes.auth);
   app.use('/api/insights', routes.insights);
+  /* Host mode: the admin API only on a tenant with an admin panel origin; its sign-in waits for the tenant's OpenID client. */
+  app.use('/api/admin', requireTenantAdminOrigin);
+  app.use('/api/admin/oauth', openIdForAuthApi);
   app.use('/api/admin', routes.adminAuth);
   app.use('/api/admin/config', routes.adminConfig);
   app.use('/api/admin/code-environments', routes.adminCodeEnvironments);
