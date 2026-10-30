@@ -13,8 +13,10 @@ jest.mock('@librechat/api', () => {
       seen.prompt = tenantInEffect();
       return {};
     }),
-    logAgentMigrationWarning: jest.fn(),
-    logPromptMigrationWarning: jest.fn(),
+    checkStartupMigrations: jest.fn(async (checks) => {
+      await checks.checkAgentPermissions();
+      await checks.checkPromptPermissions();
+    }),
   };
 });
 

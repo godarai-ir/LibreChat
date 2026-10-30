@@ -211,7 +211,7 @@ function ToolCardImpl({
         ) : null}
       </button>
       {(canFavorite || canConfigure || showInfoOnly) && (
-        <div className="absolute end-2 bottom-2 flex items-center gap-1">
+        <div className="absolute inset-e-2 bottom-2 flex items-center gap-1">
           {(canConfigure || showInfoOnly) && (
             <button
               type="button"

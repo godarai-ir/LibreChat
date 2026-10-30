@@ -82,7 +82,7 @@ function SourceItem({ source, expanded = false }: SourceItemProps) {
               </a>
             }
           />
-          <Ariakit.HovercardDisclosure className="text-text-primary focus:ring-text-primary absolute end-2 rounded-full focus:ring-2 focus:outline-hidden">
+          <Ariakit.HovercardDisclosure className="text-text-primary focus:ring-text-primary absolute inset-e-2 rounded-full focus:ring-2 focus:outline-hidden">
             <VisuallyHidden>
               {localize('com_citation_more_details', { label: domain })}
             </VisuallyHidden>
@@ -408,7 +408,7 @@ const SourcesGroup = React.memo(function SourcesGroup({
   }, [sources, limit]);
 
   return (
-    <div className="grid w-full grid-cols-4 gap-2 overflow-x-auto">
+    <div className="hide-scrollbar grid w-full grid-cols-4 gap-2 overflow-x-auto">
       <OGDialog>
         {visibleSources.map((source, i) => (
           <div key={`source-${i}`} className="w-full min-w-[7.5rem]">
@@ -497,7 +497,7 @@ function FilesGroup({ files, messageId, conversationId, limit = 3 }: FilesGroupP
   const hasMoreFiles = remainingFiles.length > 0;
 
   return (
-    <div className="grid w-full grid-cols-4 gap-2 overflow-x-auto">
+    <div className="hide-scrollbar grid w-full grid-cols-4 gap-2 overflow-x-auto">
       <OGDialog>
         {visibleFiles.map((file, i) => (
           <div key={`file-${i}`} className="w-full min-w-[7.5rem]">

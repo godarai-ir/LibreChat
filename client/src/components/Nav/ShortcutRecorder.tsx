@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { X } from 'lucide-react';
-import type { RefObject } from 'react';
-import type { ShortcutBinding } from '~/utils/shortcuts';
 import {
   bindingDisplayKeys,
   bindingHash,
@@ -9,7 +7,9 @@ import {
   isModifierKey,
   isValidBinding,
   normalizeKey,
-} from '~/utils/shortcuts';
+} from '@librechat/chat';
+import type { ShortcutBinding } from '@librechat/chat';
+import type { RefObject } from 'react';
 import { isMac } from '~/hooks/useKeyboardShortcuts';
 import ShortcutKeyCombo from './ShortcutKeyCombo';
 import { useLocalize } from '~/hooks';
@@ -243,7 +243,7 @@ export function RecorderInfo({
   }
 
   return (
-    <div id={`${ownerId}-recorder-hint`} className="flex items-center justify-end gap-2 pl-1">
+    <div id={`${ownerId}-recorder-hint`} className="flex items-center justify-end gap-2 ps-1">
       <span
         className={cn(
           'text-[11.5px]',

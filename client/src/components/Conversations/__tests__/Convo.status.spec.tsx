@@ -122,7 +122,7 @@ describe('Conversation row status', () => {
 
     const className = screen.getByTestId('status-ring').getAttribute('class') ?? '';
     expect(className).toContain('-top-[0.4375rem]');
-    expect(className).toContain('-start-[0.4375rem]');
+    expect(className).toContain('-inset-s-[0.4375rem]');
     expect(className).not.toMatch(/\[\d+px\]/);
   });
 

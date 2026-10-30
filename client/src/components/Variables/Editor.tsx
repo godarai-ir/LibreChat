@@ -104,7 +104,7 @@ export default function VariableEditor({
         <Label className={labelClassName} htmlFor={id}>
           {label}
         </Label>
-        {/* `ml-auto` keeps the actions right-aligned when the label is visually hidden. */}
+        {/* `ms-auto` keeps the actions right-aligned when the label is visually hidden. */}
         <div className="ms-auto flex items-center gap-0.5">
           {showVariables && (
             <DropdownPopup

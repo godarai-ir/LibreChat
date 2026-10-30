@@ -40,6 +40,7 @@ export function useSettingsContext(): SettingsContextValue {
 
   const balanceEnabled = startupConfig?.balance?.enabled === true;
   const langfuseConnectionAccess = startupConfig?.langfuseConnectionAccess === true;
+  const langfusePromptSyncAccess = startupConfig?.langfusePromptSyncAccess === true;
   const adminPanelURL = startupConfig?.adminPanelURL ?? '';
   const isLocalProvider = user?.provider === 'local';
   const emailEnabled = startupConfig?.emailEnabled === true;
@@ -65,7 +66,10 @@ export function useSettingsContext(): SettingsContextValue {
     replyConfigLoaded && replyNotificationsConfig?.desktop !== false;
   const replyNotificationSoundAllowed =
     replyConfigLoaded && replyNotificationsConfig?.sound !== false;
-  const analyticsConfigured = hasAnalyticsGtmId(startupConfig?.analyticsGtmId);
+  /* No toggle when the deployment granted consent for everyone: there is no choice to change. */
+  const analyticsConfigured =
+    hasAnalyticsGtmId(startupConfig?.analyticsGtmId) &&
+    startupConfig?.interface?.analyticsConsent !== false;
   const hasRemoteAgentsBool = hasRemoteAgents === true;
   const hasMultiConvoBool = hasMultiConvo === true;
   const hasPromptsBool = hasPrompts === true;
@@ -97,6 +101,7 @@ export function useSettingsContext(): SettingsContextValue {
       mascotAllowed,
       engineTTS,
       langfuseConnectionAccess,
+      langfusePromptSyncAccess,
       adminPanelURL,
       replyTabBadgeAllowed,
       replyNotificationsAllowed,
@@ -125,6 +130,7 @@ export function useSettingsContext(): SettingsContextValue {
       mascotAllowed,
       engineTTS,
       langfuseConnectionAccess,
+      langfusePromptSyncAccess,
       adminPanelURL,
       replyTabBadgeAllowed,
       replyNotificationsAllowed,

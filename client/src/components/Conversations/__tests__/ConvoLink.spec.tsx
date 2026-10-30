@@ -50,7 +50,7 @@ describe('ConvoLink title', () => {
 
     const viewport = screen.getByText('MCP & Skill').parentElement;
     expect(viewport).toHaveAttribute('dir', 'auto');
-    expect(screen.getByRole('button')).toHaveClass('text-left', 'rtl:text-right');
+    expect(screen.getByRole('button')).toHaveClass('text-start');
     expect(viewport?.className).not.toMatch(/text-align|text-start/);
   });
 });

@@ -145,7 +145,7 @@ function FileTreeNode({
   return (
     <button
       type="button"
-      style={{ ...style, paddingInlineStart: `${indentRem}rem` }}
+      style={{ ...style, '--skill-indent': `${indentRem}rem` } as React.CSSProperties}
       onClick={(e) => {
         e.stopPropagation();
         if (isFolder) {
@@ -157,7 +157,7 @@ function FileTreeNode({
         }
       }}
       className={cn(
-        'flex w-full items-center gap-1.5 rounded-lg text-sm select-none',
+        'flex w-full items-center gap-1.5 rounded-lg ps-(--skill-indent) text-sm select-none',
         isFileActive
           ? 'bg-surface-active text-text-primary font-medium'
           : 'text-text-secondary hover:bg-surface-nav-hover hover:text-text-primary',
@@ -168,8 +168,8 @@ function FileTreeNode({
         <>
           <ChevronRight
             className={cn(
-              'size-3 shrink-0 transition-transform duration-150 rtl:-scale-x-100',
-              isOpen && 'rotate-90 rtl:-rotate-90',
+              'size-3 shrink-0 transition-transform duration-150',
+              isOpen ? 'rotate-90' : 'rtl:rotate-180',
             )}
             aria-hidden="true"
           />

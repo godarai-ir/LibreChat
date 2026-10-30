@@ -9,8 +9,11 @@ import React, {
 } from 'react';
 import { useSetAtom } from 'jotai';
 import * as Ariakit from '@ariakit/react';
+import { isMacPlatform } from '@librechat/chat';
 import { AutoSizer, List } from 'react-virtualized';
 import { Star, Plus, Search, ChevronDown } from 'lucide-react';
+import { FilePreview, getFileType } from '@librechat/chat/components';
+import { composerLiftFamily, useReducedMotion, useElementSize } from '@librechat/chat/react';
 import { Button, FileUpload, IconButton, TooltipAnchor, useMediaQuery } from '@librechat/client';
 import type {
   TFile,
@@ -23,19 +26,14 @@ import type { AttachEntry } from '~/hooks/Input/useAttachItems';
 import type { ExtendedFile, FileSetter } from '~/common';
 import type { CatalogSection } from './Catalog';
 import type { TranslationKeys } from '~/hooks';
-import FilePreview from '~/components/Chat/Input/Files/FilePreview';
 import { SharePointPickerDialog } from '~/components/SharePoint';
-import useReducedMotion from '~/hooks/Generic/useReducedMotion';
-import { getFileType, isUnifiedUploadMode, cn } from '~/utils';
 import useToolFavorites from '~/hooks/Input/useToolFavorites';
-import useElementSize from '~/hooks/Generic/useElementSize';
 import useRecentFiles from '~/hooks/Input/useRecentFiles';
 import useAttachItems from '~/hooks/Input/useAttachItems';
 import { useMCPRefresh } from '~/hooks/MCP/useMCPRefresh';
-import { isMacPlatform } from '~/utils/shortcuts';
+import { isUnifiedUploadMode, cn } from '~/utils';
 import { useBadgeRowContext } from '~/Providers';
 import useCalendar from '~/hooks/useCalendar';
-import { composerLiftFamily } from './state';
 import { useLocalize } from '~/hooks';
 import Catalog from './Catalog';
 
@@ -413,6 +411,7 @@ function Palette({
   );
   const isUnifiedMode = isUnifiedUploadMode(endpointFileConfig, canAttach);
   const attach = useAttachItems({
+    index,
     agentId,
     endpoint,
     endpointType,
@@ -1051,7 +1050,7 @@ function Palette({
             {checked && (
               <span
                 aria-hidden="true"
-                className="bg-text-primary absolute inset-y-1 start-0 w-0.5 rounded-full"
+                className="bg-text-primary absolute inset-y-1 inset-s-0 w-0.5 rounded-full"
               />
             )}
             <Button
@@ -1169,6 +1168,7 @@ function Palette({
       entering,
       collapsing,
       paletteRowId,
+      dateLocale,
     ],
   );
 

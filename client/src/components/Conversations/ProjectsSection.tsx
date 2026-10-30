@@ -333,7 +333,7 @@ const ProjectItem = memo(
             /* The 4px between the two controls, and from the row's trailing edge,
                that a pinned chat keeps between its unpin badge and its overflow
                menu. Each control reveals itself. */
-            className="absolute end-1 top-1/2 flex -translate-y-1/2 items-center gap-1"
+            className="absolute inset-e-1 top-1/2 flex -translate-y-1/2 items-center gap-1"
           >
             <TooltipAnchor
               description={localize('com_ui_new_chat_in_project', { name: project.name })}
@@ -370,8 +370,8 @@ const ProjectItem = memo(
             />
           </div>
         </div>
-        <Collapse open={expanded} className="ps-2">
-          <div className="pt-1">
+        <Collapse open={expanded}>
+          <div className="ps-2 pt-1">
             <ProjectChatsInline
               projectId={project._id}
               expanded={expanded}

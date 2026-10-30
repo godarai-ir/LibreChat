@@ -62,6 +62,7 @@ export interface SettingsContextValue {
   mascotAllowed: boolean;
   engineTTS: string;
   langfuseConnectionAccess: boolean;
+  langfusePromptSyncAccess?: boolean;
   adminPanelURL: string;
   replyTabBadgeAllowed: boolean;
   replyNotificationsAllowed: boolean;
@@ -150,7 +151,7 @@ export const TABS: TabMeta[] = [
         icon: createLangfuseIcon('h-3.5 w-3.5'),
       },
     ],
-    show: (ctx) => ctx.langfuseConnectionAccess,
+    show: (ctx) => ctx.langfuseConnectionAccess || ctx.langfusePromptSyncAccess === true,
   },
   {
     id: SettingsTabValues.DATA,

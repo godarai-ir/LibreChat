@@ -245,7 +245,7 @@ const SubMenuItem: React.FC<{
         <span className="flex items-center gap-2">
           {item.icon != null && (
             <span
-              className={cn('size-theme-icon mr-2 [&>svg]:size-full', iconClassName)}
+              className={cn('size-theme-icon me-2 [&>svg]:size-full', iconClassName)}
               aria-hidden="true"
             >
               {item.icon}

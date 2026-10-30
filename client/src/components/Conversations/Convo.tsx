@@ -273,7 +273,14 @@ function Conversation({
       return;
     }
 
-    if (currentConvoId === conversationId || isPopoverActive) {
+    if (isPopoverActive) {
+      return;
+    }
+
+    if (isActiveConvo) {
+      if (isSmallScreen) {
+        toggleNav();
+      }
       return;
     }
 
@@ -344,7 +351,7 @@ function Conversation({
       className={cn(
         'group focus-visible:ring-text-primary relative flex h-12 w-full items-center rounded-lg outline-hidden focus-visible:ring-2 focus-visible:outline-hidden focus-visible:ring-inset md:h-9',
         isActiveConvo || isPopoverActive
-          ? 'bg-surface-nav-selected before:bg-text-primary before:absolute before:start-0 before:top-1 before:bottom-1 before:w-0.5 before:rounded-full'
+          ? 'bg-surface-nav-selected before:bg-text-primary before:absolute before:inset-s-0 before:top-1 before:bottom-1 before:w-0.5 before:rounded-full'
           : 'hover:bg-surface-nav-hover',
       )}
       onPointerEnter={(event) => {
@@ -421,7 +428,7 @@ function Conversation({
                 size={34}
                 strokeWidth={1.9}
                 bgOpacity={0.14}
-                className="pointer-events-none absolute -start-[0.4375rem] -top-[0.4375rem] size-[2.125rem]"
+                className="pointer-events-none absolute -inset-s-[0.4375rem] -top-[0.4375rem] size-[2.125rem]"
               />
             )}
             {isUnseen && !isGenerating && (
@@ -429,7 +436,7 @@ function Conversation({
               <span
                 aria-hidden="true"
                 className={cn(
-                  'bg-status-info pointer-events-none absolute -end-0.5 -bottom-0.5 size-2 rounded-full ring-2',
+                  'bg-status-info pointer-events-none absolute -inset-e-0.5 -bottom-0.5 size-2 rounded-full ring-2',
                   isActiveConvo || isPopoverActive
                     ? 'ring-surface-nav-selected'
                     : 'ring-surface-sidebar group-hover:ring-surface-nav-hover',

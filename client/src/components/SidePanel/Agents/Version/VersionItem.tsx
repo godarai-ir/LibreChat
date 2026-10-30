@@ -10,6 +10,7 @@ import {
   TooltipAnchor,
 } from '@librechat/client';
 import type { VersionRecord } from './types';
+import useDirection, { inlineSide } from '~/hooks/Nav/useDirection';
 import { useLocalize, useClockFormat } from '~/hooks';
 import useCalendar from '~/hooks/useCalendar';
 import { cn, formatTimeAgo } from '~/utils';
@@ -46,6 +47,7 @@ export default function VersionItem({
   onRestore,
 }: VersionItemProps) {
   const localize = useLocalize();
+  const direction = useDirection();
   const hour12 = useClockFormat();
   const { dateLocale } = useCalendar();
   const [open, setOpen] = useState(false);
@@ -170,7 +172,7 @@ export default function VersionItem({
               <OGDialogTrigger asChild>
                 <TooltipAnchor
                   description={localize('com_ui_agent_version_restore')}
-                  side="left"
+                  side={inlineSide(direction, 'start')}
                   render={
                     <Button
                       variant="quiet"

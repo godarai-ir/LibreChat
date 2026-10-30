@@ -9,6 +9,7 @@ import {
   type MouseEvent,
 } from 'react';
 import { Lightbulb, ChevronDown } from 'lucide-react';
+import { ROW_GLYPH_SLOT } from '@librechat/chat/components';
 import { Button, MorphIcon, TooltipAnchor } from '@librechat/client';
 import { ChevronUp as ChevronUpNode, ChevronDown as ChevronDownNode } from 'lucide';
 import type { FocusEvent, FC } from 'react';
@@ -16,7 +17,6 @@ import { useMessagePartsHost } from '~/Providers/MessagePartsHostContext';
 import CopyButton from '~/components/Messages/Content/CopyButton';
 import { useLocalize, useExpandCollapse } from '~/hooks';
 import { AnimatedText } from '../animate';
-import { ROW_GLYPH_SLOT } from '../rows';
 import { cn } from '~/utils';
 
 /** Whether any part of `el` is inside the viewport and every clipping ancestor. */
@@ -207,7 +207,7 @@ export const ThinkingButton = memo(
             label={localize('com_ui_copy_thoughts_to_clipboard')}
             copiedLabel={localize('com_ui_copied_to_clipboard')}
             className={cn(
-              'absolute top-1/2 end-0 -translate-y-1/2 opacity-0 transition-opacity',
+              'absolute inset-e-0 top-1/2 -translate-y-1/2 opacity-0 transition-opacity',
               'group-focus-within/thinking-container:opacity-100 group-hover/thinking-container:opacity-100',
               'focus-visible:opacity-100',
             )}
@@ -276,7 +276,7 @@ export const FloatingThinkingBar = memo(
         className={cn(
           /* Laid over the text rather than reserved below it, so the box keeps
              even padding; the fill keeps the controls legible over a line. */
-          'bg-surface-secondary absolute end-3 bottom-3 flex items-center gap-2 rounded-lg transition-opacity duration-150',
+          'bg-surface-secondary absolute inset-e-3 bottom-3 flex items-center gap-2 rounded-lg transition-opacity duration-150',
           isVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
       >

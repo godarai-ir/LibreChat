@@ -120,7 +120,7 @@ function ProjectCard({
           ) : null}
         </span>
       </Button>
-      <div className="absolute top-2 end-2">
+      <div className="absolute inset-e-2 top-2">
         <DropdownPopup
           portal={true}
           focusLoop={true}

@@ -51,7 +51,7 @@ const PromptEditor: React.FC<Props> = ({ name, isEditing, setIsEditing }) => {
           isEditing ? '' : 'hover:bg-surface-tertiary cursor-pointer',
         )}
       >
-        <div className="absolute top-2 end-2 z-10 flex items-center gap-1">
+        <div className="absolute inset-e-2 top-2 z-10 flex items-center gap-1">
           <VariablesDropdown fieldName={name} finalFocus={textareaRef} />
           <TooltipAnchor
             description={isEditing ? localize('com_ui_save') : localize('com_ui_edit')}

@@ -216,6 +216,7 @@ export default function DiffView({ parsed }: { parsed: ParsedDiff }) {
   return (
     <div
       data-testid="diff-view"
+      dir="ltr"
       className="bg-surface-code max-h-[300px] overflow-y-auto py-2 font-mono text-xs leading-5"
     >
       {lines.map((line, index) => {
