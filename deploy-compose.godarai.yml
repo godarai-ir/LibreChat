@@ -1,0 +1,6 @@
+# godarai-ir layer on top of deploy-compose.yml: serves the fork's admin panel (Persian/RTL)
+# instead of the upstream image. Set ADMIN_PANEL_IMAGE to pin a tag or fall back to upstream.
+# Usage: docker compose -f deploy-compose.yml -f deploy-compose.godarai.yml up -d
+services:
+  admin-panel:
+    image: ${ADMIN_PANEL_IMAGE:-ghcr.io/godarai-ir/librechat-admin-panel:latest}
