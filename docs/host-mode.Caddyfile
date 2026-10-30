@@ -1,0 +1,25 @@
+# Local development proxy for host multi-tenancy with the admin panel (docs/multi-tenancy-host-mode.md, section 17).
+#
+#   https://<slug>.chat.localhost:3010   -> LibreChat   (localhost:3080)
+#   https://<slug>.admin.localhost:3010  -> admin panel (localhost:3000)
+#
+# Run: caddy run --config docs/host-mode.Caddyfile
+# Caddy keeps the client's Host header, which both apps resolve the tenant from.
+# Trust Caddy's local CA once (`caddy trust`) for browsers, and point Node at it
+# (NODE_EXTRA_CA_CERTS=<caddy data dir>/pki/authorities/local/root.crt) when a
+# process must call an https://*.localhost URL, such as the Godar issuer.
+{
+	local_certs
+	https_port 3010
+	auto_https disable_redirects
+}
+
+*.chat.localhost:3010 {
+	tls internal
+	reverse_proxy localhost:3080
+}
+
+*.admin.localhost:3010 {
+	tls internal
+	reverse_proxy localhost:3000
+}

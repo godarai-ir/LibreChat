@@ -63,6 +63,11 @@ export interface HostTenancyConfig {
   enabled: boolean;
   /** Tenant hosts are `<slug>.<baseDomain>`. Empty when disabled. */
   baseDomain: string;
+  /**
+   * The admin panel of a tenant lives at `<slug>.<adminBaseDomain>`. Empty when disabled or when
+   * the deployment runs no admin panel, which turns admin sign-in off.
+   */
+  adminBaseDomain: string;
   /** Scheme of the public tenant URL. `http` is accepted only on a `.localhost` base domain. */
   scheme: string;
   /** Issuer URL with a `{slug}` placeholder. A registry entry may override it per tenant. */
@@ -174,6 +179,7 @@ export function resolveHostTenancyConfig(env: Env = process.env): HostTenancyCon
     return {
       enabled,
       baseDomain: '',
+      adminBaseDomain: '',
       scheme: 'https',
       issuerTemplate: null,
       reservedSlugs: new Set(),
@@ -189,6 +195,7 @@ export function resolveHostTenancyConfig(env: Env = process.env): HostTenancyCon
   return {
     enabled,
     baseDomain: clean(env.TENANT_HOST_BASE_DOMAIN).toLowerCase(),
+    adminBaseDomain: clean(env.ADMIN_HOST_BASE_DOMAIN).toLowerCase(),
     scheme: clean(env.TENANT_HOST_SCHEME).toLowerCase() || 'https',
     issuerTemplate: clean(env.TENANT_OIDC_ISSUER_TEMPLATE) || null,
     reservedSlugs,
@@ -216,6 +223,21 @@ export function validateHostTenancyEnv(
   } else if (!BASE_DOMAIN_PATTERN.test(config.baseDomain)) {
     problems.push(
       'TENANT_HOST_BASE_DOMAIN must be a bare lowercase host name: no scheme, port, wildcard or trailing dot',
+    );
+  }
+  if (config.adminBaseDomain && !BASE_DOMAIN_PATTERN.test(config.adminBaseDomain)) {
+    problems.push(
+      'ADMIN_HOST_BASE_DOMAIN must be a bare lowercase host name: no scheme, port, wildcard or trailing dot',
+    );
+  } else if (config.adminBaseDomain && config.adminBaseDomain === config.baseDomain) {
+    problems.push('ADMIN_HOST_BASE_DOMAIN must differ from TENANT_HOST_BASE_DOMAIN');
+  } else if (
+    config.scheme === 'http' &&
+    config.adminBaseDomain &&
+    !/(^|\.)localhost$/.test(config.adminBaseDomain)
+  ) {
+    problems.push(
+      'TENANT_HOST_SCHEME "http" requires ADMIN_HOST_BASE_DOMAIN to end in .localhost as well',
     );
   }
   if (config.scheme !== 'https' && config.scheme !== 'http') {
@@ -261,8 +283,8 @@ export function validateHostTenancyEnv(
   }
   if (clean(env.ADMIN_PANEL_URL) !== '') {
     problems.push(
-      'ADMIN_PANEL_URL must be unset: the admin panel has one SSO and is not supported in host mode, ' +
-        'and a trusted admin origin would be trusted by every tenant',
+      'ADMIN_PANEL_URL must be unset: a trusted admin origin would be trusted by every tenant; ' +
+        'set ADMIN_HOST_BASE_DOMAIN so each tenant gets its own admin panel origin',
     );
   }
   if (isTrue(env.ALLOW_PASSKEY_LOGIN)) {

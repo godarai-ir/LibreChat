@@ -178,6 +178,11 @@ export function tenantOpenIdStrategyName(tenantId: string): string {
   return `openid:${tenantId}`;
 }
 
+/** The passport strategy name for one tenant's admin panel sign-in. */
+export function tenantOpenIdAdminStrategyName(tenantId: string): string {
+  return `openidAdmin:${tenantId}`;
+}
+
 export type TenantClaimFailure = 'TID_MISSING' | 'TID_MISMATCH' | 'TENANT_MISMATCH';
 
 export type TenantClaimCheck = { ok: true } | { ok: false; reason: TenantClaimFailure };

@@ -46,6 +46,7 @@ const {
   assertHostTenancyAppConfig,
   createHostTenancyRuntime,
   createTenantOpenIdMiddleware,
+  requireTenantAdminOrigin,
   resolveHostTenancyConfig,
   decryptV3,
   requestContextMiddleware,
@@ -697,6 +698,9 @@ if (cluster.isMaster) {
     app.use('/oauth', preAuthTenantMiddleware, openIdForOAuth, routes.oauth);
     app.use('/api/auth', preAuthTenantMiddleware, openIdForAuthApi, routes.auth);
     app.use('/api/insights', routes.insights);
+    /* Host mode: the admin API only on a tenant with an admin panel origin; its sign-in waits for the tenant's OpenID client. */
+    app.use('/api/admin', requireTenantAdminOrigin);
+    app.use('/api/admin/oauth', openIdForAuthApi);
     app.use('/api/admin', routes.adminAuth);
     app.use('/api/admin/skills', routes.adminSkills);
     app.use('/api/admin/code-environments', routes.adminCodeEnvironments);

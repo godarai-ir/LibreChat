@@ -175,6 +175,42 @@ describe('validateHostTenancyEnv', () => {
     ]);
   });
 
+  it('accepts a per-tenant admin panel base domain', () => {
+    expect(problemsFor({ ...validEnv, ADMIN_HOST_BASE_DOMAIN: 'admin.example.com' })).toEqual([]);
+    expect(
+      resolveHostTenancyConfig({ ...validEnv, ADMIN_HOST_BASE_DOMAIN: ' Admin.Example.COM ' })
+        .adminBaseDomain,
+    ).toBe('admin.example.com');
+  });
+
+  it.each(['https://admin.example.com', 'admin.example.com:8443', '*.admin.example.com', 'admin'])(
+    'refuses the admin base domain %p',
+    (adminBaseDomain) => {
+      expect(problemsFor({ ...validEnv, ADMIN_HOST_BASE_DOMAIN: adminBaseDomain })).toEqual([
+        expect.stringContaining('ADMIN_HOST_BASE_DOMAIN'),
+      ]);
+    },
+  );
+
+  it('refuses an admin base domain equal to the chat base domain', () => {
+    expect(problemsFor({ ...validEnv, ADMIN_HOST_BASE_DOMAIN: 'chat.example.com' })).toEqual([
+      expect.stringContaining('must differ'),
+    ]);
+  });
+
+  it('refuses a non-localhost admin base domain over http', () => {
+    const env = {
+      ...validEnv,
+      TENANT_HOST_BASE_DOMAIN: 'chat.localhost',
+      TENANT_HOST_SCHEME: 'http',
+      TENANT_OIDC_ISSUER_TEMPLATE: undefined,
+    };
+    expect(problemsFor({ ...env, ADMIN_HOST_BASE_DOMAIN: 'admin.localhost' })).toEqual([]);
+    expect(problemsFor({ ...env, ADMIN_HOST_BASE_DOMAIN: 'admin.example.com' })).toEqual([
+      expect.stringContaining('ADMIN_HOST_BASE_DOMAIN'),
+    ]);
+  });
+
   it('refuses passkey login, which is bound to a single relying-party host', () => {
     expect(problemsFor({ ...validEnv, ALLOW_PASSKEY_LOGIN: 'true' })).toEqual([
       expect.stringContaining('ALLOW_PASSKEY_LOGIN'),
