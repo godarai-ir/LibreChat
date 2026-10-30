@@ -30,7 +30,7 @@ function Examples({ readonly, examples, setExample, addExample, removeExample }:
               } flex flex-col items-center justify-start gap-6 sm:col-span-1`}
             >
               <div className="grid w-full items-center gap-2">
-                <Label htmlFor={`input-${idx}`} className="text-left text-sm font-medium">
+                <Label htmlFor={`input-${idx}`} className="text-start text-sm font-medium">
                   {localize('com_ui_input')}{' '}
                   <small className="high-contrast:opacity-100 opacity-40">
                     ({localize('com_endpoint_default_blank')})
@@ -57,7 +57,7 @@ function Examples({ readonly, examples, setExample, addExample, removeExample }:
               } flex flex-col items-center justify-start gap-6 sm:col-span-1`}
             >
               <div className="grid w-full items-center gap-2">
-                <Label htmlFor={`output-${idx}`} className="text-left text-sm font-medium">
+                <Label htmlFor={`output-${idx}`} className="text-start text-sm font-medium">
                   {localize('com_endpoint_output')}{' '}
                   <small className="high-contrast:opacity-100 opacity-40">
                     ({localize('com_endpoint_default_blank')})

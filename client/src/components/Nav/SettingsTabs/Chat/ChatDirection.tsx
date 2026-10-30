@@ -1,31 +1,30 @@
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 import { Dropdown } from '@librechat/client';
+import type { ChatDirection as TChatDirection } from '~/store/chatDirection';
+import { chatDirectionAtom } from '~/store/chatDirection';
 import { useLocalize } from '~/hooks';
-import store from '~/store';
 
-/** Stored values: `auto` follows the interface language; `RTL` and `LTR` pin a direction. */
 const ChatDirection = () => {
-  const [preference, setPreference] = useRecoilState(store.chatDirection);
   const localize = useLocalize();
+  const [direction, setDirection] = useAtom(chatDirectionAtom);
 
   const options = [
-    { value: 'auto', label: localize('com_nav_chat_direction_auto') },
-    { value: 'RTL', label: localize('chat_direction_right_to_left') },
-    { value: 'LTR', label: localize('chat_direction_left_to_right') },
+    { value: 'auto', label: localize('com_ui_auto') },
+    { value: 'ltr', label: localize('chat_direction_left_to_right') },
+    { value: 'rtl', label: localize('chat_direction_right_to_left') },
   ];
-  const pinned = preference?.toUpperCase();
-  const value = pinned === 'RTL' || pinned === 'LTR' ? pinned : 'auto';
+
   const labelId = 'chat-direction-label';
 
   return (
     <div className="flex w-full flex-wrap items-center justify-between gap-2">
       <div id={labelId}>{localize('com_nav_chat_direction')}</div>
       <Dropdown
-        value={value}
+        value={direction}
         options={options}
-        onChange={(next) => setPreference(next)}
+        onChange={(value: string) => setDirection(value as TChatDirection)}
         testId="chatDirection"
-        sizeClasses="z-50 w-[150px]"
+        sizeClasses="z-50 w-[9.375rem]"
         className="z-50"
         aria-labelledby={labelId}
       />

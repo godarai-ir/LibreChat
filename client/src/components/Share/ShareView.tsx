@@ -419,7 +419,7 @@ export function ShareHeader({
                   className={cn(
                     'border-border-medium transition-colors',
                     isMobile
-                      ? 'absolute end-4 bottom-4 justify-center p-0 shadow-lg'
+                      ? 'absolute inset-e-4 bottom-4 justify-center p-0 shadow-lg'
                       : 'gap-2 self-start px-4 py-2',
                   )}
                 >

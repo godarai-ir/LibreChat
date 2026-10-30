@@ -203,7 +203,7 @@ const Wakeup = memo(function Wakeup({
               )}
               {display.tasks.map((task) =>
                 display.kind === 'background_tool' ? (
-                  <div key={task.taskId} className="my-2 pl-7">
+                  <div key={task.taskId} className="my-2 ps-7">
                     <BackgroundTaskCard
                       task={{
                         taskId: task.taskId,

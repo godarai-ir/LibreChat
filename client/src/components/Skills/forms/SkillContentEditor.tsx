@@ -62,7 +62,7 @@ const SkillContentEditor: React.FC<SkillContentEditorProps> = ({
           isEditing ? '' : 'hover:bg-surface-tertiary cursor-pointer',
         )}
       >
-        <div className="absolute end-2 top-2 z-10">
+        <div className="absolute inset-e-2 top-2 z-10">
           <TooltipAnchor
             description={isEditing ? localize('com_ui_save') : localize('com_ui_edit')}
             render={

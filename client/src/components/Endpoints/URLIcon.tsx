@@ -38,8 +38,8 @@ export const URLIcon = memo(
           </div>
           {imageError && iconURL && (
             <div
-              className="bg-status-error-strong absolute flex items-center justify-center rounded-full"
-              style={{ width: pxToRem(14), height: pxToRem(14), top: 0, right: 0 }}
+              className="bg-status-error-strong absolute inset-e-0 top-0 flex items-center justify-center rounded-full"
+              style={{ width: pxToRem(14), height: pxToRem(14) }}
             >
               <AlertCircle className="text-text-on-status size-2.5" aria-hidden="true" />
             </div>

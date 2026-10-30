@@ -1,4 +1,3 @@
-const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const { logger, runAsSystem, tenantStorage } = require('@librechat/data-schemas');
 const {
@@ -23,6 +22,7 @@ const {
   revokeUserCodeEnvironmentWorkers,
   finalizeMCPAuthorizationMutation,
   clearSessionHintCookie,
+  compareSecret,
 } = require('@librechat/api');
 const { Tools, Constants, FileSources } = require('librechat-data-provider');
 const { updateUserPluginAuth, deleteUserPluginAuth } = require('~/server/services/PluginService');
@@ -65,7 +65,7 @@ const emailChangeService = createEmailChangeService(
     withTenant: (tenantId, operation) =>
       tenantId ? tenantStorage.run({ tenantId }, operation) : runAsSystem(operation),
     comparePassword: (user, password) =>
-      comparePassword(user, password, { compare: bcrypt.compare }),
+      comparePassword(user, password, { compare: compareSecret }),
     sendEmail,
     getAppConfig,
     get clientDomain() {
@@ -170,7 +170,10 @@ const createMCPServerCleanup = (userId) => ({
   findMCPServerOAuthTokenUserIds: db.findMCPServerOAuthTokenUserIds,
   findMCPServerViewerEntries: db.findMCPServerViewerEntries,
   mcpOAuth: {
-    getServerConfig: (serverName) => getMCPServersRegistry().getServerConfig(serverName, userId),
+    getServerConfig: (serverName) =>
+      getMCPServersRegistry().getServerConfig(serverName, userId, undefined, undefined, {
+        includeHidden: true,
+      }),
     getUserPrincipals: (candidateId) => db.getUserPrincipals({ userId: candidateId }),
     resolveAllowlists: (candidateId) =>
       getMCPServersRegistry().resolveAllowlists({ userId: candidateId }),

@@ -55,6 +55,7 @@ type ImagePath = {
 
 type AssistantImageRecord = Pick<IAssistant, '_id' | 'assistant_id'> & {
   endpoint?: string;
+  user?: IAssistant['user'];
 };
 
 type ResolvedImageConfig = {
@@ -130,18 +131,18 @@ function parseImagePath(originalUrl: string, basePath: string): ImagePath | null
     return null;
   }
 
-  let decodedUrl: string;
+  const rawPath = originalUrl.split(/[?#]/, 1)[0];
+  let decodedPath: string;
   try {
-    decodedUrl = decodeURIComponent(originalUrl);
+    decodedPath = decodeURIComponent(rawPath);
   } catch {
     return null;
   }
 
-  if (decodedUrl.includes('\0')) {
+  if (decodedPath.includes('\0')) {
     return null;
   }
 
-  const cleanPath = decodedUrl.split(/[?#]/, 1)[0];
   let decodedBasePath: string;
   try {
     decodedBasePath = decodeURIComponent(basePath);
@@ -150,9 +151,9 @@ function parseImagePath(originalUrl: string, basePath: string): ImagePath | null
   }
   const imagesPath = `${decodedBasePath}/images`;
   const imagesPrefix = `${imagesPath}/`;
-  const normalizedPath = cleanPath.startsWith(imagesPrefix)
-    ? `${imagesPrefix}${cleanPath.slice(imagesPrefix.length).replace(/^\/+/, '')}`
-    : cleanPath;
+  const normalizedPath = decodedPath.startsWith(imagesPrefix)
+    ? `${imagesPrefix}${decodedPath.slice(imagesPrefix.length).replace(/^\/+/, '')}`
+    : decodedPath;
   const match = normalizedPath.match(
     new RegExp(`^${escapeRegExp(imagesPath)}/([a-f0-9]{24})/([^/]+)$`, 'i'),
   );
@@ -167,7 +168,7 @@ function parseImagePath(originalUrl: string, basePath: string): ImagePath | null
   return {
     ownerId,
     filename,
-    canonicalPath: `/images/${ownerId}/${filename}`,
+    canonicalPath: `/images/${ownerId}/${encodeURIComponent(filename)}`,
     agentId: filename.match(AGENT_AVATAR_PATTERN)?.[1],
   };
 }
@@ -224,8 +225,19 @@ function getSignedOpenIdUserId(
   }
 }
 
-function getStoredPathCandidates(canonicalPath: string): string[] {
-  return [canonicalPath, `${canonicalPath}?manual=false`, `${canonicalPath}?manual=true`];
+function getStoredPathCandidates(imagePath: ImagePath): string[] {
+  const { canonicalPath, ownerId, filename } = imagePath;
+  const candidates = [
+    canonicalPath,
+    `${canonicalPath}?manual=false`,
+    `${canonicalPath}?manual=true`,
+  ];
+  const storedPath = `/images/${ownerId}/${filename}`;
+  // Legacy raw filenames are aliases only when URL parsing cannot change their identity.
+  if (storedPath !== canonicalPath && !/[?#%]/.test(filename)) {
+    candidates.push(storedPath, `${storedPath}?manual=false`, `${storedPath}?manual=true`);
+  }
+  return candidates;
 }
 
 async function authenticateRequest(
@@ -319,7 +331,7 @@ async function canViewAgentAvatar(
   const agent = await deps.getAgent(
     {
       id: imagePath.agentId,
-      'avatar.filepath': { $in: getStoredPathCandidates(imagePath.canonicalPath) },
+      'avatar.filepath': { $in: getStoredPathCandidates(imagePath) },
     },
     { _id: 1 },
   );
@@ -362,8 +374,8 @@ async function canViewAssistantAvatar(
   deps: ImageAuthorizationDeps,
 ): Promise<boolean> {
   const assistant = await deps.getAssistant(
-    { avatarFilepath: getStoredPathCandidates(imagePath.canonicalPath) },
-    { _id: 1, assistant_id: 1, endpoint: 1 },
+    { avatarFilepath: getStoredPathCandidates(imagePath) },
+    { _id: 1, assistant_id: 1, endpoint: 1, user: 1 },
   );
   if (!assistant) {
     return false;
@@ -375,7 +387,7 @@ async function canViewAssistantAvatar(
   if (!viewer || viewer.tenantId !== owner.tenantId) {
     return false;
   }
-  if (isSharedAssistant(assistant, configs)) {
+  if (assistant.user?.toString() === viewerId || isSharedAssistant(assistant, configs)) {
     return true;
   }
   const principals = await loadPrincipals(viewerId, viewer, deps);
@@ -498,6 +510,8 @@ export function createImageAuthorizationMiddleware(
         return;
       }
 
+      // Static serving must receive the same single-decoded pathname that was authorized.
+      req.url = imagePath.canonicalPath.slice('/images'.length);
       res.locals.privateImageCache = true;
       let auth = await authPromise;
       let viewer: ImageUser | null = null;

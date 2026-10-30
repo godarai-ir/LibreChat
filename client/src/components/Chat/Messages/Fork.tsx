@@ -5,8 +5,9 @@ import { VisuallyHidden } from '@ariakit/react';
 import { GitFork, InfoIcon } from 'lucide-react';
 import { ForkOptions } from 'librechat-data-provider';
 import { GitCommit, GitBranchPlus, ListTree } from 'lucide-react';
-import { Button, Label, Checkbox, useToastContext, mirrorPlacement } from '@librechat/client';
+import { Button, Label, Checkbox, useToastContext } from '@librechat/client';
 import { TranslationKeys, useLocalize, useNavigateToConvo } from '~/hooks';
+import useDirection, { inlineSide } from '~/hooks/Nav/useDirection';
 import { useForkConvoMutation } from '~/data-provider';
 import { hoverButtonClasses } from './styles';
 import store from '~/store';
@@ -53,8 +54,9 @@ const PopoverButton: React.FC<PopoverButtonProps> = ({
 }) => {
   const localize = useLocalize();
 
+  const hoverSide = inlineSide(useDirection(), 'end');
   return (
-    <Ariakit.HovercardProvider placement={mirrorPlacement('right-start')}>
+    <Ariakit.HovercardProvider placement={`${hoverSide}-start`}>
       <div className="flex flex-col items-center">
         <Ariakit.HovercardAnchor
           render={
@@ -147,8 +149,9 @@ const CheckboxOption: React.FC<CheckboxOptionProps> = ({
 }) => {
   const localize = useLocalize();
   const { showToast } = useToastContext();
+  const hoverSide = inlineSide(useDirection(), 'end');
   return (
-    <Ariakit.HovercardProvider placement={mirrorPlacement('right-start')}>
+    <Ariakit.HovercardProvider placement={`${hoverSide}-start`}>
       <div className="flex items-center justify-between">
         <Ariakit.HovercardAnchor
           render={
@@ -216,6 +219,7 @@ function Fork({
 }) {
   const localize = useLocalize();
   const { showToast } = useToastContext();
+  const hoverSide = inlineSide(useDirection(), 'end');
   const [remember, setRemember] = useState(false);
   /** Per fork, never remembered: a copy without files is a recovery step, not a preference. */
   const [excludeFiles, setExcludeFiles] = useState(false);
@@ -365,7 +369,7 @@ function Fork({
       >
         <div className="text-text-primary flex h-8 w-full items-center justify-center text-sm">
           {localize(activeSetting)}
-          <Ariakit.HovercardProvider placement={mirrorPlacement('right-start')}>
+          <Ariakit.HovercardProvider placement={`${hoverSide}-start`}>
             <div className="ms-auto flex h-6 w-6 items-center justify-center gap-1">
               <Ariakit.HovercardAnchor
                 render={

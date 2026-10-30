@@ -191,21 +191,6 @@ const SCROLL_DURATION = 400;
 const BOTTOM_SNAP_RETRIES = 2;
 const DRAG_THRESHOLD = 4;
 
-type TipSide = 'left' | 'right';
-type TipPosition = { top: number; side: TipSide; inset: number };
-
-/** The preview opens on the thread's side of the rail, its inline start: left of the rail in LTR,
- *  right of it in RTL. `inset` is the distance from that viewport edge to the tip's near edge. */
-function tipAnchor(colRect: DOMRect, rtl: boolean): Omit<TipPosition, 'top'> {
-  return rtl
-    ? { side: 'left', inset: colRect.right + 8 }
-    : { side: 'right', inset: window.innerWidth - colRect.left + 8 };
-}
-
-function isRtl(el: HTMLElement): boolean {
-  return getComputedStyle(el).direction === 'rtl';
-}
-
 function easeOutCubic(t: number): number {
   return 1 - Math.pow(1 - t, 3);
 }
@@ -382,9 +367,16 @@ const chevronButtonClasses = cn(
   'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-xheavy',
 );
 
-function MessageNav({ scrollableRef }: { scrollableRef: React.RefObject<HTMLDivElement> }) {
+function MessageNav({
+  scrollableRef,
+  conversationId: renderedConversationId,
+}: {
+  scrollableRef: React.RefObject<HTMLDivElement>;
+  conversationId?: string | null;
+}) {
   const localize = useLocalize();
-  const { conversationId } = useMessagesConversation();
+  const { conversationId: contextConversationId } = useMessagesConversation();
+  const conversationId = renderedConversationId ?? contextConversationId;
   const { isSubmitting } = useMessagesSubmission();
   const { data: messages } = useGetMessagesByConvoId(
     conversationId ?? '',
@@ -450,9 +442,9 @@ function MessageNav({ scrollableRef }: { scrollableRef: React.RefObject<HTMLDivE
   const tipShownRef = useRef(false);
   const tipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tipElRef = useRef<HTMLDivElement | null>(null);
-  const tipPosRef = useRef<TipPosition>({ top: 0, side: 'right', inset: 0 });
+  const tipPosRef = useRef({ top: 0, inlineEnd: 0 });
 
-  const [tip, setTip] = useState<(TipPosition & { id: string }) | null>(null);
+  const [tip, setTip] = useState<{ id: string; top: number; inlineEnd: number } | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   /** The rib the keyboard last landed on. A roving tab stop has to travel with
    *  focus, not sit on the scroll-spy's current rib: leave it behind and the
@@ -894,13 +886,19 @@ function MessageNav({ scrollableRef }: { scrollableRef: React.RefObject<HTMLDivE
     };
   }, [entries, currentId, measureRibs]);
 
-  const positionTip = useCallback((position: TipPosition) => {
-    tipPosRef.current = position;
+  /** Distance from the viewport edge the tooltip shares with the column: the right edge in LTR, the left in RTL. */
+  const tipInlineEnd = useCallback((rect: { left: number; right: number }) => {
+    const rtl =
+      columnRef.current != null && getComputedStyle(columnRef.current).direction === 'rtl';
+    return rtl ? rect.right + 8 : window.innerWidth - rect.left + 8;
+  }, []);
+
+  const positionTip = useCallback((top: number, inlineEnd: number) => {
+    tipPosRef.current = { top, inlineEnd };
     const el = tipElRef.current;
     if (el) {
-      el.style.top = `${position.top}px`;
-      el.style[position.side] = `${position.inset}px`;
-      el.style[position.side === 'left' ? 'right' : 'left'] = '';
+      el.style.top = `${top}px`;
+      el.style.insetInlineEnd = `${inlineEnd}px`;
     }
   }, []);
 
@@ -910,7 +908,7 @@ function MessageNav({ scrollableRef }: { scrollableRef: React.RefObject<HTMLDivE
         setTip(null);
         return;
       }
-      setTip({ id, ...tipPosRef.current });
+      setTip({ id, top: tipPosRef.current.top, inlineEnd: tipPosRef.current.inlineEnd });
     },
     [entryById],
   );
@@ -931,8 +929,8 @@ function MessageNav({ scrollableRef }: { scrollableRef: React.RefObject<HTMLDivE
   }, []);
 
   const focusTooltip = useCallback(
-    (id: string, position: TipPosition) => {
-      positionTip(position);
+    (id: string, top: number, inlineEnd: number) => {
+      positionTip(top, inlineEnd);
       if (focusedIdRef.current === id) {
         return;
       }
@@ -960,9 +958,9 @@ function MessageNav({ scrollableRef }: { scrollableRef: React.RefObject<HTMLDivE
     (el: HTMLElement, id: string) => {
       const rect = el.getBoundingClientRect();
       const colRect = columnRef.current?.getBoundingClientRect() ?? rect;
-      focusTooltip(id, { top: rect.top + rect.height / 2, ...tipAnchor(colRect, isRtl(el)) });
+      focusTooltip(id, rect.top + rect.height / 2, tipInlineEnd(colRect));
     },
-    [focusTooltip],
+    [focusTooltip, tipInlineEnd],
   );
 
   const handleEndPointerEnter = useCallback(
@@ -1033,11 +1031,11 @@ function MessageNav({ scrollableRef }: { scrollableRef: React.RefObject<HTMLDivE
     }
     if (nearestId != null && nearestD <= influence && !isDraggingRef.current) {
       const top = colRect.top - scrollTop + nearestCenter;
-      focusTooltip(nearestId, { top, ...tipAnchor(colRect, isRtl(col)) });
+      focusTooltip(nearestId, top, tipInlineEnd(colRect));
     } else {
       clearTooltip();
     }
-  }, [focusTooltip, clearTooltip, ensureRibLayout]);
+  }, [focusTooltip, clearTooltip, ensureRibLayout, tipInlineEnd]);
 
   /** Restores the resting dimensions rather than clearing them: the ribs carry
    *  their base size inline, from the same `ribDimsFor` the magnifier reads, so
@@ -1628,7 +1626,7 @@ function MessageNav({ scrollableRef }: { scrollableRef: React.RefObject<HTMLDivE
       aria-label={localize('com_ui_message_nav')}
       aria-keyshortcuts="Shift+Alt+M"
       className={cn(
-        'group/nav absolute end-2 top-1/2 z-40 hidden max-h-[min(24rem,calc(100%-2rem))]',
+        'group/nav absolute inset-e-2 top-1/2 z-40 hidden max-h-[min(24rem,calc(100%-2rem))]',
         '-translate-y-1/2 flex-col items-end gap-1.5 px-1.5 py-2',
         /* The rail floats in the gutter beside the centred message column (48rem, 56rem from
            `xl`), so it shows only once the thread's container leaves room for it on both sides;
@@ -1741,14 +1739,15 @@ function MessageNav({ scrollableRef }: { scrollableRef: React.RefObject<HTMLDivE
           <div
             ref={tipElRef}
             role="tooltip"
-            style={{
-              top: tip.top,
-              left: tip.side === 'left' ? tip.inset : undefined,
-              right: tip.side === 'right' ? tip.inset : undefined,
-              transform: 'translateY(-50%)',
-              zIndex: 999,
-            }}
-            className="border-border-light bg-surface-secondary text-text-secondary pointer-events-none fixed max-w-[17.5rem] rounded-xl border px-3 py-2 shadow-lg"
+            style={
+              {
+                top: tip.top,
+                '--tip-inline-end': `${tip.inlineEnd}px`,
+                transform: 'translateY(-50%)',
+                zIndex: 999,
+              } as React.CSSProperties
+            }
+            className="border-border-light bg-surface-secondary text-text-secondary pointer-events-none fixed inset-e-(--tip-inline-end) max-w-[17.5rem] rounded-xl border px-3 py-2 shadow-lg"
           >
             <p className="line-clamp-3 text-xs">{tipText}</p>
           </div>,

@@ -413,6 +413,7 @@ function Palette({
   );
   const isUnifiedMode = isUnifiedUploadMode(endpointFileConfig, canAttach);
   const attach = useAttachItems({
+    index,
     agentId,
     endpoint,
     endpointType,
@@ -1051,7 +1052,7 @@ function Palette({
             {checked && (
               <span
                 aria-hidden="true"
-                className="bg-text-primary absolute inset-y-1 start-0 w-0.5 rounded-full"
+                className="bg-text-primary absolute inset-y-1 inset-s-0 w-0.5 rounded-full"
               />
             )}
             <Button
@@ -1169,6 +1170,7 @@ function Palette({
       entering,
       collapsing,
       paletteRowId,
+      dateLocale,
     ],
   );
 

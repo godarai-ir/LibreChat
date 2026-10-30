@@ -129,3 +129,7 @@ export type {
   AssignTenantModelResult,
 } from './migrations';
 export type { SearchTokenBackfillResult } from './migrations';
+
+export { createBrowserSetupStore, createBrowserSetupBackend } from './methods/browserSetup';
+export type * from './types/browserSetup';
+export type * from './types/codeEnvironmentSetup';

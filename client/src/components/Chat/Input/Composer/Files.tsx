@@ -122,7 +122,7 @@ const FileCard = memo(function FileCard({ file, onAttach, onPreview, disabled }:
         <span className="text-text-secondary mt-auto text-xs">{formatDate(file, dateLocale)}</span>
       </button>
       {canPreview && (
-        <span className="absolute end-2 bottom-2">
+        <span className="absolute inset-e-2 bottom-2">
           <IconButton
             size="xs"
             shape="square"

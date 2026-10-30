@@ -38,7 +38,7 @@ export default function Sidebar({
     >
       <div className="relative shrink-0">
         <Search
-          className="text-text-tertiary pointer-events-none absolute start-2 top-1/2 h-4 w-4 -translate-y-1/2"
+          className="text-text-tertiary pointer-events-none absolute inset-s-2 top-1/2 h-4 w-4 -translate-y-1/2"
           aria-hidden="true"
         />
         <input
@@ -61,7 +61,7 @@ export default function Sidebar({
             type="button"
             onClick={() => onQueryChange('')}
             aria-label={localize('com_ui_clear_search')}
-            className="text-text-secondary hover:bg-surface-hover hover:text-text-primary focus-visible:ring-text-primary absolute end-1.5 top-1/2 -translate-y-1/2 rounded-md p-1 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+            className="text-text-secondary hover:bg-surface-hover hover:text-text-primary focus-visible:ring-text-primary absolute inset-e-1.5 top-1/2 -translate-y-1/2 rounded-md p-1 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>

@@ -80,11 +80,11 @@ const FileContainer = ({
     'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-text-primary';
 
   const details = (
-    <div className="w-56 p-1.5">
+    <div className="w-56 max-w-full p-1.5">
       <div className="flex flex-row items-center gap-2">
         <FilePreview file={file} fileType={fileType} className="relative" />
         <div className="overflow-hidden">
-          <div className="truncate font-medium" title={visibleName}>
+          <div dir="auto" className="truncate font-medium" title={visibleName}>
             {visibleName}
           </div>
           {subtitleAction != null ? (

@@ -4,7 +4,7 @@ import { Button, cn } from '@librechat/client';
 import { Bot, ChevronDown } from 'lucide-react';
 import type { ParentSubagentSummary } from 'librechat-data-provider';
 import { isLiveSubagentStatus, subagentStatusDotClass, subagentStatusLabelKey } from './status';
-import { getMessageRowWidthClass } from '~/components/Chat/Messages/ui/MessageRow';
+import { getMessageRowWidthClass } from '~/components/Chat/Messages/ui/width';
 import { useChatSurface, useOpenSubagentPanel } from './surface';
 import { useParentSubagents } from './ParentSubagentsProvider';
 import { eventSubagentSelection } from './eventSelection';
@@ -130,6 +130,7 @@ function EventSubagentRows({
         if (freshSelection != null) {
           setSelected((current) => {
             if (
+              current?.event?.pinnedTask === true ||
               current?.durable?.threadId !== selection.durable?.threadId ||
               current?.durable?.taskId !== selection.durable?.taskId
             ) {

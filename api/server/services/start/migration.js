@@ -30,7 +30,7 @@ async function checkMigrationsUnscoped() {
     });
     logAgentMigrationWarning(agentMigrationResult);
   } catch (error) {
-    logger.error('Failed to check agent permissions migration:', error);
+    logger.error('[checkMigrations] Failed to check agent permissions migration:', error);
   }
   try {
     const promptMigrationResult = await checkPromptPermissionsMigration({
@@ -42,11 +42,11 @@ async function checkMigrationsUnscoped() {
     });
     logPromptMigrationWarning(promptMigrationResult);
   } catch (error) {
-    logger.error('Failed to check prompt permissions migration:', error);
+    logger.error('[checkMigrations] Failed to check prompt permissions migration:', error);
   }
   await searchTokens;
 }
 
 module.exports = {
-  checkMigrations,
+  checkMigrations: () => runAsSystem(checkMigrations),
 };

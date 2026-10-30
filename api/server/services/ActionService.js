@@ -10,6 +10,7 @@ const {
   detachOnAbort,
   getTokenExpiresAt,
   getServerOrigin,
+  getSafeErrorMetadata,
   getOAuthCallbackUrl,
   refreshAccessToken,
   GenerationJobManager,
@@ -182,6 +183,7 @@ async function loadActionSets(query) {
  * @param {number} [params.jobCreatedAt] - The generation epoch that owns emitted events.
  * @param {boolean} [params.useSSRFProtection] - When true, uses SSRF-safe HTTP agents that validate resolved IPs at connect time.
  * @param {string[] | null} [params.allowedAddresses] - Optional admin exemption list of host:port pairs that bypass the SSRF private-IP block.
+ * @param {number} [params.timeoutMs] - Milliseconds before an action HTTP call is abandoned.
  * @returns { Promise<typeof tool | { _call: (toolInput: Object | string) => unknown}> } An object with `_call` method to execute the tool input.
  */
 async function createActionTool({
@@ -197,6 +199,7 @@ async function createActionTool({
   jobCreatedAt,
   useSSRFProtection = false,
   allowedAddresses,
+  timeoutMs,
 }) {
   const ssrfAgents = useSSRFProtection ? createSSRFSafeAgents(allowedAddresses) : undefined;
   /** @type {(toolInput: Object | string, config: GraphRunnableConfig) => Promise<unknown>} */
@@ -288,6 +291,7 @@ async function createActionTool({
                     redirect_uri: redirectUri,
                     token_exchange_method: metadata.auth.token_exchange_method,
                     allowedAddresses,
+                    timeout: timeoutMs,
                     /** Encrypted values */
                     encrypted_oauth_client_id: encrypted.oauth_client_id,
                     encrypted_oauth_client_secret: encrypted.oauth_client_secret,
@@ -318,7 +322,7 @@ async function createActionTool({
                   throw error;
                 }
                 const errorMessage = 'Failed to authenticate OAuth tool';
-                logger.error(errorMessage, error);
+                logger.error(errorMessage, getSafeErrorMetadata(error));
                 throw new Error(errorMessage);
               }
             };
@@ -359,6 +363,7 @@ async function createActionTool({
                       token_exchange_method: metadata.auth.token_exchange_method,
                       encrypted_oauth_client_secret: encrypted.oauth_client_secret,
                       allowedAddresses,
+                      timeout: timeoutMs,
                     },
                     {
                       findToken,
@@ -392,7 +397,10 @@ async function createActionTool({
                 if (isAbortError(error)) {
                   throw error;
                 }
-                logger.error('Failed to refresh token, requesting new login:', error);
+                logger.error(
+                  'Failed to refresh token, requesting new login:',
+                  getSafeErrorMetadata(error),
+                );
                 await requestLogin();
               }
             } else {
@@ -413,7 +421,11 @@ async function createActionTool({
         }
       }
 
-      const response = await preparedExecutor.execute(ssrfAgents);
+      const response = await preparedExecutor.execute({
+        ...ssrfAgents,
+        timeout: timeoutMs,
+        signal: config?.signal,
+      });
 
       if (typeof response.data === 'object') {
         return JSON.stringify(response.data);

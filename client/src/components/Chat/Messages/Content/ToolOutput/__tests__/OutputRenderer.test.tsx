@@ -40,7 +40,7 @@ describe('OutputRenderer', () => {
     render(<OutputRenderer text={'First line\nSecond line'} />);
 
     const copyButton = screen.getByTestId('copy-output');
-    expect(copyButton).toHaveClass('absolute', 'end-0', 'bottom-0');
+    expect(copyButton).toHaveClass('absolute', 'inset-e-0', 'bottom-0');
     expect(copyButton).toHaveClass('no-touch:group-hover/copy:opacity-100');
     expect(copyButton.parentElement).toHaveClass('group/copy', 'relative');
     expect(copyButton.parentElement).not.toHaveClass('pe-10');

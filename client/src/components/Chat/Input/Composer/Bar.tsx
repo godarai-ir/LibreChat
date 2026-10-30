@@ -314,7 +314,7 @@ function Bar({
   const above = chipsInline ? EMPTY_ENTRIES : packedEntries;
   const inline = chipsInline ? packedEntries : EMPTY_ENTRIES;
 
-  const rowClass = 'flex flex-row flex-wrap items-center gap-1.5';
+  const rowClass = 'flex flex-wrap items-center gap-1.5';
   const barClass = 'flex flex-col gap-1.5 px-2 pb-2';
 
   const renderChip = (entry: PaletteEntry) => {
@@ -445,10 +445,7 @@ function Bar({
             each takes over the job next to it (stop, and stop-and-send) rather
             than being replaced by a control that slides in somewhere else. Only
             what has no job during a recording actually moves. */}
-        <div
-          ref={controlsRef}
-          className="ms-auto flex shrink-0 items-center gap-1.5"
-        >
+        <div ref={controlsRef} className="ms-auto flex shrink-0 items-center gap-1.5">
           {/* One cell holding both: the settled controls drop out of it as the
               elapsed time rises into their place, and the row keeps one width
               throughout so nothing beside it shifts. */}

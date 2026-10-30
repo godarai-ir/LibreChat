@@ -277,7 +277,11 @@ function Ledger({
       Enter: () => activate(activeRow),
       ' ': () => activate(activeRow),
     };
-    const handler = handlers[event.key];
+    /** Read from the tree itself so an LTR island inside an RTL page keeps its own arrows. */
+    const rtl = getComputedStyle(event.currentTarget).direction === 'rtl';
+    const mirror: Record<string, string> = { ArrowLeft: 'ArrowRight', ArrowRight: 'ArrowLeft' };
+    const key = rtl ? (mirror[event.key] ?? event.key) : event.key;
+    const handler = handlers[key];
     if (handler) {
       event.preventDefault();
       handler();
@@ -288,8 +292,8 @@ function Ledger({
     <ChevronRight
       aria-hidden="true"
       className={cn(
-        'text-text-secondary size-3.5 shrink-0 transition-transform motion-reduce:transition-none rtl:-scale-x-100',
-        expanded && 'rotate-90 rtl:-rotate-90',
+        'text-text-secondary size-3.5 shrink-0 transition-transform motion-reduce:transition-none',
+        expanded ? 'rotate-90' : 'rtl:-scale-x-100',
       )}
     />
   );
@@ -376,7 +380,10 @@ function Ledger({
           active && ACTIVE_RING,
         )}
       >
-        <span className="flex min-w-0 items-center gap-1.5" style={{ paddingInlineStart: indent }}>
+        <span
+          className="flex min-w-0 items-center gap-1.5 ps-(--indent)"
+          style={{ '--indent': `${indent}px` } as CSSProperties}
+        >
           {chevron(row.expanded)}
           <span className="shrink-0 truncate">{label}</span>
           {agents.map(({ agentId, recordId }) => {
@@ -416,7 +423,7 @@ function Ledger({
         </span>
         <span className="hidden md:block" />
         {costCell(row.type === 'turn' ? row.turn.cost : row.step.cost)}
-        <span className="relative h-full overflow-hidden">
+        <span dir="ltr" className="relative h-full overflow-hidden">
           <GroupBar span={span} domain={domainFor(messageId)} />
         </span>
       </div>
@@ -499,8 +506,8 @@ function Ledger({
         )}
       >
         <span
-          className="flex min-w-0 items-center gap-1.5"
-          style={{ paddingInlineStart: (row.level - 2) * INDENT_PX }}
+          className="flex min-w-0 items-center gap-1.5 ps-(--indent)"
+          style={{ '--indent': `${(row.level - 2) * INDENT_PX}px` } as CSSProperties}
         >
           <span
             aria-hidden="true"
@@ -575,7 +582,7 @@ function Ledger({
           {recordTokens(node)}
         </span>
         {costCell(record.cost)}
-        <span className="relative h-full overflow-hidden">
+        <span dir="ltr" className="relative h-full overflow-hidden">
           <RecordBar node={node} scale={scale} domain={domainFor(record.messageId)} />
         </span>
       </div>
@@ -620,7 +627,7 @@ function Ledger({
           <span className="hidden text-end md:block">{localize('com_ui_trace_summary_cost')}</span>
         )}
         {viewDomain ? (
-          <span className="flex justify-between tracking-normal normal-case tabular-nums">
+          <span dir="ltr" className="flex justify-between tracking-normal normal-case tabular-nums">
             <span>{position(viewDomain.start)}</span>
             <span>{position(viewDomain.start + viewDomain.span)}</span>
           </span>

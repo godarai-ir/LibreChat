@@ -88,9 +88,9 @@ export function SearchPicker<TOption extends { key: string; value: string }>({
           )}
         >
           {isLoading ? (
-            <Spinner className="absolute start-3 h-4 w-4" />
+            <Spinner className="absolute inset-s-3 h-4 w-4" />
           ) : (
-            <Search className="text-text-secondary absolute start-3 h-4 w-4" aria-hidden="true" />
+            <Search className="text-text-secondary absolute inset-s-3 h-4 w-4" aria-hidden="true" />
           )}
           <Ariakit.Combobox
             render={<Input />}

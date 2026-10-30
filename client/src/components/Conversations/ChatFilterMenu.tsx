@@ -2,13 +2,8 @@ import { memo, useCallback, useId, useMemo, useRef, useState } from 'react';
 import * as Ariakit from '@ariakit/react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { BookmarkFilledIcon, BookmarkIcon } from '@radix-ui/react-icons';
+import { TooltipAnchor, buttonVariants, usePopoverZIndex } from '@librechat/client';
 import { alternateName, PermissionTypes, Permissions } from 'librechat-data-provider';
-import {
-  TooltipAnchor,
-  buttonVariants,
-  mirrorPlacement,
-  usePopoverZIndex,
-} from '@librechat/client';
 import {
   Archive,
   ArrowDownAZ,
@@ -58,6 +53,7 @@ import {
   updatedRangeAtom,
 } from './facets';
 import { useGetConversationTags, useGetEndpointsQuery, useGetStartupConfig } from '~/data-provider';
+import useDirection, { inlineSide } from '~/hooks/Nav/useDirection';
 import MinimalIcon from '~/components/Endpoints/MinimalIcon';
 import { useHasAccess, useLocalize } from '~/hooks';
 import { cn } from '~/utils';
@@ -156,9 +152,10 @@ const PropertyRow = ({
   children,
 }: PropertyRowProps) => {
   const zIndex = usePopoverZIndex();
+  const submenuSide = inlineSide(useDirection(), 'end');
 
   return (
-    <Ariakit.MenuProvider placement={mirrorPlacement('right-start')} focusLoop={true}>
+    <Ariakit.MenuProvider placement={`${submenuSide}-start`} focusLoop={true}>
       <Ariakit.MenuButton
         render={<Ariakit.MenuItem />}
         data-testid={testId}
@@ -184,7 +181,7 @@ const PropertyRow = ({
         unmountOnHide={true}
         initialFocus={initialFocus}
         /** Portaled beside modal dialog layers, which disable pointer events on body. */
-        className="popover-ui pointer-events-auto min-w-48 max-w-72"
+        className="popover-ui pointer-events-auto max-w-72 min-w-48"
         style={{ zIndex }}
       >
         {children}
@@ -426,7 +423,7 @@ const FacetSearch = ({
   const inputId = useId();
 
   return (
-    <div className="px-1 pb-1.5 pt-0.5">
+    <div className="px-1 pt-0.5 pb-1.5">
       <label className="sr-only" htmlFor={inputId}>
         {localize('com_ui_search_filters')}
       </label>
@@ -447,7 +444,7 @@ const FacetSearch = ({
             event.preventDefault();
             menu?.move(menu.first());
           }}
-          className="text-text-primary placeholder:text-text-tertiary outline-hidden w-full bg-transparent py-1 text-sm"
+          className="text-text-primary placeholder:text-text-tertiary w-full bg-transparent py-1 text-sm outline-hidden"
         />
       </div>
     </div>
@@ -877,7 +874,7 @@ const ChatFilterMenu = () => {
             <ListFilter aria-hidden="true" className="size-4" />
             {totalCount > 0 && (
               <span
-                className="bg-text-primary absolute end-0.5 top-0.5 size-1.5 rounded-full"
+                className="bg-text-primary absolute inset-e-0.5 top-0.5 size-1.5 rounded-full"
                 aria-hidden="true"
               />
             )}
@@ -890,11 +887,11 @@ const ChatFilterMenu = () => {
         gutter={8}
         unmountOnHide={true}
         aria-label={localize('com_ui_filter_and_sort_chats')}
-        className="popover-ui pointer-events-auto min-w-60 max-w-80"
+        className="popover-ui pointer-events-auto max-w-80 min-w-60"
         /** Portaled beside modal dialog layers, which disable pointer events on body. */
         style={{ zIndex }}
       >
-        <div className="flex items-center justify-between gap-2 px-2 pb-1.5 pt-0.5">
+        <div className="flex items-center justify-between gap-2 px-2 pt-0.5 pb-1.5">
           <span className="text-text-secondary text-xs font-medium">
             {localize('com_ui_chat_list')}
           </span>
@@ -908,7 +905,7 @@ const ChatFilterMenu = () => {
                *  ways out of a filter are the same control in two places. It stays a
                *  MenuItem: a button here would leave the menu's arrow keys behind. */
               buttonVariants({ variant: 'ghost', size: 'xs' }),
-              'text-text-secondary outline-hidden cursor-pointer font-medium',
+              'text-text-secondary cursor-pointer font-medium outline-hidden',
               'aria-disabled:hover:text-text-secondary aria-disabled:opacity-50',
               'data-[active-item]:bg-surface-hover data-[active-item]:text-text-primary',
             )}

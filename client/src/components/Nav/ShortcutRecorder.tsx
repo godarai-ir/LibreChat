@@ -243,7 +243,7 @@ export function RecorderInfo({
   }
 
   return (
-    <div id={`${ownerId}-recorder-hint`} className="flex items-center justify-end gap-2 pl-1">
+    <div id={`${ownerId}-recorder-hint`} className="flex items-center justify-end gap-2 ps-1">
       <span
         className={cn(
           'text-[11.5px]',
