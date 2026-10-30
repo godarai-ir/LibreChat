@@ -58,18 +58,18 @@ export type TextareaAutosizePropsWithAria =
 export const TextareaAutosize: ForwardRefExoticComponent<
   TextareaAutosizePropsWithAria & RefAttributes<HTMLTextAreaElement>
 > = forwardRef<HTMLTextAreaElement, TextareaAutosizePropsWithAria>(
-  ({ focusOutline, variant = 'default', className, ...props }, ref) => {
+  ({ focusOutline, variant = 'default', className, dir = 'auto', ...props }, ref) => {
     const [, setIsRerendered] = useState(false);
     useLayoutEffect(() => setIsRerendered(true), []);
     return (
       <ReactTextareaAutosize
-        dir="auto"
+        dir={dir}
         {...props}
         className={
           cn(
             focusOutlineVariants({ focusOutline }),
             fieldInvalid,
-            (props.dir ?? 'auto') === 'auto' && AUTO_DIR_EMPTY,
+            dir === 'auto' && AUTO_DIR_EMPTY,
             AUTOSIZE_VARIANTS[variant],
             className,
           ) || undefined

@@ -85,7 +85,7 @@ export default function ToolCallLimitNotice({ message }: { message: TMessage }) 
             variant="quiet"
             size="icon-xs"
             aria-label={localize('com_ui_tool_call_limit_dismiss')}
-            className="absolute end-1.5 top-1.5 focus-visible:ring-offset-0 focus-visible:ring-inset"
+            className="absolute inset-e-1.5 top-1.5 focus-visible:ring-offset-0 focus-visible:ring-inset"
             onClick={() => setDismissed(true)}
           >
             <X className="h-4 w-4" aria-hidden="true" />

@@ -58,6 +58,7 @@ const chatLiteralAttributes = {
 export default [
   {
     ignores: [
+      'vendor/code/**/*',
       'client/dist/**/*',
       'client/public/**/*',
       'client/coverage/**/*',
@@ -355,6 +356,10 @@ export default [
             'submitting',
             'result-streaming',
             'result-thinking',
+            'shimmer',
+            'tool-status-text',
+            'message-render',
+            'message-timestamp',
           ],
         },
       ],

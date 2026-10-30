@@ -162,8 +162,9 @@ export type ChatFrame =
 
 /**
  * The body of the SSE `error` event: a bare message string (`handleError`),
- * `{ error, generationProtocolVersion }` from the agents stream route, or a
- * failed turn's partial request/response pair.
+ * `{ error, generationProtocolVersion }` from the agents stream route, or the
+ * error message `sendError` builds once headers are sent. No emitter sends a
+ * request/response pair here; a failed turn's pair arrives on `ChatFinalFrame`.
  */
 export type ChatErrorData =
   | string
@@ -174,8 +175,6 @@ export type ChatErrorData =
       error?: boolean | string | { message?: string };
       generationProtocolVersion?: number;
       conversation?: Partial<TConversation>;
-      requestMessage?: TMessage;
-      responseMessage?: TMessage;
     };
 
 /**
@@ -236,7 +235,12 @@ export type ChatEvent =
    */
   | { type: 'error'; data?: ChatErrorData | null; status?: number }
   /** AI SDK: `abort`. The caller closed a stream that was still open. */
-  | { type: 'abort' };
+  | { type: 'abort' }
+  /**
+   * No AI SDK equivalent: a feed that replays before going live (a subagent's activity) says
+   * the replay is delivered and what follows is live.
+   */
+  | { type: 'ready' };
 
 export type ChatEventType = ChatEvent['type'];
 

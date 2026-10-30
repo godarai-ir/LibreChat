@@ -113,8 +113,8 @@ const SecretInput: React.ForwardRefExoticComponent<
         )}
         <div
           className={cn(
-            'pointer-events-none absolute inset-y-0 end-1.5 flex items-center gap-0.5 [&_button]:pointer-events-auto',
-            isFloating && 'end-2',
+            'pointer-events-none absolute inset-y-0 inset-e-1.5 flex items-center gap-0.5 [&_button]:pointer-events-auto',
+            isFloating && 'inset-e-2',
             controlsOnHover &&
               'opacity-0 transition-opacity duration-150 group-focus-within/secret-input:opacity-100 group-hover/secret-input:opacity-100',
             controlsClassName,

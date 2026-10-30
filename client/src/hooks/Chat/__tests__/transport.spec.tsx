@@ -2,17 +2,24 @@ import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { useAtomValue, getDefaultStore } from 'jotai';
 import { RecoilRoot, useSetRecoilState } from 'recoil';
+import { useResumeOnLoad } from '@librechat/chat/react';
 import { act, renderHook, waitFor } from '@testing-library/react';
+import { useChat, resumeRequestsAtom } from '@librechat/chat/react';
+import { useChatHelpers, useResumableSSE } from '@librechat/chat/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Tools, QueryKeys, ContentTypes, EModelEndpoint, request } from 'librechat-data-provider';
 import {
   activeGenerationCreatedAtByConvoId,
   activeGenerationProtocolVersionByConvoId,
+  queuedMessagesByConvoId,
   pendingSteersByConvoId,
   resetSteerFamilies,
   submissionByIndex,
   clearSubmissions,
   resetQueueFamilies,
+  useSteerReclaim,
+  useSteerEscalate,
+  useSteering,
 } from '@librechat/chat/react';
 import type {
   TEnqueueAgentQueuedTurnRequest,
@@ -21,26 +28,21 @@ import type {
   ChatTransportOptions,
   ChatTransportRequest,
 } from 'librechat-data-provider';
+import type { PendingSteer } from '@librechat/chat';
 import type { MutableSnapshot } from 'recoil';
 import type { StreamStatusResponse } from '~/data-provider';
 import type { ChatContract } from '~/hooks/Chat/contract';
 import type { Transport } from '~/hooks/Chat/contract';
-import type { PendingSteer } from '~/hooks/Chat/queue';
+import { ChatSettingsContext, defaultChatSettings } from '~/Providers/ChatSettingsContext';
+import { usePaneConversation, usePaneConversationState } from '~/routes/ChatSettings';
 import { ChatTransportContext } from '~/Providers/ChatTransportContext';
 import { ChatContext, useChatContext } from '~/Providers/ChatContext';
 import { startupConfigKey } from '~/data-provider/Endpoints/queries';
-import { useSteerReclaim } from '~/hooks/Chat/useSteerCancel';
-import { queuedMessagesByConvoId } from '~/hooks/Chat/queue';
-import useSteerEscalate from '~/hooks/Chat/useSteerEscalate';
-import useResumableSSE from '~/hooks/SSE/useResumableSSE';
-import useResumeOnLoad from '~/hooks/SSE/useResumeOnLoad';
-import useChatHelpers from '~/hooks/Chat/useChatHelpers';
-import { resumeRequestsAtom } from '~/hooks/Chat/resume';
-import useSteering from '~/hooks/Chat/useSteering';
-import { useChat } from '~/hooks/Chat/facade';
+import { StreamHostTestProvider } from 'test/streamHost';
+import { SteerHostTestProvider } from 'test/steerHost';
+import { ChatHostTestProvider } from 'test/chatHost';
 import useSSE from '~/hooks/SSE/useSSE';
 import store from '~/store';
-import '~/Providers/SteerHostContext';
 
 jest.mock('~/hooks/AuthContext', () => {
   const { createContext } = jest.requireActual('react');
@@ -89,6 +91,13 @@ function createFakeTransport(overrides: Partial<Transport> = {}) {
   return { transport, streams, sends };
 }
 
+const chatSettings = {
+  ...defaultChatSettings,
+  usePaneConversation,
+  usePaneConversationState,
+  auth: { token: 'test-token', isAuthenticated: true },
+};
+
 function createWrapper(
   transport: Transport,
   seed?: (state: MutableSnapshot) => void,
@@ -110,9 +119,17 @@ function createWrapper(
               seed?.(state);
             }}
           >
-            <ChatTransportContext.Provider value={transport}>
-              {children}
-            </ChatTransportContext.Provider>
+            <SteerHostTestProvider>
+              <ChatHostTestProvider>
+                <StreamHostTestProvider>
+                  <ChatSettingsContext.Provider value={chatSettings}>
+                    <ChatTransportContext.Provider value={transport}>
+                      {children}
+                    </ChatTransportContext.Provider>
+                  </ChatSettingsContext.Provider>
+                </StreamHostTestProvider>
+              </ChatHostTestProvider>
+            </SteerHostTestProvider>
           </RecoilRoot>
         </QueryClientProvider>
       </MemoryRouter>

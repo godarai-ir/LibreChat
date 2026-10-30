@@ -21,6 +21,8 @@ jest.mock('@librechat/data-schemas', () => ({
 
 jest.mock('@librechat/api', () => ({
   AGENT_TRIGGER_SCOPE: 'agent_trigger',
+  loadJwtUser: jest.requireActual('@librechat/api').loadJwtUser,
+  getAuthUserDocCacheMode: () => 'off',
   isTokenRetired: jest.requireActual('@librechat/api').isTokenRetired,
   continueAfterBearerRetirement: jest.requireActual('@librechat/api').continueAfterBearerRetirement,
   belongsToRequestTenant: jest.requireActual('@librechat/api').belongsToRequestTenant,
@@ -31,6 +33,8 @@ jest.mock('~/models', () => ({
   getUserById: jest.fn(),
   updateUser: jest.fn(),
 }));
+
+jest.mock('~/cache/getLogStores', () => jest.fn());
 
 const jwtLogin = require('./jwtStrategy');
 const { getUserById, updateUser } = require('~/models');

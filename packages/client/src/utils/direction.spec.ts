@@ -1,20 +1,48 @@
-import { mirrorPlacement } from './direction';
+import { isRtl, resolveSide, resolveArrowKey } from './direction';
 
-describe('mirrorPlacement', () => {
-  it('keeps every placement under LTR', () => {
-    expect(mirrorPlacement('right-start', false)).toBe('right-start');
-    expect(mirrorPlacement('left', false)).toBe('left');
+function mount(dir: 'ltr' | 'rtl'): HTMLElement {
+  const el = document.createElement('div');
+  el.setAttribute('dir', dir);
+  el.style.direction = dir;
+  document.body.appendChild(el);
+  return el;
+}
+
+describe('direction helpers', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
   });
 
-  it('swaps left and right sides under RTL and keeps the alignment', () => {
-    expect(mirrorPlacement('right', true)).toBe('left');
-    expect(mirrorPlacement('left', true)).toBe('right');
-    expect(mirrorPlacement('right-start', true)).toBe('left-start');
-    expect(mirrorPlacement('left-end', true)).toBe('right-end');
+  it('reads the direction from the element, not the document', () => {
+    expect(isRtl(mount('rtl'))).toBe(true);
+    expect(isRtl(mount('ltr'))).toBe(false);
+    expect(isRtl(null)).toBe(false);
   });
 
-  it('leaves top and bottom placements to Floating UI', () => {
-    expect(mirrorPlacement('top-start', true)).toBe('top-start');
-    expect(mirrorPlacement('bottom', true)).toBe('bottom');
+  it('lets a CSS direction override win over an ancestor dir attribute', () => {
+    const island = document.createElement('div');
+    island.style.direction = 'rtl';
+    mount('ltr').appendChild(island);
+    expect(isRtl(island)).toBe(true);
+  });
+
+  it('swaps left and right placements for an RTL anchor only', () => {
+    const rtl = mount('rtl');
+    const ltr = mount('ltr');
+    expect(resolveSide('right', rtl)).toBe('left');
+    expect(resolveSide('left-start', rtl)).toBe('right-start');
+    expect(resolveSide('top-end', rtl)).toBe('top-end');
+    expect(resolveSide('bottom', rtl)).toBe('bottom');
+    expect(resolveSide('right', ltr)).toBe('right');
+    expect(resolveSide('left-end', undefined)).toBe('left-end');
+  });
+
+  it('swaps horizontal arrow keys for an RTL element only', () => {
+    const rtl = mount('rtl');
+    const ltr = mount('ltr');
+    expect(resolveArrowKey('ArrowRight', rtl)).toBe('ArrowLeft');
+    expect(resolveArrowKey('ArrowLeft', rtl)).toBe('ArrowRight');
+    expect(resolveArrowKey('ArrowUp', rtl)).toBe('ArrowUp');
+    expect(resolveArrowKey('ArrowRight', ltr)).toBe('ArrowRight');
   });
 });

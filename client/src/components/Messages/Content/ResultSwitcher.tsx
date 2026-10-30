@@ -38,7 +38,9 @@ export default function ResultSwitcher({
         <ChevronLeft className="size-3.5 rtl:-scale-x-100" aria-hidden="true" />
       </button>
       <span className="text-text-secondary min-w-[3ch] text-center tabular-nums select-none">
-        {currentIndex + 1}/{totalCount}
+        <bdi>
+          {currentIndex + 1}/{totalCount}
+        </bdi>
       </span>
       <button
         type="button"

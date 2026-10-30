@@ -1,6 +1,7 @@
 import { memo, useRef, useMemo, useState, useEffect } from 'react';
 import { Eye, Search } from 'lucide-react';
 import { apiBaseUrl } from 'librechat-data-provider';
+import { FilePreview, getFileType } from '@librechat/chat/components';
 import { Button, IconButton, Spinner, useToastContext } from '@librechat/client';
 import type { TFile } from 'librechat-data-provider';
 import type { TranslationKeys } from '~/hooks';
@@ -9,10 +10,9 @@ import FilePreviewDialog, {
   getDisplayType,
 } from '~/components/Chat/Messages/Content/FilePreviewDialog';
 import { getPreviewKind } from '~/components/Chat/Messages/Content/preview';
-import { getFileType, toAbsoluteFilePath, triggerDownload } from '~/utils';
 import DialogImage from '~/components/Chat/Messages/Content/DialogImage';
-import FilePreview from '~/components/Chat/Input/Files/FilePreview';
 import { useGetFiles, useFilePreviewBlob } from '~/data-provider';
+import { toAbsoluteFilePath, triggerDownload } from '~/utils';
 import { useLocalize, useAuthContext } from '~/hooks';
 import useCalendar from '~/hooks/useCalendar';
 
@@ -122,7 +122,7 @@ const FileCard = memo(function FileCard({ file, onAttach, onPreview, disabled }:
         <span className="text-text-secondary mt-auto text-xs">{formatDate(file, dateLocale)}</span>
       </button>
       {canPreview && (
-        <span className="absolute end-2 bottom-2">
+        <span className="absolute inset-e-2 bottom-2">
           <IconButton
             size="xs"
             shape="square"

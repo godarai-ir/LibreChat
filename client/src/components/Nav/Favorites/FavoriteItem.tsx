@@ -151,7 +151,7 @@ export default function FavoriteItem(props: FavoriteItemProps) {
           36px row, which is also where a pinned chat keeps its last control, so
           the two row kinds line up. Clicks are swallowed here rather than
           reaching the row underneath. */}
-      <div className="absolute end-1 flex items-center" onClick={(e) => e.stopPropagation()}>
+      <div className="absolute inset-e-1 flex items-center" onClick={(e) => e.stopPropagation()}>
         <UnpinButton
           testId="favorite-unpin-button"
           onClick={handleRemove}

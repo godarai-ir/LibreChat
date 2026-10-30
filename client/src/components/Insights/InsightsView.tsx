@@ -175,6 +175,7 @@ function Sparkline({
 
   return (
     <div
+      dir="ltr"
       className="text-status-info relative mt-2 h-14 w-full outline-hidden"
       role="img"
       tabIndex={0}

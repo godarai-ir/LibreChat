@@ -21,23 +21,33 @@ jest.mock('~/hooks/AuthContext', () => ({
 }));
 
 jest.mock('~/data-provider', () => ({
-  useGetMessagesByConvoId: () => ({ data: null, isLoading: false, isFetching: false }),
   useProjectQuery: () => ({ data: undefined }),
 }));
 
 /**
- * Heading selection only needs route params + conversation state. Stub the chat
- * helper surface so the suite can inject matching vs stale IDs without standing
- * up SSE, message trees, or full ChatRoute synchronization.
+ * Heading selection only needs route params + conversation state. Stub the session so the
+ * suite can inject matching vs stale IDs without standing up the chat host, SSE, message trees,
+ * or full ChatRoute synchronization.
  */
+jest.mock('@librechat/chat/react', () => {
+  const actual = jest.requireActual('@librechat/chat/react');
+  return {
+    ...actual,
+    ChatSessionProvider: ({
+      children,
+    }: {
+      children: (session: { messages: null; isLoading: boolean }) => React.ReactNode;
+    }) => (
+      <actual.ChatContext.Provider value={{ conversation: mockConversation() }}>
+        {children({ messages: null, isLoading: false })}
+      </actual.ChatContext.Provider>
+    ),
+  };
+});
+
 jest.mock('~/hooks', () => ({
   useLocalize: () => (key: string) => (key === 'com_ui_new_chat' ? 'New chat' : key),
-  useChatHelpers: () => ({ conversation: mockConversation() }),
   useAddedResponse: () => ({}),
-  useAdaptiveSSE: jest.fn(),
-  useResumeOnLoad: jest.fn(),
-  useQueueDrain: jest.fn(),
-  useQueuedTurnReveal: jest.fn(),
   useScrollbarGutterSeed: jest.fn(),
 }));
 
@@ -139,11 +149,11 @@ describe('ChatView composer preferences', () => {
    *  reaching into app-global state the composer only consumes. ChatView now owns the
    *  read and passes it down, the same boundary `showComposerTips` already follows. */
   test('reads the persisted enterToSend preference and passes it into ChatForm', () => {
-    localStorage.setItem('enterToSend', JSON.stringify(true));
+    localStorage.setItem('enterToSend', JSON.stringify(false));
 
     render(<ChatView />);
 
-    expect(mockChatFormProps).toHaveBeenCalledWith(expect.objectContaining({ enterToSend: true }));
+    expect(mockChatFormProps).toHaveBeenCalledWith(expect.objectContaining({ enterToSend: false }));
   });
 
   /** The same boundary for the dictation preferences: ChatForm consumes them
@@ -166,7 +176,7 @@ describe('ChatView composer preferences', () => {
   test('falls back to the atom default when nothing is persisted', () => {
     render(<ChatView />);
 
-    expect(mockChatFormProps).toHaveBeenCalledWith(expect.objectContaining({ enterToSend: false }));
+    expect(mockChatFormProps).toHaveBeenCalledWith(expect.objectContaining({ enterToSend: true }));
   });
 });
 

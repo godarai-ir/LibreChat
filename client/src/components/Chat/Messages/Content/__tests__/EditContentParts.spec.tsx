@@ -1,16 +1,17 @@
 import React from 'react';
+import { getDefaultStore } from 'jotai';
 import { Constants, ContentTypes } from 'librechat-data-provider';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { FileCitation, TMessage, TMessageContentParts } from 'librechat-data-provider';
+import { chatDirectionAtom } from '~/store/chatDirection';
 import EditContentParts from '../EditContentParts';
 
 const mockMutateAsync = jest.fn();
 const mockSetMessages = jest.fn();
 const mockAsk = jest.fn();
-let mockChatDirection = 'LTR';
 
 jest.mock('recoil', () => ({
-  useRecoilValue: () => mockChatDirection,
+  useRecoilValue: () => undefined,
 }));
 
 jest.mock('~/store', () => ({
@@ -55,7 +56,6 @@ jest.mock('~/Providers', () => ({
 
 jest.mock('~/hooks', () => ({
   useLocalize: () => (key: string) => key,
-  useChatDirection: () => (mockChatDirection.toLowerCase() === 'rtl' ? 'rtl' : 'ltr'),
 }));
 
 jest.mock('~/hooks/Conversations/useGetAddedConvo', () => ({
@@ -78,7 +78,7 @@ describe('EditContentParts', () => {
     mockMutateAsync.mockReset();
     mockAsk.mockReset();
     mockMutateAsync.mockResolvedValue({});
-    mockChatDirection = 'LTR';
+    getDefaultStore().set(chatDirectionAtom, 'auto');
     message.content = undefined;
     mockThread = [parentMessage, message];
   });
@@ -654,7 +654,7 @@ describe('EditContentParts', () => {
   });
 
   it('turns the editor around for a right-to-left chat direction', () => {
-    mockChatDirection = 'RTL';
+    getDefaultStore().set(chatDirectionAtom, 'rtl');
     render(
       <EditContentParts
         content={content}
@@ -669,10 +669,10 @@ describe('EditContentParts', () => {
 
     const editor = screen.getByRole('textbox');
     expect(editor).toHaveAttribute('dir', 'rtl');
-    expect(editor).toHaveClass('text-right');
+    expect(editor).toHaveClass('text-start');
   });
 
-  it('leaves the editor left-to-right by default', () => {
+  it('lets the editor resolve its direction from the text by default', () => {
     render(
       <EditContentParts
         content={content}
@@ -686,8 +686,8 @@ describe('EditContentParts', () => {
     );
 
     const editor = screen.getByRole('textbox');
-    expect(editor).toHaveAttribute('dir', 'ltr');
-    expect(editor).toHaveClass('text-left');
+    expect(editor).toHaveAttribute('dir', 'auto');
+    expect(editor).toHaveClass('text-start');
   });
 
   it('sizes the editor from the configured message font rather than pinning it', () => {

@@ -643,7 +643,7 @@ export default function Artifacts() {
                   )}
                 >
                   {isUndocked ? (
-                    <PanelRight className="size-4" aria-hidden="true" />
+                    <PanelRight className="size-4 rtl:-scale-x-100" aria-hidden="true" />
                   ) : (
                     <PictureInPicture2 className="size-4" aria-hidden="true" />
                   )}

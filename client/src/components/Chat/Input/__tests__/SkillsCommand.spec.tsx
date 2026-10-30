@@ -40,11 +40,9 @@ jest.mock('jotai', () => ({
   }),
 }));
 
-jest.mock('~/components/Chat/Input/Composer/state', () => ({
+jest.mock('@librechat/chat/react', () => ({
+  ...jest.requireActual('@librechat/chat/react'),
   pendingManualSkillsByConvoId: () => 'pending-manual-skills',
-}));
-
-jest.mock('../skillsState', () => ({
   showSkillsPopoverFamily: () => 'show-skills-popover',
 }));
 
