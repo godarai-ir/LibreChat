@@ -1,9 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { CacheKeys } from 'librechat-data-provider';
+import { tenantStorage } from '@librechat/data-schemas';
 import type { RedisTestClient } from '../../stream/__tests__/helpers/redis';
 import type { CatalogCache, CatalogStoreDeps } from './store';
 import { createRedisTestClient } from '../../stream/__tests__/helpers/redis';
 import { createMCPCatalogStore, ToolCacheKeys } from './store';
+import { scopeKeyvByTenant } from '../../cache/tenantScope';
 
 const describeRedis = process.env.USE_REDIS === 'true' ? describe : describe.skip;
 const tools = (name: string) => ({ [name]: { type: 'function' as const, function: { name } } });
@@ -438,5 +440,128 @@ describeRedis('MCP catalog fence compatibility (real Redis)', () => {
     }
     await expect(store.getCachedTools()).resolves.toEqual(tools('replacement'));
     expect(await redis.get(legacyGlobalFence)).toBe('old-replica');
+  });
+});
+
+/** Host multi-tenancy scopes every Keyv key to the request's tenant; the scripts must agree. */
+describeRedis('MCP catalog in host multi-tenancy (real Redis)', () => {
+  const prefix = `CatalogTenant-${randomUUID()}`;
+  const userId = `user-${randomUUID()}`;
+  const serverName = 'Neshan-Map';
+  const tenantA = `tenant-${randomUUID()}`;
+  const tenantB = `tenant-${randomUUID()}`;
+  const storedKey = (key: string) => `${prefix}::${CacheKeys.TOOL_CACHE}:${key}`;
+  const keys = new Set<string>();
+  let redis: RedisTestClient;
+
+  beforeAll(async () => {
+    redis = createRedisTestClient('');
+    await redis.connect();
+  });
+
+  afterEach(async () => {
+    await Promise.all([...keys].map((key) => redis.del(key)));
+    keys.clear();
+  });
+
+  afterAll(() => redis.disconnect());
+
+  function createTenantStore() {
+    /** Stores entries the way Keyv's Redis adapter does, so scripts and reads share one shape. */
+    const cache = scopeKeyvByTenant<CatalogCache>({
+      get: async (key) => {
+        const raw = await redis.get(storedKey(key));
+        return raw == null ? null : JSON.parse(raw).value;
+      },
+      set: async (key, value, ttl) => {
+        keys.add(storedKey(key));
+        const entry = JSON.stringify({ value, expires: ttl ? Date.now() + ttl : null });
+        await (ttl
+          ? redis.set(storedKey(key), entry, 'PX', ttl)
+          : redis.set(storedKey(key), entry));
+        return true;
+      },
+      delete: async (key) => (await redis.del(storedKey(key))) > 0,
+    });
+    return createMCPCatalogStore({
+      cacheConfig: { REDIS_KEY_PREFIX: prefix },
+      getCache: () => cache,
+      ioredisClient: {
+        set: (key, value, mode, ttl, condition) => {
+          keys.add(`${prefix}::${key}`);
+          return redis.set(`${prefix}::${key}`, value, mode, ttl, condition);
+        },
+        eval: (script, count, key, token) => redis.eval(script, count, `${prefix}::${key}`, token),
+      },
+      keyvRedisClient: {
+        eval: async (script, options) => {
+          options.keys.forEach((key) => keys.add(key));
+          return redis.eval(script, options.keys.length, ...options.keys, ...options.arguments);
+        },
+      },
+    });
+  }
+
+  const inTenant = <T>(tenantId: string, fn: () => Promise<T>) =>
+    tenantStorage.run({ tenantId }, fn);
+
+  async function generationOf(
+    store: ReturnType<typeof createTenantStore>,
+    scope: { userId: string; serverName: string },
+  ): Promise<string> {
+    const generation = await store.getMCPToolsCacheGeneration(scope);
+    if (!generation) {
+      throw new Error('Expected a publication generation');
+    }
+    return generation;
+  }
+
+  it('keeps a tenant user connection publication lease current', async () => {
+    const store = createTenantStore();
+    const scope = { userId, serverName };
+    await inTenant(tenantA, async () => {
+      const publicationGeneration = await generationOf(store, scope);
+      await expect(store.getMCPToolsCacheGeneration(scope)).resolves.toBe(publicationGeneration);
+      await expect(
+        store.renewMCPToolsCacheGeneration({ ...scope, publicationGeneration }),
+      ).resolves.toBe(true);
+      await expect(
+        store.setCachedToolsIfCurrent(tools('neshan'), {
+          ...scope,
+          configGeneration: 'config',
+          publicationGeneration,
+        }),
+      ).resolves.toBe(true);
+      await expect(store.getCachedTools({ ...scope, configGeneration: 'config' })).resolves.toEqual(
+        tools('neshan'),
+      );
+    });
+
+    const generationKey = storedKey(ToolCacheKeys.MCP_SERVER_GENERATION(userId, serverName));
+    expect(await redis.exists(`${generationKey}:${tenantA}`)).toBe(1);
+    expect(await redis.exists(generationKey)).toBe(0);
+  });
+
+  it('gives each tenant its own publication generation', async () => {
+    const store = createTenantStore();
+    const scope = { userId, serverName };
+    const generationA = await inTenant(tenantA, () => generationOf(store, scope));
+    const generationB = await inTenant(tenantB, () => generationOf(store, scope));
+
+    expect(generationB).not.toBe(generationA);
+    await expect(
+      inTenant(tenantB, () =>
+        store.renewMCPToolsCacheGeneration({ ...scope, publicationGeneration: generationA }),
+      ),
+    ).resolves.toBe(false);
+  });
+
+  it('reads back the global catalog it writes inside a tenant', async () => {
+    const store = createTenantStore();
+    await inTenant(tenantA, async () => {
+      await store.setCachedTools(tools('global'));
+      await expect(store.getCachedTools()).resolves.toEqual(tools('global'));
+    });
+    await expect(inTenant(tenantB, () => store.getCachedTools())).resolves.toBeNull();
   });
 });

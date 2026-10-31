@@ -3,6 +3,7 @@ import calculateSlot from 'cluster-key-slot';
 import { logger } from '@librechat/data-schemas';
 import { CacheKeys, Time } from 'librechat-data-provider';
 import type { LCAvailableTools } from '../types';
+import { isTenantScopedCache, scopeCacheKey } from '../../cache/tenantScope';
 
 const GLOBAL_LOCK_TTL_MS = 30_000;
 const LOCK_FENCE_SAFETY_MS = 1_000;
@@ -375,12 +376,19 @@ export function createMCPCatalogStore(deps: CatalogStoreDeps): MCPCatalogStore {
     return deps.getCache();
   };
 
-  const rawKey = (key: string): string => {
+  const prefixedKey = (key: string): string => {
     const namespaced = `${CacheKeys.TOOL_CACHE}:${key}`;
     return deps.cacheConfig.REDIS_KEY_PREFIX
       ? `${deps.cacheConfig.REDIS_KEY_PREFIX}${deps.cacheConfig.GLOBAL_PREFIX_SEPARATOR ?? '::'}${namespaced}`
       : namespaced;
   };
+  /**
+   * The Redis key Keyv stores `key` under for the current request. Scripts address the store
+   * directly, past the methods a tenant-scoped cache patches, so in host multi-tenancy they must
+   * append the same tenant suffix or they read and write a different entry than `cache.get` does.
+   */
+  const rawKey = (key: string): string =>
+    prefixedKey(isTenantScopedCache(deps.getCache()) ? scopeCacheKey(key) : key);
   const rememberAppRevision = (
     revisions: Map<string, number>,
     scope: string,
@@ -417,7 +425,7 @@ export function createMCPCatalogStore(deps: CatalogStoreDeps): MCPCatalogStore {
     const closingBrace = openingBrace >= 0 ? key.indexOf('}', openingBrace + 1) : -1;
     return closingBrace > openingBrace + 1 ? key.slice(openingBrace + 1, closingBrace) : key;
   };
-  const prefixHasBraces = /[{}]/.test(rawKey(''));
+  const prefixHasBraces = /[{}]/.test(prefixedKey(''));
   const ownershipFenceKey = (name: string, guardedKey: string): string => {
     let key = rawKey(`${name}:{${redisHashTag(guardedKey)}}`);
     if (!prefixHasBraces) return key;
@@ -432,10 +440,8 @@ export function createMCPCatalogStore(deps: CatalogStoreDeps): MCPCatalogStore {
     }
     return key;
   };
-  const globalCacheRawKey = rawKey(ToolCacheKeys.GLOBAL);
-  /** Hashes to the same Redis Cluster slot as the unchanged legacy global catalog key. */
-  const globalFenceKey = ownershipFenceKey('tools:global:write-fence', globalCacheRawKey);
-  const legacyGlobalFenceKey = `tools:global:write-fence:{${redisHashTag(globalCacheRawKey)}}`;
+  /** Resolved per call: the global catalog key carries the tenant of the request in host mode. */
+  const globalCacheRawKey = (): string => rawKey(ToolCacheKeys.GLOBAL);
 
   async function withRedisLock<T>(
     lockKey: string,
@@ -591,7 +597,7 @@ export function createMCPCatalogStore(deps: CatalogStoreDeps): MCPCatalogStore {
     const written = await deps.keyvRedisClient!.eval(WRITE_GLOBAL_IF_OWNER_SCRIPT, {
       keys: ownershipKeys(
         { key: globalLockFenceKey, token: globalLockToken, legacyKey: globalLockLegacyFenceKey },
-        globalCacheRawKey,
+        globalCacheRawKey(),
       ),
       arguments: [globalLockToken, JSON.stringify(tools), String(Date.now() + ttl), String(ttl)],
     });
@@ -612,7 +618,7 @@ export function createMCPCatalogStore(deps: CatalogStoreDeps): MCPCatalogStore {
     const deleted = await deps.keyvRedisClient!.eval(DELETE_GLOBAL_IF_OWNER_SCRIPT, {
       keys: ownershipKeys(
         { key: globalLockFenceKey, token: globalLockToken, legacyKey: globalLockLegacyFenceKey },
-        globalCacheRawKey,
+        globalCacheRawKey(),
       ),
       arguments: [globalLockToken],
     });
@@ -622,6 +628,10 @@ export function createMCPCatalogStore(deps: CatalogStoreDeps): MCPCatalogStore {
   }
 
   function runWithGlobalCacheLock<T>(operation: () => Promise<T>): Promise<T> {
+    const cacheRawKey = globalCacheRawKey();
+    /** Hashes to the same Redis Cluster slot as the unchanged legacy global catalog key. */
+    const globalFenceKey = ownershipFenceKey('tools:global:write-fence', cacheRawKey);
+    const legacyGlobalFenceKey = `tools:global:write-fence:{${redisHashTag(cacheRawKey)}}`;
     const locked = () =>
       withRedisLock(GLOBAL_LOCK_KEY, GLOBAL_LOCK_TTL_MS, async (token, leaseExpiresAt) => {
         return withOwnershipFence(
