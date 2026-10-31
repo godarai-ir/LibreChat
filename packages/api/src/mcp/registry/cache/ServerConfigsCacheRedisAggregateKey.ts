@@ -1,3 +1,4 @@
+import { runAsSystem } from '@librechat/data-schemas';
 import type Keyv from 'keyv';
 import type { IServerConfigsRepositoryInterface } from '~/mcp/registry/ServerConfigsRepositoryInterface';
 import type { ParsedServerConfig, AddServerResult } from '~/mcp/types';
@@ -113,6 +114,23 @@ export class ServerConfigsCacheRedisAggregateKey
     this.cache = standardCache(`${this.PREFIX}::Servers::${namespace}`);
   }
 
+  /**
+   * YAML servers and config-source servers (keyed by a hash of their config) are shared by the
+   * whole deployment, and the scripts address the unscoped key. A tenant-scoped cache would
+   * read and write `<key>:<tenantId>` instead, so Keyv runs as the system here.
+   */
+  private readAggregate(): Promise<unknown> {
+    return runAsSystem(() => this.cache.get(AGGREGATE_KEY));
+  }
+
+  private writeAggregate(value: Record<string, object>): Promise<boolean> {
+    return runAsSystem(() => this.cache.set(AGGREGATE_KEY, value));
+  }
+
+  private deleteAggregate(): Promise<boolean> {
+    return runAsSystem(() => this.cache.delete(AGGREGATE_KEY));
+  }
+
   private invalidateLocalSnapshot(): void {
     this.localSnapshot = null;
     this.localSnapshotExpiry = 0;
@@ -185,8 +203,7 @@ export class ServerConfigsCacheRedisAggregateKey
     }
 
     const result =
-      ((await this.cache.get(AGGREGATE_KEY)) as Record<string, ParsedServerConfig> | undefined) ??
-      {};
+      ((await this.readAggregate()) as Record<string, ParsedServerConfig> | undefined) ?? {};
 
     if (ttl > 0) {
       this.localSnapshot = result;
@@ -237,7 +254,7 @@ export class ServerConfigsCacheRedisAggregateKey
         );
       }
       const newAll = { ...all, [serverName]: storedConfig };
-      const success = await this.cache.set(AGGREGATE_KEY, newAll);
+      const success = await this.writeAggregate(newAll);
       this.successCheck(`add ${this.namespace} server "${serverName}"`, success);
       return { serverName, config: storedConfig };
     });
@@ -265,7 +282,7 @@ export class ServerConfigsCacheRedisAggregateKey
         );
       }
       const newAll = { ...all, [serverName]: { ...config, updatedAt } };
-      const success = await this.cache.set(AGGREGATE_KEY, newAll);
+      const success = await this.writeAggregate(newAll);
       this.successCheck(`update ${this.namespace} server "${serverName}"`, success);
     });
   }
@@ -282,7 +299,7 @@ export class ServerConfigsCacheRedisAggregateKey
       this.invalidateLocalSnapshot();
       const all = await this.getAll();
       const newAll = { ...all, [serverName]: { ...config, updatedAt } };
-      const success = await this.cache.set(AGGREGATE_KEY, newAll);
+      const success = await this.writeAggregate(newAll);
       this.successCheck(`upsert ${this.namespace} server "${serverName}"`, success);
     });
   }
@@ -320,7 +337,7 @@ export class ServerConfigsCacheRedisAggregateKey
         return false;
       }
       const newAll = { ...all, [serverName]: { ...existing, ...fields } };
-      const success = await this.cache.set(AGGREGATE_KEY, newAll);
+      const success = await this.writeAggregate(newAll);
       this.successCheck(`patch ${this.namespace} server "${serverName}"`, success);
       return true;
     });
@@ -353,7 +370,7 @@ export class ServerConfigsCacheRedisAggregateKey
       if (existing?.inspectionFailed !== true || existing.updatedAt !== stubUpdatedAt) {
         return undefined;
       }
-      const success = await this.cache.set(AGGREGATE_KEY, { ...all, [serverName]: storedConfig });
+      const success = await this.writeAggregate({ ...all, [serverName]: storedConfig });
       this.successCheck(`replace ${this.namespace} server stub "${serverName}"`, success);
       return storedConfig;
     });
@@ -376,7 +393,7 @@ export class ServerConfigsCacheRedisAggregateKey
         throw new Error(`Failed to remove server "${serverName}" in cache.`);
       }
       const { [serverName]: _, ...newAll } = all;
-      const success = await this.cache.set(AGGREGATE_KEY, newAll);
+      const success = await this.writeAggregate(newAll);
       this.successCheck(`remove ${this.namespace} server "${serverName}"`, success);
     });
   }
@@ -394,7 +411,7 @@ export class ServerConfigsCacheRedisAggregateKey
     if (this.leaderOnly) {
       await this.leaderCheck(`reset ${this.namespace} MCP servers cache`);
     }
-    await this.cache.delete(AGGREGATE_KEY);
+    await this.deleteAggregate();
     this.invalidateLocalSnapshot();
   }
 }

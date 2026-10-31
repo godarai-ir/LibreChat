@@ -1,11 +1,19 @@
 import { Keyv } from 'keyv';
 import { randomUUID } from 'crypto';
-import { logger, scopedCacheKey, getTenantId, SYSTEM_TENANT_ID } from '@librechat/data-schemas';
+import {
+  logger,
+  runAsSystem,
+  scopedCacheKey,
+  getTenantId,
+  SYSTEM_TENANT_ID,
+} from '@librechat/data-schemas';
 import { standardCache } from '~/cache';
 
 /** Base key holding the active generation tag; the effective key is
  *  tenant-scoped, so one tenant's mutations cannot orphan another's entries. */
 const GENERATION_KEY = '__generation__';
+/** Shared by every tenant, so it is read and written as the system: a tenant-scoped cache would
+ *  otherwise give each tenant, and the startup context, a fence of its own. */
 const GLOBAL_GENERATION_KEY = '__global_generation__';
 
 interface MemoEntry<T> {
@@ -104,7 +112,7 @@ export class ReadThroughAllCache<T> {
     let tenantGeneration: unknown;
     try {
       [globalGeneration, tenantGeneration] = await Promise.all([
-        this.generationCache.get(GLOBAL_GENERATION_KEY),
+        runAsSystem(() => this.generationCache.get(GLOBAL_GENERATION_KEY)),
         this.generationCache.get(scopedCacheKey(GENERATION_KEY)),
       ]);
     } catch (error) {
@@ -274,18 +282,20 @@ export class ReadThroughAllCache<T> {
     if (!this.enabled) {
       return;
     }
-    try {
-      await this.generationCache.set(GLOBAL_GENERATION_KEY, randomUUID());
-    } catch (error) {
-      logger.warn('[ReadThroughAllCache] Global generation write failed:', error);
-      throw error;
-    }
-    this.memo.clear();
+    /** Clears before rotating: in Redis the namespace scan also matches the generation store
+     *  (`<namespace>::generation:*`), so clearing after would delete the fence just written. */
     try {
       await this.cache.clear();
     } catch (error) {
       logger.warn('[ReadThroughAllCache] Global clear failed:', error);
     }
+    try {
+      await runAsSystem(() => this.generationCache.set(GLOBAL_GENERATION_KEY, randomUUID()));
+    } catch (error) {
+      logger.warn('[ReadThroughAllCache] Global generation write failed:', error);
+      throw error;
+    }
+    this.memo.clear();
   }
 
   private evictTenantMemo(tenantId: string | undefined): void {

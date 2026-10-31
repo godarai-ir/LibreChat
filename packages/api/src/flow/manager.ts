@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { logger } from '@librechat/data-schemas';
 import type { StoredDataNoRaw } from 'keyv';
 import type { FlowState, FlowMetadata, FlowManagerOptions } from './types';
+import { isTenantScopedCache, scopeCacheKey } from '../cache/tenantScope';
 import { registerShutdownTask } from '../app/shutdown';
 import { math } from '~/utils/math';
 
@@ -249,10 +250,10 @@ export class FlowStateManager<T = unknown> {
   }
 
   /**
-   * Flow keys are intentionally NOT tenant-scoped. OAuth callbacks arrive
-   * without tenant ALS context (the provider redirect doesn't carry
-   * X-Tenant-Id). Flow IDs are random UUIDs with no collision risk, and
-   * flow data is ephemeral (TTL-bounded, no sensitive user content).
+   * The logical flow key carries no tenant. Flow IDs are random UUIDs with no collision risk, and
+   * flow data is ephemeral (TTL-bounded, no sensitive user content). In host multi-tenancy the
+   * flows cache is tenant-scoped, so Keyv stores the state under `<key>:<tenantId>`; the paths
+   * that reach past Keyv use {@link getStoredStateKey} to address the same entry.
    */
   private getFlowKey(flowId: string, type: string): string {
     return `${type}:${flowId}`;
@@ -382,6 +383,18 @@ export class FlowStateManager<T = unknown> {
     }
   }
 
+  /**
+   * The key Keyv stores a flow's state under for the current operation. Evaluated per call: the
+   * tenant comes from the request. Leases are not Keyv entries and keep the unscoped key.
+   */
+  private getStoredStateKey(flowKey: string): string {
+    return isTenantScopedCache(this.keyv) ? scopeCacheKey(flowKey) : flowKey;
+  }
+
+  private getStateRedisKey(flowKey: string): string | null {
+    return this.getRedisKey(this.getStoredStateKey(flowKey));
+  }
+
   private getRedisKey(flowKey: string): string | null {
     const store = this.keyv.store as KeyvRedisStore;
     if (store?.constructor?.name !== 'KeyvRedis' || typeof store.createKeyPrefix !== 'function') {
@@ -429,7 +442,8 @@ export class FlowStateManager<T = unknown> {
     if (!(this.keyv instanceof Keyv) || !(this.keyv.store instanceof Map)) {
       return null;
     }
-    const key = this.keyv.namespace ? `${this.keyv.namespace}:${flowKey}` : flowKey;
+    const stateKey = this.getStoredStateKey(flowKey);
+    const key = this.keyv.namespace ? `${this.keyv.namespace}:${stateKey}` : stateKey;
     const raw = this.keyv.store.get(key);
     if (typeof raw !== 'string') {
       return null;
@@ -454,7 +468,7 @@ export class FlowStateManager<T = unknown> {
     expectedState = '',
   ): Promise<GuardedMutationResult> {
     const flowKey = this.getFlowKey(flowId, type);
-    const redisKey = this.getRedisKey(flowKey);
+    const redisKey = this.getStateRedisKey(flowKey);
     if (redisKey) {
       const result = await this.evalRedisScript(GUARDED_DELETE_FLOW, redisKey, [
         String(expectedCreatedAt),
@@ -499,7 +513,7 @@ export class FlowStateManager<T = unknown> {
     const message = error instanceof Error ? error.message : error;
     const errorName = error instanceof Error ? error.name : 'Error';
     const failedAt = Date.now();
-    const redisKey = this.getRedisKey(flowKey);
+    const redisKey = this.getStateRedisKey(flowKey);
     if (redisKey) {
       const result = await this.evalRedisScript(GUARDED_FAIL_FLOW, redisKey, [
         String(expectedCreatedAt),
@@ -564,7 +578,7 @@ export class FlowStateManager<T = unknown> {
   ): Promise<GuardedMutationResult> {
     const flowKey = this.getFlowKey(flowId, type);
     const completedAt = Date.now();
-    const redisKey = this.getRedisKey(flowKey);
+    const redisKey = this.getStateRedisKey(flowKey);
     if (redisKey) {
       const guardedResult = await this.evalRedisScript(GUARDED_COMPLETE_FLOW, redisKey, [
         String(expectedCreatedAt),
@@ -620,7 +634,7 @@ export class FlowStateManager<T = unknown> {
   ): Promise<GuardedMutationResult> {
     const flowKey = this.getFlowKey(flowId, type);
     const completedAt = Date.now();
-    const redisKey = this.getRedisKey(flowKey);
+    const redisKey = this.getStateRedisKey(flowKey);
     if (redisKey) {
       const guardedResult = await this.evalRedisScript(GUARDED_SETTLE_FLOW, redisKey, [
         String(expectedCreatedAt),
@@ -1112,7 +1126,7 @@ export class FlowStateManager<T = unknown> {
   /** Redis and the default in-memory store install an attempt atomically; other stores cannot. */
   private claimsAtomically(flowKey: string): boolean {
     return (
-      this.getRedisKey(flowKey) != null ||
+      this.getStateRedisKey(flowKey) != null ||
       (this.keyv instanceof Keyv && this.keyv.store instanceof Map)
     );
   }
@@ -1133,7 +1147,7 @@ export class FlowStateManager<T = unknown> {
       value: initialState,
       expires: initialState.createdAt + this.ttl,
     });
-    const redisKey = this.getRedisKey(flowKey);
+    const redisKey = this.getStateRedisKey(flowKey);
     if (redisKey) {
       const claimed = await this.evalRedisScript(CLAIM_FLOW, redisKey, [
         envelope,
@@ -1159,7 +1173,8 @@ export class FlowStateManager<T = unknown> {
       ) {
         return false;
       }
-      const key = this.keyv.namespace ? `${this.keyv.namespace}:${flowKey}` : flowKey;
+      const stateKey = this.getStoredStateKey(flowKey);
+      const key = this.keyv.namespace ? `${this.keyv.namespace}:${stateKey}` : stateKey;
       this.keyv.store.set(key, envelope);
       return true;
     }
