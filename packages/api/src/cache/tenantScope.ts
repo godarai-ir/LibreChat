@@ -25,6 +25,14 @@ export function scopeCacheKey(key: string): string {
 type Patchable = Record<PropertyKey, unknown>;
 
 /**
+ * Whether `scopeKeyvByTenant` patched this cache. Code that reaches past the Keyv methods to the
+ * store (atomic `getDel`, for example) must scope the key itself with `scopeCacheKey`.
+ */
+export function isTenantScopedCache(cache: object): boolean {
+  return (cache as Patchable)[TENANT_SCOPED] === true;
+}
+
+/**
  * Makes every key of a Keyv cache tenant-scoped, so one tenant can never read, overwrite or
  * delete another tenant's entry whatever the caller forgot. Patches the instance in place, like
  * the Redis instrumentation does, and is safe to apply twice. `clear()` still clears the whole
